@@ -1,0 +1,10 @@
+# Norma Jurídica — PARTE 9 — SEO, sitemaps, robots, ads e PWA
+
+- **`layout.tsx`:** `metadataBase`, `title.default = "Norma Jurídica | A informação que move o Brasil"`, `template = "%s | Norma Jurídica"`, `applicationName`, `authors`, `keywords` (Norma Jurídica, Notícias Brasil, Política, Economia, Justiça, Educação, Esporte, Tecnologia, Jornalismo), ícones, `manifest: '/manifest.webmanifest'`, Open Graph (`pt_BR`, `/cover.png` 1200×630), Twitter, `alternates.canonical`, `robots` com `max-image-preview: large`; `viewport` (`themeColor #1d4ed8`, `maximumScale: 5`); `dns-prefetch`/`preconnect` (domínio, `pagead2.googlesyndication.com`, Google Fonts); script AdSense (`next/script`, `afterInteractive`) apenas se houver `clientId`; JSON-LD `NewsMediaOrganization` e `WebSite` (com `SearchAction` → `/?q={search_term_string}`); inicializador de tema/fonte antes da hidratação; script de recuperação de *chunk* (recarrega 1× a cada 8 s em `ChunkLoadError`); `<CookieConsentBanner />` no `body`.
+- **`seo.ts`:** `auditPageMetadata` (nota 0–100), `generatePortalOrganizationSchema`, `generateWebSiteSchema`, `generateNewsArticleSchema`, `getSeoCacheHeaders(max-age 1800, s-maxage 3600, stale-while-revalidate 86400)`.
+- **Sitemaps** (humano no navegador → visualizador HTML moderno **azul**; robôs → XML puro):
+  - `/sitemap.xml` (índice) → `sitemap-posts.xml` (hourly, 1.0), `sitemap-categories.xml` (hourly, 0.9), `sitemap-pages.xml` (weekly, 0.8), `sitemap-images.xml` (hourly, 0.8, com `image:image`).
+  - Entradas e prioridades exatas em **Anexo C** (página de vídeos removida).
+- **`robots`:** `User-agent: *`, `Allow: /`, `Disallow: /api/` e `Sitemap:` apontando para os cinco sitemaps **com o domínio dinâmico** (implemente em `app/robots.ts` usando `getBaseUrl()`; não fixar URL de hospedagem).
+- **`public/ads.txt`:** manter a linha de editor existente (`google.com, pub-7059730627018047, DIRECT, f08c47fec0942fa0`).
+- **`manifest.ts`:** `display: standalone`, `orientation: portrait`, ícones 192/512 (*any* + *maskable*) e SVG, `theme_color #1d4ed8`.

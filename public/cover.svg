@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a8a"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+  
+  <!-- Subtle background glowing circle -->
+  <circle cx="600" cy="315" r="380" fill="#3b82f6" opacity="0.12" />
+  
+  <!-- Monogram Logo Container -->
+  <g transform="translate(520, 160)">
+    <rect width="160" height="160" rx="36" fill="url(#logoGrad)" stroke="#60a5fa" stroke-width="4"/>
+    <text x="80" y="86" font-family="system-ui, -apple-system, 'Inter', sans-serif" font-size="78" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="-3">NJ</text>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="600" y="385" font-family="system-ui, -apple-system, 'Inter', sans-serif" font-size="54" font-weight="900" text-anchor="middle" letter-spacing="-1">
+    <tspan fill="#ffffff">NORMA </tspan>
+    <tspan fill="#60a5fa">JURÍDICA</tspan>
+  </text>
+
+  <!-- Tagline -->
+  <text x="600" y="435" font-family="system-ui, -apple-system, 'Inter', sans-serif" font-size="22" font-weight="500" fill="#cbd5e1" text-anchor="middle" letter-spacing="1">
+    A INFORMAÇÃO QUE MOVE O BRASIL
+  </text>
+
+  <!-- Bottom Accent Line -->
+  <rect x="540" y="475" width="120" height="4" rx="2" fill="#3b82f6"/>
+</svg>

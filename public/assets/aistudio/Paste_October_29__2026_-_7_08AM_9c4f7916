@@ -1,0 +1,2671 @@
+{
+  "items": [
+    {
+      "id": 6571187291942,
+      "category": "Tocantins",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/6571187291942"
+        },
+        "news": {
+          "href": "/api/news/6571187291942"
+        },
+        "images": {
+          "href": "/api/images/6571187291942"
+        }
+      }
+    },
+    {
+      "id": 6424291362274,
+      "category": "Educação",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/6424291362274"
+        },
+        "news": {
+          "href": "/api/news/6424291362274"
+        },
+        "images": {
+          "href": "/api/images/6424291362274"
+        }
+      }
+    },
+    {
+      "id": 5183624795316,
+      "category": "Esporte",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/5183624795316"
+        },
+        "news": {
+          "href": "/api/news/5183624795316"
+        },
+        "images": {
+          "href": "/api/images/5183624795316"
+        }
+      }
+    },
+    {
+      "id": 9482399189391,
+      "category": "Justiça",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/9482399189391"
+        },
+        "news": {
+          "href": "/api/news/9482399189391"
+        },
+        "images": {
+          "href": "/api/images/9482399189391"
+        }
+      }
+    },
+    {
+      "id": 1216294345584,
+      "category": "Tocantins",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/1216294345584"
+        },
+        "news": {
+          "href": "/api/news/1216294345584"
+        },
+        "images": {
+          "href": "/api/images/1216294345584"
+        }
+      }
+    },
+    {
+      "id": 4334469414432,
+      "category": "Tocantins",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/4334469414432"
+        },
+        "news": {
+          "href": "/api/news/4334469414432"
+        },
+        "images": {
+          "href": "/api/images/4334469414432"
+        }
+      }
+    },
+    {
+      "id": 1144428532544,
+      "category": "Notícias Gerais",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/1144428532544"
+        },
+        "news": {
+          "href": "/api/news/1144428532544"
+        },
+        "images": {
+          "href": "/api/images/1144428532544"
+        }
+      }
+    },
+    {
+      "id": 7727428425279,
+      "category": "Tocantins",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/7727428425279"
+        },
+        "news": {
+          "href": "/api/news/7727428425279"
+        },
+        "images": {
+          "href": "/api/images/7727428425279"
+        }
+      }
+    },
+    {
+      "id": 3386542816798,
+      "category": "Economia",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/3386542816798"
+        },
+        "news": {
+          "href": "/api/news/3386542816798"
+        },
+        "images": {
+          "href": "/api/images/3386542816798"
+        }
+      }
+    },
+    {
+      "id": 2429537983919,
+      "category": "Esporte",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/2429537983919"
+        },
+        "news": {
+          "href": "/api/news/2429537983919"
+        },
+        "images": {
+          "href": "/api/images/2429537983919"
+        }
+      }
+    },
+    {
+      "id": 6242412692949,
+      "category": "Notícias Gerais",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/6242412692949"
+        },
+        "news": {
+          "href": "/api/news/6242412692949"
+        },
+        "images": {
+          "href": "/api/images/6242412692949"
+        }
+      }
+    },
+    {
+      "id": 3422817479195,
+      "category": "Finanças",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/3422817479195"
+        },
+        "news": {
+          "href": "/api/news/3422817479195"
+        },
+        "images": {
+          "href": "/api/images/3422817479195"
+        }
+      }
+    },
+    {
+      "id": 6389841444633,
+      "category": "Palmeiras",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/6389841444633"
+        },
+        "news": {
+          "href": "/api/news/6389841444633"
+        },
+        "images": {
+          "href": "/api/images/6389841444633"
+        }
+      }
+    },
+    {
+      "id": 8346116142997,
+      "category": "Goiás",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/8346116142997"
+        },
+        "news": {
+          "href": "/api/news/8346116142997"
+        },
+        "images": {
+          "href": "/api/images/8346116142997"
+        }
+      }
+    },
+    {
+      "id": 4168916172248,
+      "category": "Goiás",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/4168916172248"
+        },
+        "news": {
+          "href": "/api/news/4168916172248"
+        },
+        "images": {
+          "href": "/api/images/4168916172248"
+        }
+      }
+    },
+    {
+      "id": 8929856116462,
+      "category": "Goiás",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/8929856116462"
+        },
+        "news": {
+          "href": "/api/news/8929856116462"
+        },
+        "images": {
+          "href": "/api/images/8929856116462"
+        }
+      }
+    },
+    {
+      "id": 8132269214748,
+      "category": "Justiça",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/8132269214748"
+        },
+        "news": {
+          "href": "/api/news/8132269214748"
+        },
+        "images": {
+          "href": "/api/images/8132269214748"
+        }
+      }
+    },
+    {
+      "id": 3429813199232,
+      "category": "Justiça",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/3429813199232"
+        },
+        "news": {
+          "href": "/api/news/3429813199232"
+        },
+        "images": {
+          "href": "/api/images/3429813199232"
+        }
+      }
+    },
+    {
+      "id": 5432383432343,
+      "category": "Justiça",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/5432383432343"
+        },
+        "news": {
+          "href": "/api/news/5432383432343"
+        },
+        "images": {
+          "href": "/api/images/5432383432343"
+        }
+      }
+    },
+    {
+      "id": 1492834928862,
+      "category": "Santa Catarina",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/1492834928862"
+        },
+        "news": {
+          "href": "/api/news/1492834928862"
+        },
+        "images": {
+          "href": "/api/images/1492834928862"
+        }
+      }
+    },
+    {
+      "id": 3218295838848,
+      "category": "Tocantins",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/3218295838848"
+        },
+        "news": {
+          "href": "/api/news/3218295838848"
+        },
+        "images": {
+          "href": "/api/images/3218295838848"
+        }
+      }
+    },
+    {
+      "id": 3388113412422,
+      "category": "Tocantins",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/3388113412422"
+        },
+        "news": {
+          "href": "/api/news/3388113412422"
+        },
+        "images": {
+          "href": "/api/images/3388113412422"
+        }
+      }
+    },
+    {
+      "id": 9444246624891,
+      "category": "Tocantins",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/9444246624891"
+        },
+        "news": {
+          "href": "/api/news/9444246624891"
+        },
+        "images": {
+          "href": "/api/images/9444246624891"
+        }
+      }
+    },
+    {
+      "id": 3592837212343,
+      "category": "Tocantins",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/3592837212343"
+        },
+        "news": {
+          "href": "/api/news/3592837212343"
+        },
+        "images": {
+          "href": "/api/images/3592837212343"
+        }
+      }
+    },
+    {
+      "id": 3313974548439,
+      "category": "Tocantins",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/3313974548439"
+        },
+        "news": {
+          "href": "/api/news/3313974548439"
+        },
+        "images": {
+          "href": "/api/images/3313974548439"
+        }
+      }
+    },
+    {
+      "id": 7125539114898,
+      "category": "Tocantins",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/7125539114898"
+        },
+        "news": {
+          "href": "/api/news/7125539114898"
+        },
+        "images": {
+          "href": "/api/images/7125539114898"
+        }
+      }
+    },
+    {
+      "id": 9124882157745,
+      "category": "Esporte",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/9124882157745"
+        },
+        "news": {
+          "href": "/api/news/9124882157745"
+        },
+        "images": {
+          "href": "/api/images/9124882157745"
+        }
+      }
+    },
+    {
+      "id": 8281449136684,
+      "category": "Notícias Gerais",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/8281449136684"
+        },
+        "news": {
+          "href": "/api/news/8281449136684"
+        },
+        "images": {
+          "href": "/api/images/8281449136684"
+        }
+      }
+    },
+    {
+      "id": 9886348421411,
+      "category": "Notícias Gerais",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/9886348421411"
+        },
+        "news": {
+          "href": "/api/news/9886348421411"
+        },
+        "images": {
+          "href": "/api/images/9886348421411"
+        }
+      }
+    },
+    {
+      "id": 5923414182828,
+      "category": "Santa Catarina",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/5923414182828"
+        },
+        "news": {
+          "href": "/api/news/5923414182828"
+        },
+        "images": {
+          "href": "/api/images/5923414182828"
+        }
+      }
+    },
+    {
+      "id": 7915414156447,
+      "category": "Tocantins",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/7915414156447"
+        },
+        "news": {
+          "href": "/api/news/7915414156447"
+        },
+        "images": {
+          "href": "/api/images/7915414156447"
+        }
+      }
+    },
+    {
+      "id": 2433821824848,
+      "category": "Sergipe",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/2433821824848"
+        },
+        "news": {
+          "href": "/api/news/2433821824848"
+        },
+        "images": {
+          "href": "/api/images/2433821824848"
+        }
+      }
+    },
+    {
+      "id": 9436443519823,
+      "category": "Vale do Paraíba e região",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/9436443519823"
+        },
+        "news": {
+          "href": "/api/news/9436443519823"
+        },
+        "images": {
+          "href": "/api/images/9436443519823"
+        }
+      }
+    },
+    {
+      "id": 1839328484191,
+      "category": "São Carlos e Araraquara",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/1839328484191"
+        },
+        "news": {
+          "href": "/api/news/1839328484191"
+        },
+        "images": {
+          "href": "/api/images/1839328484191"
+        }
+      }
+    },
+    {
+      "id": 3324424181638,
+      "category": "Santos e Região",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/3324424181638"
+        },
+        "news": {
+          "href": "/api/news/3324424181638"
+        },
+        "images": {
+          "href": "/api/images/3324424181638"
+        }
+      }
+    },
+    {
+      "id": 6196524489144,
+      "category": "Ribeirão Preto e Franca",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/6196524489144"
+        },
+        "news": {
+          "href": "/api/news/6196524489144"
+        },
+        "images": {
+          "href": "/api/images/6196524489144"
+        }
+      }
+    },
+    {
+      "id": 4114381242158,
+      "category": "Mogi das Cruzes e Suzano",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/4114381242158"
+        },
+        "news": {
+          "href": "/api/news/4114381242158"
+        },
+        "images": {
+          "href": "/api/images/4114381242158"
+        }
+      }
+    },
+    {
+      "id": 3849343233418,
+      "category": "Campinas e região",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/3849343233418"
+        },
+        "news": {
+          "href": "/api/news/3849343233418"
+        },
+        "images": {
+          "href": "/api/images/3849343233418"
+        }
+      }
+    },
+    {
+      "id": 3543958594834,
+      "category": "Bauru e Marília",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/3543958594834"
+        },
+        "news": {
+          "href": "/api/news/3543958594834"
+        },
+        "images": {
+          "href": "/api/images/3543958594834"
+        }
+      }
+    },
+    {
+      "id": 3845881883451,
+      "category": "Roraima",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/3845881883451"
+        },
+        "news": {
+          "href": "/api/news/3845881883451"
+        },
+        "images": {
+          "href": "/api/images/3845881883451"
+        }
+      }
+    },
+    {
+      "id": 1422286119169,
+      "category": "Rondônia",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/1422286119169"
+        },
+        "news": {
+          "href": "/api/news/1422286119169"
+        },
+        "images": {
+          "href": "/api/images/1422286119169"
+        }
+      }
+    },
+    {
+      "id": 2748323482438,
+      "category": "Rio Grande do Sul",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/2748323482438"
+        },
+        "news": {
+          "href": "/api/news/2748323482438"
+        },
+        "images": {
+          "href": "/api/images/2748323482438"
+        }
+      }
+    },
+    {
+      "id": 9257989274575,
+      "category": "Rio Grande do Norte",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/9257989274575"
+        },
+        "news": {
+          "href": "/api/news/9257989274575"
+        },
+        "images": {
+          "href": "/api/images/9257989274575"
+        }
+      }
+    },
+    {
+      "id": 4393858142416,
+      "category": "Sul e Costa Verde Fluminense",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/4393858142416"
+        },
+        "news": {
+          "href": "/api/news/4393858142416"
+        },
+        "images": {
+          "href": "/api/images/4393858142416"
+        }
+      }
+    },
+    {
+      "id": 2186249285838,
+      "category": "Norte Fluminense",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/2186249285838"
+        },
+        "news": {
+          "href": "/api/news/2186249285838"
+        },
+        "images": {
+          "href": "/api/images/2186249285838"
+        }
+      }
+    },
+    {
+      "id": 6632828331491,
+      "category": "Região dos Lagos Fluminense",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/6632828331491"
+        },
+        "news": {
+          "href": "/api/news/6632828331491"
+        },
+        "images": {
+          "href": "/api/images/6632828331491"
+        }
+      }
+    },
+    {
+      "id": 4792857824177,
+      "category": "Região Serrana Fluminense",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/4792857824177"
+        },
+        "news": {
+          "href": "/api/news/4792857824177"
+        },
+        "images": {
+          "href": "/api/images/4792857824177"
+        }
+      }
+    },
+    {
+      "id": 6119924343182,
+      "category": "Petrolina e Região",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/6119924343182"
+        },
+        "news": {
+          "href": "/api/news/6119924343182"
+        },
+        "images": {
+          "href": "/api/images/6119924343182"
+        }
+      }
+    },
+    {
+      "id": 6489199234844,
+      "category": "Caruaru e Região",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/6489199234844"
+        },
+        "news": {
+          "href": "/api/news/6489199234844"
+        },
+        "images": {
+          "href": "/api/images/6489199234844"
+        }
+      }
+    },
+    {
+      "id": 4584883333742,
+      "category": "Norte e Noroeste do Paraná",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/4584883333742"
+        },
+        "news": {
+          "href": "/api/news/4584883333742"
+        },
+        "images": {
+          "href": "/api/images/4584883333742"
+        }
+      }
+    },
+    {
+      "id": 8519233519764,
+      "category": "Oeste e Sudoeste do Paraná",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/8519233519764"
+        },
+        "news": {
+          "href": "/api/news/8519233519764"
+        },
+        "images": {
+          "href": "/api/images/8519233519764"
+        }
+      }
+    },
+    {
+      "id": 1284929119511,
+      "category": "Campos Gerais e Sul do Paraná",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/1284929119511"
+        },
+        "news": {
+          "href": "/api/news/1284929119511"
+        },
+        "images": {
+          "href": "/api/images/1284929119511"
+        }
+      }
+    },
+    {
+      "id": 3347141892497,
+      "category": "Paraná",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/3347141892497"
+        },
+        "news": {
+          "href": "/api/news/3347141892497"
+        },
+        "images": {
+          "href": "/api/images/3347141892497"
+        }
+      }
+    },
+    {
+      "id": 1245372445124,
+      "category": "Paraíba",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/1245372445124"
+        },
+        "news": {
+          "href": "/api/news/1245372445124"
+        },
+        "images": {
+          "href": "/api/images/1245372445124"
+        }
+      }
+    },
+    {
+      "id": 9329418888697,
+      "category": "Pará",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/9329418888697"
+        },
+        "news": {
+          "href": "/api/news/9329418888697"
+        },
+        "images": {
+          "href": "/api/images/9329418888697"
+        }
+      }
+    },
+    {
+      "id": 6585819492491,
+      "category": "Zona da Mata Mineira",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/6585819492491"
+        },
+        "news": {
+          "href": "/api/news/6585819492491"
+        },
+        "images": {
+          "href": "/api/images/6585819492491"
+        }
+      }
+    },
+    {
+      "id": 1824349914845,
+      "category": "Vales de Minas Gerais",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/1824349914845"
+        },
+        "news": {
+          "href": "/api/news/1824349914845"
+        },
+        "images": {
+          "href": "/api/images/1824349914845"
+        }
+      }
+    },
+    {
+      "id": 8454432466834,
+      "category": "Sul de Minas",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/8454432466834"
+        },
+        "news": {
+          "href": "/api/news/8454432466834"
+        },
+        "images": {
+          "href": "/api/images/8454432466834"
+        }
+      }
+    },
+    {
+      "id": 9343643133947,
+      "category": "Grande Minas",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/9343643133947"
+        },
+        "news": {
+          "href": "/api/news/9343643133947"
+        },
+        "images": {
+          "href": "/api/images/9343643133947"
+        }
+      }
+    },
+    {
+      "id": 9474943656715,
+      "category": "Centro-Oeste de Minas",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/9474943656715"
+        },
+        "news": {
+          "href": "/api/news/9474943656715"
+        },
+        "images": {
+          "href": "/api/images/9474943656715"
+        }
+      }
+    },
+    {
+      "id": 9978226349482,
+      "category": "Maranhão",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/9978226349482"
+        },
+        "news": {
+          "href": "/api/news/9978226349482"
+        },
+        "images": {
+          "href": "/api/images/9978226349482"
+        }
+      }
+    },
+    {
+      "id": 8928139593792,
+      "category": "Amazonas",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/8928139593792"
+        },
+        "news": {
+          "href": "/api/news/8928139593792"
+        },
+        "images": {
+          "href": "/api/images/8928139593792"
+        }
+      }
+    },
+    {
+      "id": 2543318141136,
+      "category": "Amapá",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/2543318141136"
+        },
+        "news": {
+          "href": "/api/news/2543318141136"
+        },
+        "images": {
+          "href": "/api/images/2543318141136"
+        }
+      }
+    },
+    {
+      "id": 9863321459192,
+      "category": "Alagoas",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/9863321459192"
+        },
+        "news": {
+          "href": "/api/news/9863321459192"
+        },
+        "images": {
+          "href": "/api/images/9863321459192"
+        }
+      }
+    },
+    {
+      "id": 8943219782427,
+      "category": "Justiça",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/8943219782427"
+        },
+        "news": {
+          "href": "/api/news/8943219782427"
+        },
+        "images": {
+          "href": "/api/images/8943219782427"
+        }
+      }
+    },
+    {
+      "id": 9981429932433,
+      "category": "Justiça",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/9981429932433"
+        },
+        "news": {
+          "href": "/api/news/9981429932433"
+        },
+        "images": {
+          "href": "/api/images/9981429932433"
+        }
+      }
+    },
+    {
+      "id": 2518991918643,
+      "category": "Justiça",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/2518991918643"
+        },
+        "news": {
+          "href": "/api/news/2518991918643"
+        },
+        "images": {
+          "href": "/api/images/2518991918643"
+        }
+      }
+    },
+    {
+      "id": 6874538729284,
+      "category": "Justiça",
+      "type": "wp-api",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/6874538729284"
+        },
+        "news": {
+          "href": "/api/news/6874538729284"
+        },
+        "images": {
+          "href": "/api/images/6874538729284"
+        }
+      }
+    },
+    {
+      "id": 9848634844762,
+      "category": "Acre",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/9848634844762"
+        },
+        "news": {
+          "href": "/api/news/9848634844762"
+        },
+        "images": {
+          "href": "/api/images/9848634844762"
+        }
+      }
+    },
+    {
+      "id": 7392433713338,
+      "category": "Turismo e Viagem",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/7392433713338"
+        },
+        "news": {
+          "href": "/api/news/7392433713338"
+        },
+        "images": {
+          "href": "/api/images/7392433713338"
+        }
+      }
+    },
+    {
+      "id": 4415826156744,
+      "category": "Tecnologia e Games",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/4415826156744"
+        },
+        "news": {
+          "href": "/api/news/4415826156744"
+        },
+        "images": {
+          "href": "/api/images/4415826156744"
+        }
+      }
+    },
+    {
+      "id": 8833539123215,
+      "category": "Pop & Arte",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/8833539123215"
+        },
+        "news": {
+          "href": "/api/news/8833539123215"
+        },
+        "images": {
+          "href": "/api/images/8833539123215"
+        }
+      }
+    },
+    {
+      "id": 2431124818641,
+      "category": "Mundo",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/2431124818641"
+        },
+        "news": {
+          "href": "/api/news/2431124818641"
+        },
+        "images": {
+          "href": "/api/images/2431124818641"
+        }
+      }
+    },
+    {
+      "id": 1183417944433,
+      "category": "Loterias",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/1183417944433"
+        },
+        "news": {
+          "href": "/api/news/1183417944433"
+        },
+        "images": {
+          "href": "/api/images/1183417944433"
+        }
+      }
+    },
+    {
+      "id": 5498139197391,
+      "category": "Educação",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/5498139197391"
+        },
+        "news": {
+          "href": "/api/news/5498139197391"
+        },
+        "images": {
+          "href": "/api/images/5498139197391"
+        }
+      }
+    },
+    {
+      "id": 4524183818294,
+      "category": "Economia",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/4524183818294"
+        },
+        "news": {
+          "href": "/api/news/4524183818294"
+        },
+        "images": {
+          "href": "/api/images/4524183818294"
+        }
+      }
+    },
+    {
+      "id": 3815913481419,
+      "category": "Autoesporte",
+      "type": "rss",
+      "active": true,
+      "_links": {
+        "self": {
+          "href": "/api/news/3815913481419"
+        },
+        "news": {
+          "href": "/api/news/3815913481419"
+        },
+        "images": {
+          "href": "/api/images/3815913481419"
+        }
+      }
+    }
+  ],
+  "_embedded": {
+    "items": [
+      {
+        "id": 6571187291942,
+        "category": "Tocantins",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/6571187291942"
+          },
+          "news": {
+            "href": "/api/news/6571187291942"
+          },
+          "images": {
+            "href": "/api/images/6571187291942"
+          }
+        }
+      },
+      {
+        "id": 6424291362274,
+        "category": "Educação",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/6424291362274"
+          },
+          "news": {
+            "href": "/api/news/6424291362274"
+          },
+          "images": {
+            "href": "/api/images/6424291362274"
+          }
+        }
+      },
+      {
+        "id": 5183624795316,
+        "category": "Esporte",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/5183624795316"
+          },
+          "news": {
+            "href": "/api/news/5183624795316"
+          },
+          "images": {
+            "href": "/api/images/5183624795316"
+          }
+        }
+      },
+      {
+        "id": 9482399189391,
+        "category": "Justiça",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/9482399189391"
+          },
+          "news": {
+            "href": "/api/news/9482399189391"
+          },
+          "images": {
+            "href": "/api/images/9482399189391"
+          }
+        }
+      },
+      {
+        "id": 1216294345584,
+        "category": "Tocantins",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/1216294345584"
+          },
+          "news": {
+            "href": "/api/news/1216294345584"
+          },
+          "images": {
+            "href": "/api/images/1216294345584"
+          }
+        }
+      },
+      {
+        "id": 4334469414432,
+        "category": "Tocantins",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/4334469414432"
+          },
+          "news": {
+            "href": "/api/news/4334469414432"
+          },
+          "images": {
+            "href": "/api/images/4334469414432"
+          }
+        }
+      },
+      {
+        "id": 1144428532544,
+        "category": "Notícias Gerais",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/1144428532544"
+          },
+          "news": {
+            "href": "/api/news/1144428532544"
+          },
+          "images": {
+            "href": "/api/images/1144428532544"
+          }
+        }
+      },
+      {
+        "id": 7727428425279,
+        "category": "Tocantins",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/7727428425279"
+          },
+          "news": {
+            "href": "/api/news/7727428425279"
+          },
+          "images": {
+            "href": "/api/images/7727428425279"
+          }
+        }
+      },
+      {
+        "id": 3386542816798,
+        "category": "Economia",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/3386542816798"
+          },
+          "news": {
+            "href": "/api/news/3386542816798"
+          },
+          "images": {
+            "href": "/api/images/3386542816798"
+          }
+        }
+      },
+      {
+        "id": 2429537983919,
+        "category": "Esporte",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/2429537983919"
+          },
+          "news": {
+            "href": "/api/news/2429537983919"
+          },
+          "images": {
+            "href": "/api/images/2429537983919"
+          }
+        }
+      },
+      {
+        "id": 6242412692949,
+        "category": "Notícias Gerais",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/6242412692949"
+          },
+          "news": {
+            "href": "/api/news/6242412692949"
+          },
+          "images": {
+            "href": "/api/images/6242412692949"
+          }
+        }
+      },
+      {
+        "id": 3422817479195,
+        "category": "Finanças",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/3422817479195"
+          },
+          "news": {
+            "href": "/api/news/3422817479195"
+          },
+          "images": {
+            "href": "/api/images/3422817479195"
+          }
+        }
+      },
+      {
+        "id": 6389841444633,
+        "category": "Palmeiras",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/6389841444633"
+          },
+          "news": {
+            "href": "/api/news/6389841444633"
+          },
+          "images": {
+            "href": "/api/images/6389841444633"
+          }
+        }
+      },
+      {
+        "id": 8346116142997,
+        "category": "Goiás",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/8346116142997"
+          },
+          "news": {
+            "href": "/api/news/8346116142997"
+          },
+          "images": {
+            "href": "/api/images/8346116142997"
+          }
+        }
+      },
+      {
+        "id": 4168916172248,
+        "category": "Goiás",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/4168916172248"
+          },
+          "news": {
+            "href": "/api/news/4168916172248"
+          },
+          "images": {
+            "href": "/api/images/4168916172248"
+          }
+        }
+      },
+      {
+        "id": 8929856116462,
+        "category": "Goiás",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/8929856116462"
+          },
+          "news": {
+            "href": "/api/news/8929856116462"
+          },
+          "images": {
+            "href": "/api/images/8929856116462"
+          }
+        }
+      },
+      {
+        "id": 8132269214748,
+        "category": "Justiça",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/8132269214748"
+          },
+          "news": {
+            "href": "/api/news/8132269214748"
+          },
+          "images": {
+            "href": "/api/images/8132269214748"
+          }
+        }
+      },
+      {
+        "id": 3429813199232,
+        "category": "Justiça",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/3429813199232"
+          },
+          "news": {
+            "href": "/api/news/3429813199232"
+          },
+          "images": {
+            "href": "/api/images/3429813199232"
+          }
+        }
+      },
+      {
+        "id": 5432383432343,
+        "category": "Justiça",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/5432383432343"
+          },
+          "news": {
+            "href": "/api/news/5432383432343"
+          },
+          "images": {
+            "href": "/api/images/5432383432343"
+          }
+        }
+      },
+      {
+        "id": 1492834928862,
+        "category": "Santa Catarina",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/1492834928862"
+          },
+          "news": {
+            "href": "/api/news/1492834928862"
+          },
+          "images": {
+            "href": "/api/images/1492834928862"
+          }
+        }
+      },
+      {
+        "id": 3218295838848,
+        "category": "Tocantins",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/3218295838848"
+          },
+          "news": {
+            "href": "/api/news/3218295838848"
+          },
+          "images": {
+            "href": "/api/images/3218295838848"
+          }
+        }
+      },
+      {
+        "id": 3388113412422,
+        "category": "Tocantins",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/3388113412422"
+          },
+          "news": {
+            "href": "/api/news/3388113412422"
+          },
+          "images": {
+            "href": "/api/images/3388113412422"
+          }
+        }
+      },
+      {
+        "id": 9444246624891,
+        "category": "Tocantins",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/9444246624891"
+          },
+          "news": {
+            "href": "/api/news/9444246624891"
+          },
+          "images": {
+            "href": "/api/images/9444246624891"
+          }
+        }
+      },
+      {
+        "id": 3592837212343,
+        "category": "Tocantins",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/3592837212343"
+          },
+          "news": {
+            "href": "/api/news/3592837212343"
+          },
+          "images": {
+            "href": "/api/images/3592837212343"
+          }
+        }
+      },
+      {
+        "id": 3313974548439,
+        "category": "Tocantins",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/3313974548439"
+          },
+          "news": {
+            "href": "/api/news/3313974548439"
+          },
+          "images": {
+            "href": "/api/images/3313974548439"
+          }
+        }
+      },
+      {
+        "id": 7125539114898,
+        "category": "Tocantins",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/7125539114898"
+          },
+          "news": {
+            "href": "/api/news/7125539114898"
+          },
+          "images": {
+            "href": "/api/images/7125539114898"
+          }
+        }
+      },
+      {
+        "id": 9124882157745,
+        "category": "Esporte",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/9124882157745"
+          },
+          "news": {
+            "href": "/api/news/9124882157745"
+          },
+          "images": {
+            "href": "/api/images/9124882157745"
+          }
+        }
+      },
+      {
+        "id": 8281449136684,
+        "category": "Notícias Gerais",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/8281449136684"
+          },
+          "news": {
+            "href": "/api/news/8281449136684"
+          },
+          "images": {
+            "href": "/api/images/8281449136684"
+          }
+        }
+      },
+      {
+        "id": 9886348421411,
+        "category": "Notícias Gerais",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/9886348421411"
+          },
+          "news": {
+            "href": "/api/news/9886348421411"
+          },
+          "images": {
+            "href": "/api/images/9886348421411"
+          }
+        }
+      },
+      {
+        "id": 5923414182828,
+        "category": "Santa Catarina",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/5923414182828"
+          },
+          "news": {
+            "href": "/api/news/5923414182828"
+          },
+          "images": {
+            "href": "/api/images/5923414182828"
+          }
+        }
+      },
+      {
+        "id": 7915414156447,
+        "category": "Tocantins",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/7915414156447"
+          },
+          "news": {
+            "href": "/api/news/7915414156447"
+          },
+          "images": {
+            "href": "/api/images/7915414156447"
+          }
+        }
+      },
+      {
+        "id": 2433821824848,
+        "category": "Sergipe",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/2433821824848"
+          },
+          "news": {
+            "href": "/api/news/2433821824848"
+          },
+          "images": {
+            "href": "/api/images/2433821824848"
+          }
+        }
+      },
+      {
+        "id": 9436443519823,
+        "category": "Vale do Paraíba e região",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/9436443519823"
+          },
+          "news": {
+            "href": "/api/news/9436443519823"
+          },
+          "images": {
+            "href": "/api/images/9436443519823"
+          }
+        }
+      },
+      {
+        "id": 1839328484191,
+        "category": "São Carlos e Araraquara",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/1839328484191"
+          },
+          "news": {
+            "href": "/api/news/1839328484191"
+          },
+          "images": {
+            "href": "/api/images/1839328484191"
+          }
+        }
+      },
+      {
+        "id": 3324424181638,
+        "category": "Santos e Região",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/3324424181638"
+          },
+          "news": {
+            "href": "/api/news/3324424181638"
+          },
+          "images": {
+            "href": "/api/images/3324424181638"
+          }
+        }
+      },
+      {
+        "id": 6196524489144,
+        "category": "Ribeirão Preto e Franca",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/6196524489144"
+          },
+          "news": {
+            "href": "/api/news/6196524489144"
+          },
+          "images": {
+            "href": "/api/images/6196524489144"
+          }
+        }
+      },
+      {
+        "id": 4114381242158,
+        "category": "Mogi das Cruzes e Suzano",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/4114381242158"
+          },
+          "news": {
+            "href": "/api/news/4114381242158"
+          },
+          "images": {
+            "href": "/api/images/4114381242158"
+          }
+        }
+      },
+      {
+        "id": 3849343233418,
+        "category": "Campinas e região",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/3849343233418"
+          },
+          "news": {
+            "href": "/api/news/3849343233418"
+          },
+          "images": {
+            "href": "/api/images/3849343233418"
+          }
+        }
+      },
+      {
+        "id": 3543958594834,
+        "category": "Bauru e Marília",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/3543958594834"
+          },
+          "news": {
+            "href": "/api/news/3543958594834"
+          },
+          "images": {
+            "href": "/api/images/3543958594834"
+          }
+        }
+      },
+      {
+        "id": 3845881883451,
+        "category": "Roraima",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/3845881883451"
+          },
+          "news": {
+            "href": "/api/news/3845881883451"
+          },
+          "images": {
+            "href": "/api/images/3845881883451"
+          }
+        }
+      },
+      {
+        "id": 1422286119169,
+        "category": "Rondônia",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/1422286119169"
+          },
+          "news": {
+            "href": "/api/news/1422286119169"
+          },
+          "images": {
+            "href": "/api/images/1422286119169"
+          }
+        }
+      },
+      {
+        "id": 2748323482438,
+        "category": "Rio Grande do Sul",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/2748323482438"
+          },
+          "news": {
+            "href": "/api/news/2748323482438"
+          },
+          "images": {
+            "href": "/api/images/2748323482438"
+          }
+        }
+      },
+      {
+        "id": 9257989274575,
+        "category": "Rio Grande do Norte",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/9257989274575"
+          },
+          "news": {
+            "href": "/api/news/9257989274575"
+          },
+          "images": {
+            "href": "/api/images/9257989274575"
+          }
+        }
+      },
+      {
+        "id": 4393858142416,
+        "category": "Sul e Costa Verde Fluminense",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/4393858142416"
+          },
+          "news": {
+            "href": "/api/news/4393858142416"
+          },
+          "images": {
+            "href": "/api/images/4393858142416"
+          }
+        }
+      },
+      {
+        "id": 2186249285838,
+        "category": "Norte Fluminense",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/2186249285838"
+          },
+          "news": {
+            "href": "/api/news/2186249285838"
+          },
+          "images": {
+            "href": "/api/images/2186249285838"
+          }
+        }
+      },
+      {
+        "id": 6632828331491,
+        "category": "Região dos Lagos Fluminense",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/6632828331491"
+          },
+          "news": {
+            "href": "/api/news/6632828331491"
+          },
+          "images": {
+            "href": "/api/images/6632828331491"
+          }
+        }
+      },
+      {
+        "id": 4792857824177,
+        "category": "Região Serrana Fluminense",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/4792857824177"
+          },
+          "news": {
+            "href": "/api/news/4792857824177"
+          },
+          "images": {
+            "href": "/api/images/4792857824177"
+          }
+        }
+      },
+      {
+        "id": 6119924343182,
+        "category": "Petrolina e Região",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/6119924343182"
+          },
+          "news": {
+            "href": "/api/news/6119924343182"
+          },
+          "images": {
+            "href": "/api/images/6119924343182"
+          }
+        }
+      },
+      {
+        "id": 6489199234844,
+        "category": "Caruaru e Região",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/6489199234844"
+          },
+          "news": {
+            "href": "/api/news/6489199234844"
+          },
+          "images": {
+            "href": "/api/images/6489199234844"
+          }
+        }
+      },
+      {
+        "id": 4584883333742,
+        "category": "Norte e Noroeste do Paraná",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/4584883333742"
+          },
+          "news": {
+            "href": "/api/news/4584883333742"
+          },
+          "images": {
+            "href": "/api/images/4584883333742"
+          }
+        }
+      },
+      {
+        "id": 8519233519764,
+        "category": "Oeste e Sudoeste do Paraná",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/8519233519764"
+          },
+          "news": {
+            "href": "/api/news/8519233519764"
+          },
+          "images": {
+            "href": "/api/images/8519233519764"
+          }
+        }
+      },
+      {
+        "id": 1284929119511,
+        "category": "Campos Gerais e Sul do Paraná",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/1284929119511"
+          },
+          "news": {
+            "href": "/api/news/1284929119511"
+          },
+          "images": {
+            "href": "/api/images/1284929119511"
+          }
+        }
+      },
+      {
+        "id": 3347141892497,
+        "category": "Paraná",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/3347141892497"
+          },
+          "news": {
+            "href": "/api/news/3347141892497"
+          },
+          "images": {
+            "href": "/api/images/3347141892497"
+          }
+        }
+      },
+      {
+        "id": 1245372445124,
+        "category": "Paraíba",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/1245372445124"
+          },
+          "news": {
+            "href": "/api/news/1245372445124"
+          },
+          "images": {
+            "href": "/api/images/1245372445124"
+          }
+        }
+      },
+      {
+        "id": 9329418888697,
+        "category": "Pará",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/9329418888697"
+          },
+          "news": {
+            "href": "/api/news/9329418888697"
+          },
+          "images": {
+            "href": "/api/images/9329418888697"
+          }
+        }
+      },
+      {
+        "id": 6585819492491,
+        "category": "Zona da Mata Mineira",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/6585819492491"
+          },
+          "news": {
+            "href": "/api/news/6585819492491"
+          },
+          "images": {
+            "href": "/api/images/6585819492491"
+          }
+        }
+      },
+      {
+        "id": 1824349914845,
+        "category": "Vales de Minas Gerais",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/1824349914845"
+          },
+          "news": {
+            "href": "/api/news/1824349914845"
+          },
+          "images": {
+            "href": "/api/images/1824349914845"
+          }
+        }
+      },
+      {
+        "id": 8454432466834,
+        "category": "Sul de Minas",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/8454432466834"
+          },
+          "news": {
+            "href": "/api/news/8454432466834"
+          },
+          "images": {
+            "href": "/api/images/8454432466834"
+          }
+        }
+      },
+      {
+        "id": 9343643133947,
+        "category": "Grande Minas",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/9343643133947"
+          },
+          "news": {
+            "href": "/api/news/9343643133947"
+          },
+          "images": {
+            "href": "/api/images/9343643133947"
+          }
+        }
+      },
+      {
+        "id": 9474943656715,
+        "category": "Centro-Oeste de Minas",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/9474943656715"
+          },
+          "news": {
+            "href": "/api/news/9474943656715"
+          },
+          "images": {
+            "href": "/api/images/9474943656715"
+          }
+        }
+      },
+      {
+        "id": 9978226349482,
+        "category": "Maranhão",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/9978226349482"
+          },
+          "news": {
+            "href": "/api/news/9978226349482"
+          },
+          "images": {
+            "href": "/api/images/9978226349482"
+          }
+        }
+      },
+      {
+        "id": 8928139593792,
+        "category": "Amazonas",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/8928139593792"
+          },
+          "news": {
+            "href": "/api/news/8928139593792"
+          },
+          "images": {
+            "href": "/api/images/8928139593792"
+          }
+        }
+      },
+      {
+        "id": 2543318141136,
+        "category": "Amapá",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/2543318141136"
+          },
+          "news": {
+            "href": "/api/news/2543318141136"
+          },
+          "images": {
+            "href": "/api/images/2543318141136"
+          }
+        }
+      },
+      {
+        "id": 9863321459192,
+        "category": "Alagoas",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/9863321459192"
+          },
+          "news": {
+            "href": "/api/news/9863321459192"
+          },
+          "images": {
+            "href": "/api/images/9863321459192"
+          }
+        }
+      },
+      {
+        "id": 8943219782427,
+        "category": "Justiça",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/8943219782427"
+          },
+          "news": {
+            "href": "/api/news/8943219782427"
+          },
+          "images": {
+            "href": "/api/images/8943219782427"
+          }
+        }
+      },
+      {
+        "id": 9981429932433,
+        "category": "Justiça",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/9981429932433"
+          },
+          "news": {
+            "href": "/api/news/9981429932433"
+          },
+          "images": {
+            "href": "/api/images/9981429932433"
+          }
+        }
+      },
+      {
+        "id": 2518991918643,
+        "category": "Justiça",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/2518991918643"
+          },
+          "news": {
+            "href": "/api/news/2518991918643"
+          },
+          "images": {
+            "href": "/api/images/2518991918643"
+          }
+        }
+      },
+      {
+        "id": 6874538729284,
+        "category": "Justiça",
+        "type": "wp-api",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/6874538729284"
+          },
+          "news": {
+            "href": "/api/news/6874538729284"
+          },
+          "images": {
+            "href": "/api/images/6874538729284"
+          }
+        }
+      },
+      {
+        "id": 9848634844762,
+        "category": "Acre",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/9848634844762"
+          },
+          "news": {
+            "href": "/api/news/9848634844762"
+          },
+          "images": {
+            "href": "/api/images/9848634844762"
+          }
+        }
+      },
+      {
+        "id": 7392433713338,
+        "category": "Turismo e Viagem",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/7392433713338"
+          },
+          "news": {
+            "href": "/api/news/7392433713338"
+          },
+          "images": {
+            "href": "/api/images/7392433713338"
+          }
+        }
+      },
+      {
+        "id": 4415826156744,
+        "category": "Tecnologia e Games",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/4415826156744"
+          },
+          "news": {
+            "href": "/api/news/4415826156744"
+          },
+          "images": {
+            "href": "/api/images/4415826156744"
+          }
+        }
+      },
+      {
+        "id": 8833539123215,
+        "category": "Pop & Arte",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/8833539123215"
+          },
+          "news": {
+            "href": "/api/news/8833539123215"
+          },
+          "images": {
+            "href": "/api/images/8833539123215"
+          }
+        }
+      },
+      {
+        "id": 2431124818641,
+        "category": "Mundo",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/2431124818641"
+          },
+          "news": {
+            "href": "/api/news/2431124818641"
+          },
+          "images": {
+            "href": "/api/images/2431124818641"
+          }
+        }
+      },
+      {
+        "id": 1183417944433,
+        "category": "Loterias",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/1183417944433"
+          },
+          "news": {
+            "href": "/api/news/1183417944433"
+          },
+          "images": {
+            "href": "/api/images/1183417944433"
+          }
+        }
+      },
+      {
+        "id": 5498139197391,
+        "category": "Educação",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/5498139197391"
+          },
+          "news": {
+            "href": "/api/news/5498139197391"
+          },
+          "images": {
+            "href": "/api/images/5498139197391"
+          }
+        }
+      },
+      {
+        "id": 4524183818294,
+        "category": "Economia",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/4524183818294"
+          },
+          "news": {
+            "href": "/api/news/4524183818294"
+          },
+          "images": {
+            "href": "/api/images/4524183818294"
+          }
+        }
+      },
+      {
+        "id": 3815913481419,
+        "category": "Autoesporte",
+        "type": "rss",
+        "active": true,
+        "_links": {
+          "self": {
+            "href": "/api/news/3815913481419"
+          },
+          "news": {
+            "href": "/api/news/3815913481419"
+          },
+          "images": {
+            "href": "/api/images/3815913481419"
+          }
+        }
+      }
+    ]
+  },
+  "meta": {
+    "itemCount": 77,
+    "totalItems": 77,
+    "itemsPerPage": 100,
+    "totalPages": 1,
+    "currentPage": 1
+  },
+  "page": {
+    "size": 100,
+    "totalElements": 77,
+    "totalPages": 1,
+    "number": 1
+  },
+  "links": {
+    "first": "/api/news?page=1&limit=100",
+    "previous": "",
+    "next": "",
+    "last": "/api/news?page=1&limit=100"
+  },
+  "_links": {
+    "self": {
+      "href": "/api/news?page=1&limit=100"
+    },
+    "first": {
+      "href": "/api/news?page=1&limit=100"
+    },
+    "prev": {
+      "href": null
+    },
+    "next": {
+      "href": null
+    },
+    "last": {
+      "href": "/api/news?page=1&limit=100"
+    },
+    "categories": {
+      "href": "/api/categories"
+    },
+    "images": {
+      "href": "/api/images"
+    },
+    "stats": {
+      "href": "/api/stats"
+    }
+  }
+}
