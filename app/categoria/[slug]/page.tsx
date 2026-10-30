@@ -11,7 +11,8 @@ import { Footer } from '@/components/Footer';
 import { SITE_CONFIG, getBaseUrl } from '@/lib/site-config';
 import { AdSenseBanner } from '@/components/AdSenseBanner';
 
-export const revalidate = 60; // ISR 60s
+export const revalidate = 20; // ISR 20s
+
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;

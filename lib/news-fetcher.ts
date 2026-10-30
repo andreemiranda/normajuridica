@@ -11,18 +11,18 @@ import {
   DEFAULT_ALL_SOURCE_IDS
 } from './sources';
 import { slugify, categorySlugify } from './slug';
-import { cleanTitle, cleanFullNewsText, isForbiddenVideoPost, removeTruncationMarkers } from './sanitizer';
+import { cleanTitle, cleanFullNewsText, isForbiddenVideoPost, removeTruncationMarkers, fixEncoding } from './sanitizer';
 import { ensureCompleteArticleText } from './article-extractor';
-import { getEditorialSeedNews } from './seed-news';
 
 interface CacheEntry {
   items: NewsItem[];
   timestamp: number;
 }
 
-// In-memory cache with 60s TTL
+// In-memory cache with 20s TTL (sincronização contínua com intervalo de 20 segundos)
 const memoryCache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 60 * 1000;
+const CACHE_TTL_MS = 20 * 1000;
+
 
 // O(1) in-memory index
 const newsIndex = new Map<string, NewsItem>();
@@ -129,7 +129,7 @@ async function fetchWithFallback<T>(endpoint: string): Promise<T | null> {
       const res = await fetch(url, {
         headers,
         signal: controller.signal,
-        next: { revalidate: 60, tags: ['news', 'posts'] },
+        next: { revalidate: 20, tags: ['news', 'posts'] },
       });
       clearTimeout(timeout);
       if (!res.ok) return null;
@@ -234,6 +234,7 @@ export async function fetchNews(options?: {
 
   // Per-category image pool so fallbacks strictly use authentic images from the same category
   const categoryImagePool = new Map<string, string[]>();
+  const allAuthenticImagesPool: string[] = [];
 
   // Query sources using pool with max 8 concurrent requests
   const sourceResults = await asyncPool(8, sourcesToQuery, async (source) => {
@@ -330,18 +331,23 @@ export async function fetchNews(options?: {
       else if (source.id === '3422817479195') effectiveCategory = 'Economia';
       else if (source.id === '8833539123215') effectiveCategory = 'Cultura';
 
+      effectiveCategory = fixEncoding(effectiveCategory);
+
       // Summary
       let summary = item.description || rawContent.replace(/<[^>]+>/g, ' ');
       summary = removeTruncationMarkers(cleanFullNewsText(summary));
       if (summary.length > 260) {
         summary = summary.substring(0, 260).replace(/\s+[^\s]*$/, '') + '…';
       }
+      summary = fixEncoding(summary);
 
       // Content HTML
-      const contentHtml = ensureCompleteArticleText(
-        item.content ? item.content.split(/\n\n+/).map(p => `<p>${cleanFullNewsText(p)}</p>`).join('') : summary,
-        rawTitle,
-        effectiveCategory
+      const contentHtml = fixEncoding(
+        ensureCompleteArticleText(
+          item.content ? item.content.split(/\n\n+/).map(p => `<p>${cleanFullNewsText(p)}</p>`).join('') : summary,
+          rawTitle,
+          effectiveCategory
+        )
       );
 
       // Collect Images for Article:
@@ -353,6 +359,7 @@ export async function fetchNews(options?: {
           const pool = categoryImagePool.get(effectiveCategory) || [];
           if (!pool.includes(u!)) pool.push(u!);
           categoryImagePool.set(effectiveCategory, pool);
+          if (!allAuthenticImagesPool.includes(u!)) allAuthenticImagesPool.push(u!);
         }
       };
 
@@ -382,6 +389,7 @@ export async function fetchNews(options?: {
       if (!author || /^\d+$/.test(author) || /admin|redacao|portal/i.test(author)) {
         author = 'Norma Jurídica';
       }
+      author = fixEncoding(author);
 
       const itemIdStr = String(item.id || item.slug || rawTitle);
       const slug = slugify(rawTitle, itemIdStr);
@@ -390,7 +398,7 @@ export async function fetchNews(options?: {
       parsedItems.push({
         id: slug,
         slug,
-        title: rawTitle,
+        title: fixEncoding(rawTitle),
         link: `/noticia/${slug}`,
         pubDate,
         isoDate: pubDate,
@@ -402,18 +410,18 @@ export async function fetchNews(options?: {
         contentHtml,
         imageUrl: images[0] || '',
         images,
-        imageCaption: item.alt || `Registro jornalístico editorial • ${effectiveCategory}`,
+        imageCaption: fixEncoding(item.alt || `Registro jornalístico editorial • ${effectiveCategory}`),
         author,
         originalCategory: source.category,
       });
     }
   }
 
-  // Fallback for articles without images: borrow strictly from the SAME category's image pool
+  // Fallback for articles without images: borrow strictly from the SAME category's image pool or allAuthenticImagesPool
   for (const item of parsedItems) {
     if (!item.imageUrl || item.images?.length === 0) {
       const sameCategoryImages = categoryImagePool.get(item.category) || [];
-      const borrowed = sameCategoryImages.find(img => isValidImageUrl(img));
+      const borrowed = sameCategoryImages.find(img => isValidImageUrl(img)) || allAuthenticImagesPool.find(img => isValidImageUrl(img));
       const fallbackImg = borrowed || '/cover.png';
       item.imageUrl = fallbackImg;
       item.images = [fallbackImg];
@@ -519,18 +527,6 @@ export async function fetchNews(options?: {
     });
   }
 
-  // If no news found (e.g. initial setup before key or network failure), use seed as contingency fallback
-  if (uniqueItems.length === 0) {
-    const seed = getEditorialSeedNews();
-    if (category && category !== 'all' && category !== 'todas') {
-      const normCat = resolveCategoryDisplayName(category).toLowerCase();
-      const filtered = seed.filter(s => s.category.toLowerCase() === normCat);
-      uniqueItems = filtered.length > 0 ? filtered : seed;
-    } else {
-      uniqueItems = seed;
-    }
-  }
-
   // Update in-memory index for O(1) resolution
   for (const item of uniqueItems) {
     newsIndex.set(item.slug, item);
@@ -587,15 +583,6 @@ export async function getNewsItemBySlugOrId(slugOrId: string): Promise<NewsItem 
     return matched;
   }
 
-  // 5. Check seed news
-  const seed = getEditorialSeedNews();
-  const seedMatched = seed.find(
-    s => s.slug === slugOrId || s.id === slugOrId || slugify(s.title) === cleanTarget
-  );
-  if (seedMatched) {
-    newsIndex.set(slugOrId, seedMatched);
-    return seedMatched;
-  }
-
   return null;
 }
+

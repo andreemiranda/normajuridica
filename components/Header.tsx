@@ -48,24 +48,32 @@ export function Header({
   const bookmarksCount = typeof propBookmarksCount === 'number' ? propBookmarksCount : storeBookmarksCount;
   const [searchQuery, setSearchQuery] = useState('');
 
-  const [clock, setClock] = useState({ date: 'Brasília, DF', time: '12:00' });
+  const [clock, setClock] = useState({ date: 'Brasília, DF', time: '12:00:00' });
 
   useEffect(() => {
     const updateClock = () => {
       const now = new Date();
       const dateStr = now.toLocaleDateString('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
         weekday: 'long',
         day: 'numeric',
         month: 'long',
         year: 'numeric',
       });
+      const timeStr = now.toLocaleTimeString('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
       setClock({
         date: dateStr.charAt(0).toUpperCase() + dateStr.slice(1),
-        time: now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        time: timeStr,
       });
     };
     updateClock();
-    const interval = setInterval(updateClock, 30000);
+    const interval = setInterval(updateClock, 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -94,18 +102,14 @@ export function Header({
       {/* Top Utility Bar */}
       <div className="bg-zinc-950 text-slate-300 text-xs py-1.5 px-4 border-b border-zinc-800/80">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          {/* Date & live indicator */}
-          <div className="flex items-center gap-3">
+          {/* Date & Brasília live clock with seconds */}
+          <div className="flex items-center gap-2.5">
             <span className="font-medium text-slate-200" suppressHydrationWarning>
               {clock.date}
             </span>
-            <span className="hidden md:inline text-zinc-600">•</span>
-            <span className="flex items-center gap-1.5 text-slate-400">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-              </span>
-              <span suppressHydrationWarning>Atualizado às {clock.time}</span>
+            <span className="text-zinc-600">•</span>
+            <span className="font-mono font-semibold text-slate-300 text-xs tracking-wider" suppressHydrationWarning>
+              {clock.time}
             </span>
           </div>
 

@@ -51,7 +51,8 @@ export function CookieConsentBanner() {
               Sua privacidade é prioridade no Norma Jurídica
             </p>
             <p>
-              Utilizamos cookies e tecnologias similares para aprimorar sua experiência de navegação, oferecer conteúdos editoriais personalizados e veicular publicidade relevante, em estrita conformidade com a LGPD. Saiba mais em nossa{' '}
+              {/* Conformidade com diretrizes de privacidade e proteção de dados */}
+              Utilizamos cookies e tecnologias similares para aprimorar sua experiência de navegação, oferecer conteúdos editoriais personalizados e veicular publicidade relevante, com total transparência e segurança. Saiba mais em nossa{' '}
               <Link href="/cookies" className="text-brand-700 dark:text-brand-400 font-semibold underline">
                 Política de Cookies
               </Link>{' '}

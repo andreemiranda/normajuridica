@@ -1,6 +1,8 @@
 import React, { Suspense } from 'react';
 import { HomePageClient } from '@/components/HomePageClient';
 
+export const revalidate = 20;
+
 export default function HomePage() {
   return (
     <Suspense

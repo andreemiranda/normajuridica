@@ -18,10 +18,9 @@ export async function GET(req: NextRequest) {
     { url: `${baseUrl}/pagina/sobre-a-prefeitura`, title: 'Sobre a Prefeitura e Administração', changefreq: 'monthly', priority: '0.8', lastmod: now },
     { url: `${baseUrl}/pagina/transparencia`, title: 'Transparência e Governança', changefreq: 'monthly', priority: '0.8', lastmod: now },
     { url: `${baseUrl}/pagina/ouvidoria`, title: 'Ouvidoria Geral e Atendimento', changefreq: 'monthly', priority: '0.8', lastmod: now },
-    { url: `${baseUrl}/pagina/iptu`, title: 'IPTU e Serviços Fazendários', changefreq: 'monthly', priority: '0.8', lastmod: now },
     { url: `${baseUrl}/pagina/linha-editorial`, title: 'Linha Editorial e Princípios Éticos', changefreq: 'monthly', priority: '0.7', lastmod: now },
     { url: `${baseUrl}/contato`, title: 'Contato da Redação e Atendimento', changefreq: 'monthly', priority: '0.8', lastmod: now },
-    { url: `${baseUrl}/privacidade`, title: 'Política de Privacidade (LGPD)', changefreq: 'monthly', priority: '0.7', lastmod: now },
+    { url: `${baseUrl}/privacidade`, title: 'Política de Privacidade', changefreq: 'monthly', priority: '0.7', lastmod: now },
     { url: `${baseUrl}/termos`, title: 'Termos e Condições de Uso', changefreq: 'monthly', priority: '0.7', lastmod: now },
     { url: `${baseUrl}/cookies`, title: 'Política e Gestão de Cookies', changefreq: 'monthly', priority: '0.7', lastmod: now },
   ];

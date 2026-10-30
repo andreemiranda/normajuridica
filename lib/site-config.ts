@@ -1,16 +1,21 @@
+const domain =
+  process.env.NEXT_PUBLIC_SITE_DOMAIN ||
+  process.env.SITE_DOMAIN ||
+  'normajuridica.com.br';
+
 export const SITE_CONFIG = {
   name: 'Norma Jurídica',
   shortName: 'Norma Jurídica',
   tagline: 'A informação que move o Brasil',
   description:
     'Portal de notícias com cobertura de política, economia, justiça, educação, esportes, tecnologia e notícias dos estados brasileiros.',
+  domain,
   institutional: {
     responsible: 'Norma Jurídica',
     address: 'Brasília-DF',
     phone: '(61) 9 9242-8022',
-    email: 'contato@portalnews.com.br',
+    email: `contato@${domain}`,
   },
-  domain: 'normajuridica.com.br',
   adsense: {
     clientId:
       process.env.NEXT_PUBLIC_ADSENSE_ID ||
@@ -46,7 +51,7 @@ export const SITE_CONFIG = {
     receiver:
       process.env.CONTACT_RECEIVER_EMAIL ||
       process.env.SMTP_USER ||
-      'contato@portalnews.com.br',
+      `contato@${domain}`,
   },
   aiSummary: {
     endpoint: process.env.AI_SUMMARY_API_ENDPOINT || '',

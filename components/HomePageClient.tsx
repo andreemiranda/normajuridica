@@ -166,14 +166,6 @@ export function HomePageClient() {
         {/* Top Feature Bar: Headline statement + WeatherCard */}
         <section className="mb-8 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6 p-6 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-sm">
           <div className="max-w-2xl">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="p-1 bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-400 rounded-lg">
-                <Sparkles className="w-4 h-4" />
-              </span>
-              <span className="text-xs font-black uppercase tracking-wider text-brand-700 dark:text-brand-400">
-                Jornalismo em Tempo Real
-              </span>
-            </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 dark:text-zinc-50 tracking-tight leading-tight">
               Acompanhe as principais informações de economia, justiça, política e acontecimentos do Brasil.
             </h1>
@@ -200,11 +192,6 @@ export function HomePageClient() {
                 </span>
               )}
             </h2>
-            {lastUpdatedTime && (
-              <p className="text-xs text-slate-400 dark:text-zinc-500 mt-0.5" suppressHydrationWarning>
-                Atualizado às {lastUpdatedTime} • {displayedNews.length} reportagens
-              </p>
-            )}
           </div>
 
           {/* View mode switcher */}

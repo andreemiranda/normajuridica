@@ -165,11 +165,6 @@ export function Footer() {
                   Gestão Pública Municipal
                 </Link>
               </li>
-              <li>
-                <Link href="/pagina/iptu" className="hover:text-white transition-colors">
-                  IPTU e Serviços Fiscais
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -186,7 +181,7 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/privacidade" className="hover:text-white transition-colors">
-                  Privacidade (LGPD)
+                  Privacidade
                 </Link>
               </li>
               <li>
@@ -214,7 +209,7 @@ export function Footer() {
             © {new Date().getFullYear()} {SITE_CONFIG.name}. Todos os direitos reservados.
           </div>
           <div>
-            Brasília - DF • CNPJ e registros oficiais sob fiscalização da lei brasileira.
+            Brasília - DF
           </div>
         </div>
       </div>

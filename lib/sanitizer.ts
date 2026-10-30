@@ -25,33 +25,95 @@ export const BLOCKED_BRAND_TERMS = [
   'CNN Brasil',
 ];
 
+const MOJIBAKE_MAP: [RegExp, string][] = [
+  [/Ã¡/g, 'á'], [/Ã©/g, 'é'], [/Ã­/g, 'í'], [/Ã³/g, 'ó'], [/Ãº/g, 'ú'],
+  [/Ã\u00AD/g, 'í'], [/Ã\u008D/g, 'Í'],
+  [/Ã /g, 'à'], [/Ã\u00A0/g, 'à'], [/Ã¢/g, 'â'], [/Ãª/g, 'ê'], [/Ã´/g, 'ô'],
+  [/Ã£/g, 'ã'], [/Ãµ/g, 'õ'],
+  [/Ã§/g, 'ç'], [/Ã‡/g, 'Ç'],
+  [/Ã/g, 'Á'], [/Ã‰/g, 'É'], [/Ã\u0081/g, 'Á'], [/Ã\u0089/g, 'É'], [/Ã“/g, 'Ó'], [/Ãš/g, 'Ú'],
+  [/Ã€/g, 'À'], [/Ã‚/g, 'Â'], [/ÃŠ/g, 'Ê'], [/Ã”/g, 'Ô'], [/Ãƒ/g, 'Ã'], [/Ã•/g, 'Õ'],
+  [/Âº/g, 'º'], [/Âª/g, 'ª'], [/Â°/g, '°'], [/Â§/g, '§'], [/Â /g, ' '],
+  [/â€“/g, '–'], [/â€”/g, '—'], [/â€˜/g, '‘'], [/â€™/g, '’'], [/â€œ/g, '“'], [/â€/g, '”'],
+  [/â€¢/g, '•'], [/â€¦/g, '…'], [/â€/g, '—'],
+];
+
+const HTML_NAMED_ENTITIES: Record<string, string> = {
+  '&aacute;': 'á', '&eacute;': 'é', '&iacute;': 'í', '&oacute;': 'ó', '&uacute;': 'ú',
+  '&Aacute;': 'Á', '&Eacute;': 'É', '&Iacute;': 'Í', '&Oacute;': 'Ó', '&Uacute;': 'Ú',
+  '&atilde;': 'ã', '&otilde;': 'õ', '&Atilde;': 'Ã', '&Otilde;': 'Õ',
+  '&acirc;': 'â', '&ecirc;': 'ê', '&icirc;': 'î', '&ocirc;': 'ô', '&ucirc;': 'û',
+  '&Acirc;': 'Â', '&Ecirc;': 'Ê', '&Icirc;': 'Î', '&Ocirc;': 'Ô', '&Ucirc;': 'Û',
+  '&agrave;': 'à', '&egrave;': 'è', '&igrave;': 'ì', '&ograve;': 'ò', '&ugrave;': 'ù',
+  '&Agrave;': 'À', '&Egrave;': 'È', '&Igrave;': 'Ì', '&Ograve;': 'Ò', '&Ugrave;': 'Ù',
+  '&ccedil;': 'ç', '&Ccedil;': 'Ç',
+  '&uuml;': 'ü', '&Uuml;': 'Ü',
+  '&amp;': '&', '&quot;': '"', '&apos;': "'", '&#039;': "'", '&lt;': '<', '&gt;': '>',
+  '&nbsp;': ' ', '&#160;': ' ', '&ordf;': 'ª', '&ordm;': 'º', '&bull;': '•',
+  '&ndash;': '–', '&mdash;': '—', '&lsquo;': '‘', '&rsquo;': '’', '&ldquo;': '“', '&rdquo;': '”',
+  '&hellip;': '…', '&copy;': '©', '&reg;': '®', '&deg;': '°',
+  '&#8217;': "'", '&#8216;': "'", '&#8220;': '"', '&#8221;': '"',
+  '&#8211;': '–', '&#8212;': '—',
+};
+
+export function fixEncoding(str: string): string {
+  if (!str) return '';
+  let res = str;
+
+  // 1. Decode numeric & named HTML entities
+  res = decodeHtmlEntities(res);
+
+  // 2. Buffer conversion for general UTF-8 interpreted as Latin-1
+  if (/(?:Ã[\u0080-\u00BF]|â€[\u0080-\u00BF]|Â[\u00A0-\u00BF])/.test(res)) {
+    try {
+      const fixed = Buffer.from(res, 'latin1').toString('utf8');
+      if (!fixed.includes('\uFFFD')) {
+        res = fixed;
+      }
+    } catch {}
+  }
+
+  // 3. Fallback explicit mojibake mapping
+  for (const [pattern, replacement] of MOJIBAKE_MAP) {
+    res = res.replace(pattern, replacement);
+  }
+
+  return res;
+}
+
 export function decodeHtmlEntities(str: string): string {
   if (!str) return '';
-  return str
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-    .replace(/&#8217;/g, "'")
-    .replace(/&#8216;/g, "'")
-    .replace(/&#8220;/g, '"')
-    .replace(/&#8221;/g, '"')
-    .replace(/&#8211;/g, '–')
-    .replace(/&#8212;/g, '—')
-    .replace(/&hellip;/g, '…')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&#160;/g, ' ')
-    .replace(/&#\d+;/g, (match) => {
-      const num = parseInt(match.replace(/&#|;/g, ''), 10);
-      return !isNaN(num) ? String.fromCharCode(num) : match;
-    });
+  let res = str;
+
+  // Replace known named entities
+  for (const [entity, char] of Object.entries(HTML_NAMED_ENTITIES)) {
+    res = res.replaceAll(entity, char);
+    res = res.replaceAll(entity.toUpperCase(), char);
+  }
+
+  // Decimal entities &#123;
+  res = res.replace(/&#(\d+);/g, (match, dec) => {
+    const num = parseInt(dec, 10);
+    return !isNaN(num) && num > 0 ? String.fromCodePoint(num) : match;
+  });
+
+  // Hexadecimal entities &#x1f;
+  res = res.replace(/&#x([0-9a-fA-F]+);/g, (match, hex) => {
+    const num = parseInt(hex, 16);
+    return !isNaN(num) && num > 0 ? String.fromCodePoint(num) : match;
+  });
+
+  return res;
 }
 
 export function cleanTitle(title: string): string {
   if (!title) return '';
-  let cleaned = decodeHtmlEntities(title).trim();
+  let cleaned = fixEncoding(title).trim();
   
+  // Remove trailing video markers often left in titles
+  cleaned = cleaned.replace(/;\s*(?:vídeo|video|veja o vídeo|assista)\s*$/i, '');
+  cleaned = cleaned.replace(/\[(?:vídeo|video)\]/i, '');
+
   // Remove blocked brand terms
   for (const term of BLOCKED_BRAND_TERMS) {
     const reg = new RegExp(`\\b${term}\\b`, 'gi');
@@ -113,7 +175,7 @@ export function isForbiddenVideoPost(title: string, content?: string): boolean {
 
 export function cleanFullNewsText(text: string): string {
   if (!text) return '';
-  let cleaned = decodeHtmlEntities(text);
+  let cleaned = fixEncoding(text);
 
   // Remove blocked brand references in text
   for (const term of BLOCKED_BRAND_TERMS) {

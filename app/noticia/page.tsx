@@ -8,7 +8,8 @@ import { NewsCard } from '@/components/NewsCard';
 import { Footer } from '@/components/Footer';
 import { SITE_CONFIG, getBaseUrl } from '@/lib/site-config';
 
-export const revalidate = 60; // ISR 60s
+export const revalidate = 20; // ISR 20s
+
 
 export async function generateMetadata(): Promise<Metadata> {
   const baseUrl = getBaseUrl();

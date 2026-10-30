@@ -100,19 +100,6 @@ export const INSTITUTIONAL_PAGES: Record<string, WordPressPage> = {
       <p>O jornalismo cívico é indispensável para que os munícipes conheçam a destinação de tributos, o andamento de obras viárias e as políticas públicas municipais de saúde e educação.</p>
     `,
   },
-  'iptu': {
-    id: 'iptu',
-    slug: 'iptu',
-    title: 'IPTU e Serviços Fazendários',
-    category: 'Serviços',
-    lead: 'Informações sobre calendários fiscais, tributação imobiliária e direitos do contribuinte.',
-    contentHtml: `
-      <h2>Tributos Imobiliários e Cidadania</h2>
-      <p>O Imposto Predial e Territorial Urbano (IPTU) é uma das principais fontes de arrecadação dos municípios, revertido na manutenção de escolas, hospitais públicos e infraestrutura urbana.</p>
-      <h2>Direitos do Contribuinte</h2>
-      <p>O portal <strong>${SITE_CONFIG.name}</strong> orienta os cidadãos sobre prazos de pagamento à vista com desconto, parcelamento legal, hipóteses de isenção e meios de impugnação administrativa de lançamentos fiscais indevidos.</p>
-    `,
-  },
   'contato': {
     id: 'contato',
     slug: 'contato',

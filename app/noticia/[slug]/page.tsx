@@ -11,7 +11,8 @@ import { SITE_CONFIG, getBaseUrl } from '@/lib/site-config';
 import { generateNewsArticleSchema } from '@/lib/seo';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 
-export const revalidate = 60; // ISR 60s
+export const revalidate = 20; // ISR 20s
+
 
 interface ArticlePageProps {
   params: Promise<{ slug: string }>;
