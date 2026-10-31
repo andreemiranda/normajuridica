@@ -1,4 +1,3 @@
-// lib/accessibility.ts
 import { useSyncExternalStore } from 'react';
 
 export const STORAGE_KEYS = {
@@ -126,7 +125,6 @@ const subscribeBookmarks = (callback: () => void) => {
 
 const getBookmarksCountSnapshot = (): number => getStoredBookmarks().length;
 
-// React 19 Sync External Store hooks to eliminate hydration mismatch and cascading renders
 export function useIsClient(): boolean {
   return useSyncExternalStore(
     emptySubscribe,
@@ -174,3 +172,5 @@ export function useAllBookmarks(): string[] {
     getServerBookmarks
   );
 }
+
+

@@ -69,7 +69,8 @@ function isValidImageUrl(url?: string): boolean {
     lower.includes('data:image') ||
     lower.includes('pixel') ||
     lower.includes('1x1') ||
-    lower.includes('blank.gif')
+    lower.includes('blank.gif') ||
+    lower.includes('gazetaesportiva.com')
   ) {
     return false;
   }
