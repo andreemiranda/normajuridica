@@ -1,7 +1,19 @@
-const domain =
+function cleanDomain(input?: string): string {
+  if (!input) return 'normajuridica.com.br';
+  let d = input.trim();
+  d = d.replace(/^https?:\/\//i, '');
+  d = d.replace(/\/.*$/, '');
+  d = d.replace(/[^a-zA-Z0-9.-]/g, '');
+  if (!d || d.length < 4 || !d.includes('.') || d.includes('localhost')) {
+    return 'normajuridica.com.br';
+  }
+  return d;
+}
+
+const domain = cleanDomain(
   process.env.NEXT_PUBLIC_SITE_DOMAIN ||
-  process.env.SITE_DOMAIN ||
-  'normajuridica.com.br';
+  process.env.SITE_DOMAIN
+);
 
 export const SITE_CONFIG = {
   name: 'Norma Jurídica',

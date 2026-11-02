@@ -65,7 +65,7 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-2 text-slate-400">
                 <Mail className="w-3.5 h-3.5 text-brand-400 flex-shrink-0" />
-                <span>{SITE_CONFIG.institutional.email}</span>
+                <span suppressHydrationWarning>{SITE_CONFIG.institutional.email}</span>
               </div>
             </div>
           </div>
