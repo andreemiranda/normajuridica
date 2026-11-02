@@ -48,7 +48,9 @@ export function HomePageClient() {
       setError(null);
       try {
         const params = new URLSearchParams();
-        if (activeCategory && activeCategory !== 'all' && activeCategory !== 'todas' && activeCategory !== 'favoritos') {
+        if (activeCategory === 'favoritos') {
+          params.set('limit', '100');
+        } else if (activeCategory && activeCategory !== 'all' && activeCategory !== 'todas') {
           params.set('category', activeCategory);
         }
         if (searchQuery) {
@@ -80,7 +82,9 @@ export function HomePageClient() {
     setError(null);
     try {
       const params = new URLSearchParams();
-      if (activeCategory && activeCategory !== 'all' && activeCategory !== 'todas' && activeCategory !== 'favoritos') {
+      if (activeCategory === 'favoritos') {
+        params.set('limit', '100');
+      } else if (activeCategory && activeCategory !== 'all' && activeCategory !== 'todas') {
         params.set('category', activeCategory);
       }
       if (searchQuery) {
@@ -137,8 +141,8 @@ export function HomePageClient() {
     activeCategory === 'favoritos'
       ? 'Minha Lista • Matérias Salvas'
       : activeCategory === 'all' || activeCategory === 'todas'
-      ? 'Principais Notícias do Brasil'
-      : `Editoria de ${resolveCategoryDisplayName(activeCategory)}`;
+      ? 'Destaques'
+      : resolveCategoryDisplayName(activeCategory);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/50 dark:bg-zinc-950">

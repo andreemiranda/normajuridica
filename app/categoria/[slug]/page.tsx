@@ -60,9 +60,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8">
         {/* Category Header */}
         <div className="mb-8 pb-4 border-b border-slate-200 dark:border-zinc-800">
-          <span className="text-xs font-black uppercase tracking-wider text-brand-700 dark:text-brand-400 block mb-1">
-            Editoria
-          </span>
           <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-zinc-100 tracking-tight">
             {categoryName}
           </h1>

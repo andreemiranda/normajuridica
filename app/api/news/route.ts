@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
     const response = {
       items: result.items,
-      source: 'upstream',
+      source: result.fromStore ? 'sqlite_local_store' : 'upstream',
       total: result.total,
       isRealTime: result.isRealTime,
       updatedAt: new Date().toISOString(),

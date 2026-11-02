@@ -116,6 +116,9 @@ export function NewsCard({
       <Link
         href={`/noticia/${news.slug}`}
         prefetch={true}
+        suppressHydrationWarning
+        data-pin-nopin="true"
+        data-pin-no-hover="true"
         className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100 dark:bg-zinc-800 block focus:outline-none zoom-frame"
       >
         <OptimizedImage
@@ -172,8 +175,8 @@ export function NewsCard({
             </h3>
           </Link>
 
-          {/* Justified Summary */}
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 line-clamp-3 leading-relaxed mb-4 font-normal text-justify hyphens-auto">
+          {/* Justified Summary without right-edge hyphenation */}
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 line-clamp-3 leading-relaxed mb-4 font-normal text-justify hyphens-none">
             {news.summary}
           </p>
         </div>

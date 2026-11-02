@@ -67,14 +67,14 @@ export default async function PaginaViewPage({ params }: PaginaViewProps) {
             {page.title}
           </h1>
 
-          <p className="text-base sm:text-lg text-slate-600 dark:text-zinc-300 leading-relaxed border-l-4 border-brand-700 pl-4 text-justify hyphens-auto">
+          <p className="text-base sm:text-lg text-slate-600 dark:text-zinc-300 leading-relaxed border-l-4 border-brand-700 pl-4 text-justify hyphens-none">
             {page.lead}
           </p>
         </div>
 
         {/* Page Body with Justified text */}
         <article
-          className="article-body prose prose-slate dark:prose-invert max-w-none text-slate-800 dark:text-zinc-200 font-serif leading-8 text-base md:text-lg mb-12 text-justify hyphens-auto [text-align:justify]"
+          className="article-body prose prose-slate dark:prose-invert max-w-none text-slate-800 dark:text-zinc-200 font-serif leading-8 text-base md:text-lg mb-12 text-justify hyphens-none [text-align:justify]"
           dangerouslySetInnerHTML={{ __html: page.contentHtml }}
         />
 

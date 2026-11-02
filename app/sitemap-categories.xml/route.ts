@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
 
   const entries: SitemapEntry[] = ALL_CATEGORIES.map(cat => ({
     url: `${baseUrl}/categoria/${cat.slug}`,
-    title: `Editoria de ${cat.name}`,
+    title: cat.name,
     lastmod: now,
     changefreq: 'hourly',
     priority: cat.highlight ? '0.9' : '0.8',

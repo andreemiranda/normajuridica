@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 
 export const STORAGE_KEYS = {
   themeSession: 'nj_theme_session',
@@ -19,7 +19,7 @@ export function getStoredTheme(): 'light' | 'dark' {
     const localVal = localStorage.getItem(STORAGE_KEYS.theme);
     if (localVal === 'dark' || localVal === 'light') return localVal;
   } catch {}
-  return 'light'; // Light is always the default
+  return 'light';
 }
 
 export function setStoredTheme(theme: 'light' | 'dark'): void {
@@ -65,35 +65,41 @@ const getServerTheme = (): 'light' | 'dark' => 'light';
 const getServerFontSize = (): FontSizeLevel => 'normal';
 const emptySubscribe = () => () => {};
 
-let cachedBookmarksRaw = '[]';
+let cachedBookmarksRaw = '';
 let cachedBookmarksList: string[] = [];
 
 export function getStoredBookmarks(): string[] {
   if (typeof window === 'undefined') return SERVER_EMPTY_BOOKMARKS;
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.bookmarks) || '[]';
+    let raw = localStorage.getItem(STORAGE_KEYS.bookmarks);
+    // Check fallback legacy keys if main key is unset
+    if (!raw) {
+      raw = localStorage.getItem('nj_bookmarks') || localStorage.getItem('bookmarks') || '[]';
+    }
     if (raw !== cachedBookmarksRaw) {
       cachedBookmarksRaw = raw;
       const parsed = JSON.parse(raw);
-      cachedBookmarksList = Array.isArray(parsed) ? parsed : [];
+      cachedBookmarksList = Array.isArray(parsed) ? parsed.map(String) : [];
     }
     return cachedBookmarksList;
-  } catch {}
-  return SERVER_EMPTY_BOOKMARKS;
+  } catch {
+    return SERVER_EMPTY_BOOKMARKS;
+  }
 }
 
 export function toggleStoredBookmark(id: string): { isBookmarked: boolean; count: number } {
-  if (typeof window === 'undefined') return { isBookmarked: false, count: 0 };
+  if (typeof window === 'undefined' || !id) return { isBookmarked: false, count: 0 };
   try {
+    const cleanId = String(id).trim();
     const current = getStoredBookmarks();
     let updated: string[];
     let isBookmarked: boolean;
 
-    if (current.includes(id)) {
-      updated = current.filter(item => item !== id);
+    if (current.includes(cleanId)) {
+      updated = current.filter(item => item !== cleanId);
       isBookmarked = false;
     } else {
-      updated = [...current, id];
+      updated = [...current, cleanId];
       isBookmarked = true;
     }
 
@@ -101,7 +107,12 @@ export function toggleStoredBookmark(id: string): { isBookmarked: boolean; count
     cachedBookmarksRaw = raw;
     cachedBookmarksList = updated;
     localStorage.setItem(STORAGE_KEYS.bookmarks, raw);
-    window.dispatchEvent(new CustomEvent('nj_bookmarks_change', { detail: { bookmarks: updated, count: updated.length } }));
+    // Also sync to legacy keys for compatibility
+    localStorage.setItem('nj_bookmarks', raw);
+
+    window.dispatchEvent(
+      new CustomEvent('nj_bookmarks_change', { detail: { bookmarks: updated, count: updated.length } })
+    );
     return { isBookmarked, count: updated.length };
   } catch {
     return { isBookmarked: false, count: 0 };
@@ -109,21 +120,28 @@ export function toggleStoredBookmark(id: string): { isBookmarked: boolean; count
 }
 
 const subscribeTheme = (callback: () => void) => {
+  if (typeof window === 'undefined') return () => {};
   window.addEventListener('nj_theme_change', callback);
   return () => window.removeEventListener('nj_theme_change', callback);
 };
 
 const subscribeFontSize = (callback: () => void) => {
+  if (typeof window === 'undefined') return () => {};
   window.addEventListener('nj_font_size_change', callback);
   return () => window.removeEventListener('nj_font_size_change', callback);
 };
 
 const subscribeBookmarks = (callback: () => void) => {
+  if (typeof window === 'undefined') return () => {};
   window.addEventListener('nj_bookmarks_change', callback);
-  return () => window.removeEventListener('nj_bookmarks_change', callback);
+  window.addEventListener('storage', callback);
+  window.addEventListener('focus', callback);
+  return () => {
+    window.removeEventListener('nj_bookmarks_change', callback);
+    window.removeEventListener('storage', callback);
+    window.removeEventListener('focus', callback);
+  };
 };
-
-const getBookmarksCountSnapshot = (): number => getStoredBookmarks().length;
 
 export function useIsClient(): boolean {
   return useSyncExternalStore(
@@ -150,27 +168,48 @@ export function useFontSize(): FontSizeLevel {
 }
 
 export function useBookmarksCount(): number {
-  return useSyncExternalStore(
-    subscribeBookmarks,
-    getBookmarksCountSnapshot,
-    getServerBookmarksCount
-  );
+  const [count, setCount] = useState<number>(0);
+
+  useEffect(() => {
+    const update = () => {
+      setCount(getStoredBookmarks().length);
+    };
+    update();
+    const unsub = subscribeBookmarks(update);
+    return unsub;
+  }, []);
+
+  return count;
 }
 
 export function useIsBookmarked(id: string): boolean {
-  return useSyncExternalStore(
-    subscribeBookmarks,
-    () => getStoredBookmarks().includes(id),
-    getServerFalse
-  );
+  const [bookmarked, setBookmarked] = useState<boolean>(false);
+
+  useEffect(() => {
+    const update = () => {
+      if (!id) return;
+      const list = getStoredBookmarks();
+      setBookmarked(list.includes(String(id)));
+    };
+    update();
+    const unsub = subscribeBookmarks(update);
+    return unsub;
+  }, [id]);
+
+  return bookmarked;
 }
 
 export function useAllBookmarks(): string[] {
-  return useSyncExternalStore(
-    subscribeBookmarks,
-    getStoredBookmarks,
-    getServerBookmarks
-  );
+  const [bookmarks, setBookmarks] = useState<string[]>([]);
+
+  useEffect(() => {
+    const update = () => {
+      setBookmarks([...getStoredBookmarks()]);
+    };
+    update();
+    const unsub = subscribeBookmarks(update);
+    return unsub;
+  }, []);
+
+  return bookmarks;
 }
-
-

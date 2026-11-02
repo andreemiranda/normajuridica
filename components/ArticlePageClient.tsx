@@ -38,8 +38,8 @@ export function ArticlePageClient({
   mostReadNews,
 }: ArticlePageClientProps) {
   // Gallery state
-  const images = article.images && article.images.length > 0 ? article.images : [article.imageUrl || '/cover.png'];
-  const [selectedImage, setSelectedImage] = useState<string>(images[0] || '/cover.png');
+  const images = article.images && article.images.length > 0 ? article.images : [article.imageUrl].filter(Boolean) as string[];
+  const [selectedImage, setSelectedImage] = useState<string>(images[0] || article.imageUrl || '');
 
   // Bookmarking via external store subscription
   const isBookmarked = useIsBookmarked(article.id || article.slug);
@@ -246,7 +246,7 @@ export function ArticlePageClient({
           </h1>
 
           {/* Lead / Subhead */}
-          <p className="text-base sm:text-lg text-slate-600 dark:text-zinc-300 font-normal leading-relaxed mb-6 border-l-4 border-brand-700 pl-4 text-justify hyphens-auto">
+          <p className="text-base sm:text-lg text-slate-600 dark:text-zinc-300 font-normal leading-relaxed mb-6 border-l-4 border-brand-700 pl-4 text-justify hyphens-none">
             {article.summary}
           </p>
 
@@ -348,8 +348,13 @@ export function ArticlePageClient({
           </div>
 
           {/* Featured Image Display with Zoom on Hover */}
-          <div className="mb-6">
-            <div className="zoom-frame group relative aspect-[16/9] w-full rounded-2xl overflow-hidden shadow-lg bg-slate-900 border border-slate-200 dark:border-zinc-800 cursor-pointer">
+          <div className="mb-6" suppressHydrationWarning>
+            <div
+              className="zoom-frame group relative aspect-[16/9] w-full rounded-2xl overflow-hidden shadow-lg bg-slate-900 border border-slate-200 dark:border-zinc-800 cursor-pointer"
+              suppressHydrationWarning
+              data-pin-nopin="true"
+              data-pin-no-hover="true"
+            >
               <OptimizedImage
                 src={selectedImage}
                 alt={article.title}
@@ -404,7 +409,7 @@ export function ArticlePageClient({
               </h2>
             </div>
 
-            <p className="text-sm text-slate-700 dark:text-zinc-200 leading-relaxed mb-4 font-medium text-justify hyphens-auto">
+            <p className="text-sm text-slate-700 dark:text-zinc-200 leading-relaxed mb-4 font-medium text-justify hyphens-none">
               {aiSummary}
             </p>
 
@@ -416,8 +421,8 @@ export function ArticlePageClient({
                 <ul className="space-y-1.5 text-xs sm:text-sm text-slate-700 dark:text-zinc-300">
                   {keyPoints.map((pt, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <span className="text-brand-600 dark:text-brand-400 font-bold">•</span>
-                      <span className="text-justify hyphens-auto">{pt}</span>
+                       <span className="text-brand-600 dark:text-brand-400 font-bold">•</span>
+                      <span className="text-justify hyphens-none">{pt}</span>
                     </li>
                   ))}
                 </ul>
@@ -427,7 +432,7 @@ export function ArticlePageClient({
 
           {/* Full Article Body with Justified text */}
           <article
-            className="article-body prose prose-slate dark:prose-invert max-w-none text-slate-800 dark:text-zinc-200 font-serif leading-8 text-base md:text-lg mb-8 text-justify hyphens-auto [text-align:justify]"
+            className="article-body prose prose-slate dark:prose-invert max-w-none text-slate-800 dark:text-zinc-200 font-serif leading-8 text-base md:text-lg mb-8 text-justify hyphens-none [text-align:justify]"
             dangerouslySetInnerHTML={{ __html: contentHtml }}
           />
 

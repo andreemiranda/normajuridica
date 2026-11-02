@@ -26,25 +26,38 @@ export function OptimizedImage({
 }: OptimizedImageProps) {
   const [imgError, setImgError] = useState(false);
 
-  // Validate source url
-  const isValid = (u?: string): boolean => {
-    if (!u) return false;
-    const lower = u.toLowerCase();
+  // If there is no image url from the API or failed, don't show artificial fallback images
+  if (!src || imgError) {
+    return null;
+  }
+
+  // Detect gazetaesportiva.com domain to render direct unoptimized <img> tag
+  const isGazetaEsportiva = src.toLowerCase().includes('gazetaesportiva.com');
+
+  if (isGazetaEsportiva) {
     return (
-      !lower.includes('placeholder') &&
-      !lower.includes('data:image') &&
-      !lower.includes('pixel') &&
-      !lower.includes('1x1') &&
-      !lower.includes('blank.gif') &&
-      !lower.includes('gazetaesportiva.com')
+      // Direct unoptimized image embedding for gazetaesportiva.com
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={alt || 'Norma Jurídica'}
+        loading={priority ? 'eager' : 'lazy'}
+        decoding="async"
+        referrerPolicy="no-referrer"
+        data-pin-nopin="true"
+        data-pin-no-hover="true"
+        suppressHydrationWarning
+        onError={() => setImgError(true)}
+        className={`${fill ? 'absolute inset-0 w-full h-full object-cover' : ''} transition-transform duration-500 ease-out group-hover:scale-105 hover:scale-105 ${className}`}
+        style={!fill && (width || height) ? { width: width ? `${width}px` : undefined, height: height ? `${height}px` : undefined } : undefined}
+      />
     );
-  };
+  }
 
-  const finalSrc = (!src || imgError || !isValid(src)) ? '/cover.png' : src;
-
+  // All other sources continue using Next.js optimized next_image mode
   return (
     <Image
-      src={finalSrc}
+      src={src}
       alt={alt || 'Norma Jurídica'}
       width={!fill ? width || 800 : undefined}
       height={!fill ? height || 450 : undefined}
@@ -52,6 +65,9 @@ export function OptimizedImage({
       priority={priority}
       sizes={sizes || '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'}
       referrerPolicy="no-referrer"
+      data-pin-nopin="true"
+      data-pin-no-hover="true"
+      suppressHydrationWarning
       onError={() => setImgError(true)}
       className={`transition-transform duration-500 ease-out group-hover:scale-105 hover:scale-105 ${className}`}
     />

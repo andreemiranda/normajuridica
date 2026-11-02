@@ -146,8 +146,13 @@ export function FeaturedNews({ news }: FeaturedNewsProps) {
       </div>
 
       {/* Main Slide Card */}
-      <div className="relative rounded-3xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-zinc-800 shadow-xl group">
-        <div className="relative aspect-[16/10] sm:aspect-[16/8] lg:aspect-[21/9] w-full overflow-hidden zoom-frame">
+      <div className="relative rounded-3xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-zinc-800 shadow-xl group" suppressHydrationWarning>
+        <div
+          className="relative aspect-[16/10] sm:aspect-[16/8] lg:aspect-[21/9] w-full overflow-hidden zoom-frame"
+          suppressHydrationWarning
+          data-pin-nopin="true"
+          data-pin-no-hover="true"
+        >
           <OptimizedImage
             key={currentArticle.slug}
             src={currentArticle.imageUrl}
@@ -194,8 +199,8 @@ export function FeaturedNews({ news }: FeaturedNewsProps) {
               </h3>
             </Link>
 
-            {/* Justified Summary */}
-            <p className="text-xs sm:text-sm md:text-base text-slate-200 line-clamp-2 md:line-clamp-3 mb-5 max-w-3xl font-normal text-justify hyphens-auto leading-relaxed hidden sm:block">
+            {/* Justified Summary without right-edge hyphenation */}
+            <p className="text-xs sm:text-sm md:text-base text-slate-200 line-clamp-2 md:line-clamp-3 mb-5 max-w-3xl font-normal text-justify hyphens-none leading-relaxed hidden sm:block">
               {currentArticle.summary}
             </p>
 

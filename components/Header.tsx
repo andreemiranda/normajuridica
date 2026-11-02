@@ -45,7 +45,7 @@ export function Header({
   const theme = useTheme();
   const fontSize = useFontSize();
   const storeBookmarksCount = useBookmarksCount();
-  const bookmarksCount = typeof propBookmarksCount === 'number' ? propBookmarksCount : storeBookmarksCount;
+  const bookmarksCount = typeof propBookmarksCount === 'number' && propBookmarksCount > 0 ? propBookmarksCount : storeBookmarksCount;
   const [searchQuery, setSearchQuery] = useState('');
 
   const [clock, setClock] = useState({ date: 'Brasília, DF', time: '12:00:00' });
@@ -94,6 +94,14 @@ export function Header({
       onSearch(q);
     } else {
       router.push(q ? `/?q=${encodeURIComponent(q)}` : '/');
+    }
+  };
+
+  const handleBookmarksClick = () => {
+    if (onBookmarksClick) {
+      onBookmarksClick();
+    } else {
+      router.push('/?cat=favoritos');
     }
   };
 
@@ -235,7 +243,7 @@ export function Header({
             <button
               id="bookmarks-tab-button"
               type="button"
-              onClick={onBookmarksClick}
+              onClick={handleBookmarksClick}
               className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-zinc-900 hover:bg-brand-50 dark:hover:bg-brand-950/60 text-slate-700 dark:text-zinc-300 hover:text-brand-700 dark:hover:text-brand-400 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs md:text-sm font-bold transition-all cursor-pointer focus:outline-none focus-visible:ring-2 ring-brand-500"
               title="Acessar Minha Lista de matérias salvas"
               aria-label="Minha Lista de matérias salvas"
