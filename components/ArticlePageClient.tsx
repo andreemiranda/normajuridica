@@ -10,7 +10,7 @@ import {
   Play,
   Pause,
   RotateCcw,
-  Sparkles,
+  BookOpen,
   User,
   Clock,
   ArrowLeft,
@@ -261,7 +261,7 @@ export function ArticlePageClient({
                   {article.author || 'Norma Jurídica'}
                 </p>
                 <p className="text-[11px] text-slate-400">
-                  Redação Oficial • {article.source}
+                  Redação
                 </p>
               </div>
             </div>
@@ -403,7 +403,7 @@ export function ArticlePageClient({
           {/* AI Summary Card */}
           <section className="mb-8 p-5 md:p-6 bg-gradient-to-br from-brand-50 to-blue-50/50 dark:from-zinc-900 dark:to-brand-950/30 border border-brand-200 dark:border-brand-900/50 rounded-2xl shadow-sm" aria-label="Resumo da Notícia">
             <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-5 h-5 text-brand-700 dark:text-brand-400" />
+              <BookOpen className="w-5 h-5 text-brand-700 dark:text-brand-400" />
               <h2 className="text-base font-black text-brand-900 dark:text-brand-300 uppercase tracking-tight">
                 Resumo da Notícia • Síntese Editorial
               </h2>

@@ -2,6 +2,7 @@
 import 'server-only';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import Database from 'better-sqlite3';
 import { NewsItem } from './types';
 
@@ -148,14 +149,41 @@ export class SqliteNewsStore implements INewsStore {
     if (this.initialized && this.db) return;
 
     try {
-      const dir = path.dirname(this.dbPath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
+      let resolvedPath = path.isAbsolute(this.dbPath)
+        ? this.dbPath
+        : path.resolve(process.cwd(), this.dbPath);
+
+      const dir = path.dirname(resolvedPath);
+      try {
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+      } catch (err) {
+        console.warn(`[SqliteNewsStore] Aviso: Diretório ${dir} inacessível, utilizando os.tmpdir()`, err);
+        const tmpDir = path.join(os.tmpdir(), 'norma-juridica-data');
+        if (!fs.existsSync(tmpDir)) {
+          try {
+            fs.mkdirSync(tmpDir, { recursive: true });
+          } catch {}
+        }
+        resolvedPath = path.join(tmpDir, 'news.db');
+        this.dbPath = resolvedPath;
+        this.isEphemeral = true;
       }
 
-      this.db = new Database(this.dbPath, {
-        timeout: 5000,
-      });
+      try {
+        this.db = new Database(resolvedPath, {
+          timeout: 5000,
+        });
+      } catch (dbErr) {
+        console.warn(`[SqliteNewsStore] Falha ao abrir ${resolvedPath}, usando fallback em /tmp`, dbErr);
+        const fallbackPath = path.join(os.tmpdir(), 'norma-juridica-news-fallback.db');
+        this.db = new Database(fallbackPath, {
+          timeout: 5000,
+        });
+        this.dbPath = fallbackPath;
+        this.isEphemeral = true;
+      }
 
       // Enable Write-Ahead Logging (WAL) for high concurrency
       this.db.pragma('journal_mode = WAL');
@@ -354,7 +382,7 @@ export class SqliteNewsStore implements INewsStore {
     let updated = 0;
     let unchanged = 0;
 
-    const findStmt = db.prepare('SELECT id, title, summary, pub_date_timestamp FROM news WHERE id = ? OR slug = ? LIMIT 1');
+    const findStmt = db.prepare('SELECT id, title, category, category_id, summary, pub_date_timestamp FROM news WHERE id = ? OR slug = ? LIMIT 1');
 
     const insertStmt = db.prepare(`
       INSERT INTO news (
@@ -442,10 +470,12 @@ export class SqliteNewsStore implements INewsStore {
             }
           }
         } else {
-          // Check if changed
+          // Check if changed (including category updates from API)
           if (
             existing.title !== item.title ||
             existing.summary !== item.summary ||
+            (existing as { category?: string }).category !== item.category ||
+            (existing as { category_id?: string }).category_id !== item.categoryId ||
             Math.abs(existing.pub_date_timestamp - pubDateTs) > 60000 ||
             item.contentHtml
           ) {

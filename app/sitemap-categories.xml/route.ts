@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getBaseUrl } from '@/lib/site-config';
 import { ALL_CATEGORIES } from '@/lib/sources';
 import { renderSitemapHtml, SitemapEntry } from '@/lib/sitemap-viewer';
+import { getNewsStore } from '@/lib/news-store';
+import { categorySlugify } from '@/lib/slug';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +12,21 @@ export async function GET(req: NextRequest) {
   const acceptHeader = req.headers.get('accept') || '';
   const now = new Date().toISOString();
 
-  const entries: SitemapEntry[] = ALL_CATEGORIES.map(cat => ({
+  const categories: { name: string; slug: string; highlight?: boolean }[] = [...ALL_CATEGORIES];
+  try {
+    const store = getNewsStore();
+    await store.init();
+    const dbCategories = await store.getDistinctCategories();
+    for (const catName of dbCategories) {
+      if (!catName) continue;
+      const slug = categorySlugify(catName);
+      if (!categories.some(c => c.slug === slug)) {
+        categories.push({ name: catName, slug, highlight: false });
+      }
+    }
+  } catch {}
+
+  const entries: SitemapEntry[] = categories.map(cat => ({
     url: `${baseUrl}/categoria/${cat.slug}`,
     title: cat.name,
     lastmod: now,
@@ -21,7 +37,7 @@ export async function GET(req: NextRequest) {
   if (acceptHeader.includes('text/html')) {
     const html = renderSitemapHtml({
       title: 'Sitemap de Editorias e Categorias',
-      description: 'Catálogo de todas as 54 seções editoriais oficiais do portal Norma Jurídica.',
+      description: `Catálogo de todas as ${entries.length} seções e editorias ativas no portal Norma Jurídica.`,
       entries,
       type: 'categories',
     });

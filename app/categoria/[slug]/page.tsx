@@ -2,45 +2,55 @@ import React from 'react';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { fetchNews } from '@/lib/news-fetcher';
-import { resolveCategoryDisplayName, normalizeCategoryText } from '@/lib/sources';
+import { resolveCategoryDisplayName } from '@/lib/sources';
 import { categorySlugify } from '@/lib/slug';
 import { Header } from '@/components/Header';
 import { CategoryTabs } from '@/components/CategoryTabs';
 import { NewsCard } from '@/components/NewsCard';
+import { Pagination } from '@/components/Pagination';
 import { Footer } from '@/components/Footer';
 import { SITE_CONFIG, getBaseUrl } from '@/lib/site-config';
 import { AdSenseBanner } from '@/components/AdSenseBanner';
 
 export const revalidate = 20; // ISR 20s
 
-
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ page?: string }>;
 }
 
-export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: CategoryPageProps): Promise<Metadata> {
   const { slug } = await params;
+  const resolvedSearchParams = (await searchParams) || {};
+  const rawPage = resolvedSearchParams.page;
+  const page = Math.max(1, parseInt(typeof rawPage === 'string' ? rawPage : '1', 10) || 1);
+
   const decodedSlug = decodeURIComponent(slug);
   const cleanSlug = categorySlugify(decodedSlug);
   const categoryName = resolveCategoryDisplayName(cleanSlug);
   const baseUrl = getBaseUrl();
+  const pageSuffix = page > 1 ? ` - Página ${page}` : '';
 
   return {
-    title: `Notícias sobre ${categoryName}`,
-    description: `Acompanhe as últimas notícias, análises e reportagens sobre ${categoryName} no portal ${SITE_CONFIG.name}.`,
+    title: `Notícias sobre ${categoryName}${pageSuffix}`,
+    description: `Acompanhe as últimas notícias, análises e reportagens sobre ${categoryName} no portal ${SITE_CONFIG.name}.${pageSuffix}`,
     alternates: {
-      canonical: `${baseUrl}/categoria/${cleanSlug}`,
+      canonical: page > 1 ? `${baseUrl}/categoria/${cleanSlug}?page=${page}` : `${baseUrl}/categoria/${cleanSlug}`,
     },
     openGraph: {
-      title: `${categoryName} | ${SITE_CONFIG.name}`,
-      description: `Cobertura especial de ${categoryName} no portal ${SITE_CONFIG.name}.`,
-      url: `${baseUrl}/categoria/${cleanSlug}`,
+      title: `${categoryName}${pageSuffix} | ${SITE_CONFIG.name}`,
+      description: `Cobertura especial de ${categoryName} no portal ${SITE_CONFIG.name}.${pageSuffix}`,
+      url: page > 1 ? `${baseUrl}/categoria/${cleanSlug}?page=${page}` : `${baseUrl}/categoria/${cleanSlug}`,
     },
   };
 }
 
-export default async function CategoryPage({ params }: CategoryPageProps) {
+export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
   const { slug } = await params;
+  const resolvedSearchParams = (await searchParams) || {};
+  const rawPage = resolvedSearchParams.page;
+  const page = Math.max(1, parseInt(typeof rawPage === 'string' ? rawPage : '1', 10) || 1);
+
   const decodedSlug = decodeURIComponent(slug);
   const cleanSlug = categorySlugify(decodedSlug);
 
@@ -50,7 +60,9 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   }
 
   const categoryName = resolveCategoryDisplayName(cleanSlug);
-  const { items } = await fetchNews({ category: categoryName, limit: 30 });
+  const limit = 24;
+  const { items, total } = await fetchNews({ category: categoryName, page, limit });
+  const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/50 dark:bg-zinc-950">
@@ -59,13 +71,20 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8">
         {/* Category Header */}
-        <div className="mb-8 pb-4 border-b border-slate-200 dark:border-zinc-800">
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-zinc-100 tracking-tight">
-            {categoryName}
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-zinc-400 mt-2">
-            Cobertura analítica e factual sobre {categoryName.toLowerCase()}, decisões oficiais e impactos para o cidadão.
-          </p>
+        <div className="mb-8 pb-4 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-zinc-100 tracking-tight">
+              {categoryName}
+            </h1>
+            <p className="text-sm text-slate-500 dark:text-zinc-400 mt-2">
+              Cobertura analítica e factual sobre {categoryName.toLowerCase()}, decisões oficiais e acontecimentos em tempo real.
+            </p>
+          </div>
+          {total > 0 && (
+            <div className="text-xs font-semibold text-slate-500 dark:text-zinc-400">
+              {total} {total === 1 ? 'notícia disponível' : 'notícias disponíveis'}
+            </div>
+          )}
         </div>
 
         {/* Ad Banner */}
@@ -83,11 +102,24 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {items.map(news => (
-              <NewsCard key={news.slug} news={news} variant="grid" />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {items.map(news => (
+                <NewsCard key={news.slug} news={news} variant="grid" />
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="mt-8">
+                <Pagination
+                  baseUrl={`/categoria/${cleanSlug}`}
+                  currentPage={page}
+                  totalPages={totalPages}
+                />
+              </div>
+            )}
+          </>
         )}
       </main>
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { LayoutGrid, List, Sparkles, AlertCircle, Bookmark, Search, RefreshCw } from 'lucide-react';
+import { LayoutGrid, List, AlertCircle, Bookmark, Search, RefreshCw } from 'lucide-react';
 import { NewsItem } from '@/lib/types';
 import { Header } from '@/components/Header';
 import { BreakingTicker } from '@/components/BreakingTicker';
@@ -12,6 +12,7 @@ import { FeaturedNews } from '@/components/FeaturedNews';
 import { NewsCard } from '@/components/NewsCard';
 import { Footer } from '@/components/Footer';
 import { AdSenseBanner } from '@/components/AdSenseBanner';
+import { Pagination } from '@/components/Pagination';
 import { SITE_CONFIG } from '@/lib/site-config';
 import { resolveCategoryDisplayName } from '@/lib/sources';
 import { useAllBookmarks } from '@/lib/accessibility';
@@ -29,6 +30,10 @@ export function HomePageClient() {
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>(() => searchParams.get('q') || '');
   const [viewMode, setViewMode] = useState<'grid' | 'compact'>('grid');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [totalCount, setTotalCount] = useState<number>(0);
+
   const bookmarkedIds = useAllBookmarks();
 
   // Check ?article= redirect as specified in Parte 4
@@ -39,7 +44,7 @@ export function HomePageClient() {
     }
   }, [searchParams, router]);
 
-  // Fetch news on mount or when category/search changes
+  // Fetch news on mount or when category/search/page changes
   useEffect(() => {
     let isMounted = true;
 
@@ -48,9 +53,11 @@ export function HomePageClient() {
       setError(null);
       try {
         const params = new URLSearchParams();
-        if (activeCategory === 'favoritos') {
-          params.set('limit', '100');
-        } else if (activeCategory && activeCategory !== 'all' && activeCategory !== 'todas') {
+        const limit = activeCategory === 'favoritos' ? 100 : 28;
+        params.set('page', String(currentPage));
+        params.set('limit', String(limit));
+
+        if (activeCategory && activeCategory !== 'all' && activeCategory !== 'todas' && activeCategory !== 'favoritos') {
           params.set('category', activeCategory);
         }
         if (searchQuery) {
@@ -61,6 +68,8 @@ export function HomePageClient() {
         if (res.ok && isMounted) {
           const data = await res.json();
           setNews(data.items || []);
+          setTotalPages(data.totalPages || 1);
+          setTotalCount(data.total || 0);
           setLastUpdatedTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
         }
       } catch {
@@ -75,16 +84,18 @@ export function HomePageClient() {
     return () => {
       isMounted = false;
     };
-  }, [activeCategory, searchQuery]);
+  }, [activeCategory, searchQuery, currentPage]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     setError(null);
     try {
       const params = new URLSearchParams();
-      if (activeCategory === 'favoritos') {
-        params.set('limit', '100');
-      } else if (activeCategory && activeCategory !== 'all' && activeCategory !== 'todas') {
+      const limit = activeCategory === 'favoritos' ? 100 : 28;
+      params.set('page', String(currentPage));
+      params.set('limit', String(limit));
+
+      if (activeCategory && activeCategory !== 'all' && activeCategory !== 'todas' && activeCategory !== 'favoritos') {
         params.set('category', activeCategory);
       }
       if (searchQuery) {
@@ -96,6 +107,8 @@ export function HomePageClient() {
       if (!res.ok) throw new Error('Falha');
       const data = await res.json();
       setNews(data.items || []);
+      setTotalPages(data.totalPages || 1);
+      setTotalCount(data.total || 0);
       setLastUpdatedTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
     } catch {
       setError('Não foi possível atualizar as notícias no momento. Verifique sua conexão e tente novamente.');
@@ -106,10 +119,22 @@ export function HomePageClient() {
 
   const handleCategorySelect = (cat: string) => {
     setActiveCategory(cat);
+    setCurrentPage(1);
   };
 
   const handleSearch = (q: string) => {
     setSearchQuery(q);
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    if (typeof window !== 'undefined') {
+      const target = document.getElementById('feed-section') || document.getElementById('main-content');
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
   };
 
   // Filter news for current display
@@ -132,9 +157,9 @@ export function HomePageClient() {
     );
   }
 
-  const mainHighlights = displayedNews.slice(0, 10);
-  const remainingNews = displayedNews.slice(10, 26);
-  const moreNews = displayedNews.slice(26);
+  const isInitialHighlightsView = activeCategory === 'all' && !searchQuery && currentPage === 1;
+  const mainHighlights = isInitialHighlightsView ? displayedNews.slice(0, 10) : [];
+  const feedNews = isInitialHighlightsView ? displayedNews.slice(10) : displayedNews;
   const mostRead = [...news].slice(0, 5);
 
   const categoryTitle =
@@ -193,6 +218,11 @@ export function HomePageClient() {
               {searchQuery && (
                 <span className="text-sm font-normal text-slate-500">
                   (busca por: &quot;{searchQuery}&quot;)
+                </span>
+              )}
+              {totalCount > 0 && (
+                <span className="text-xs font-semibold text-slate-400 dark:text-zinc-500">
+                  ({totalCount} {totalCount === 1 ? 'notícia' : 'notícias'})
                 </span>
               )}
             </h2>
@@ -281,15 +311,15 @@ export function HomePageClient() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
             {/* Main Stream (col-8) */}
             <div className="lg:col-span-8 space-y-10">
-              {/* Featured News Hero only in 'all' view without search query */}
-              {activeCategory === 'all' && !searchQuery && (
+              {/* Featured News Hero only in 'all' view without search query on page 1 */}
+              {isInitialHighlightsView && mainHighlights.length > 0 && (
                 <FeaturedNews news={mainHighlights} />
               )}
 
-              {/* Feed of remaining news */}
-              <section aria-label="Notícias Recentes">
+              {/* Feed of news */}
+              <section id="feed-section" aria-label="Notícias">
                 <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 gap-6' : 'space-y-4'}>
-                  {(activeCategory === 'all' && !searchQuery ? remainingNews : displayedNews).map(item => (
+                  {feedNews.map(item => (
                     <NewsCard
                       key={item.slug}
                       news={item}
@@ -303,27 +333,15 @@ export function HomePageClient() {
               {/* In-feed Ad Banner */}
               <AdSenseBanner slot={SITE_CONFIG.adsense.slots.inArticle} />
 
-              {/* More News & Analysis */}
-              {activeCategory === 'all' && !searchQuery && moreNews.length > 0 && (
-                <section aria-label="Mais Notícias e Análises">
-                  <div className="flex items-center gap-2 mb-6">
-                    <div className="w-1.5 h-6 bg-brand-700 rounded-full" />
-                    <h3 className="text-xl font-black text-slate-900 dark:text-zinc-100 tracking-tight">
-                      Mais Notícias e Análises
-                    </h3>
-                  </div>
-
-                  <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 gap-6' : 'space-y-4'}>
-                    {moreNews.map(item => (
-                      <NewsCard
-                        key={item.slug}
-                        news={item}
-                        variant={viewMode}
-                        isBookmarked={bookmarkedIds.includes(item.id || item.slug)}
-                      />
-                    ))}
-                  </div>
-                </section>
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="pt-2">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                </div>
               )}
             </div>
 

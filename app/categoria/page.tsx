@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Layers, ArrowRight, MapPin, Sparkles } from 'lucide-react';
+import { Layers, ArrowRight, MapPin, Newspaper } from 'lucide-react';
 import { ALL_CATEGORIES } from '@/lib/sources';
 import { Header } from '@/components/Header';
 import { CategoryTabs } from '@/components/CategoryTabs';
@@ -54,7 +54,7 @@ export default function CategoriasIndexPage() {
         {/* Editorias Temáticas */}
         <section className="mb-12" aria-label="Editorias Temáticas">
           <div className="flex items-center gap-2 mb-6">
-            <Sparkles className="w-4 h-4 text-brand-700" />
+            <Newspaper className="w-4 h-4 text-brand-700" />
             <h2 className="text-xl font-black text-slate-900 dark:text-zinc-100 uppercase tracking-tight">
               Grandes Temas Nacionais
             </h2>

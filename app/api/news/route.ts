@@ -11,8 +11,8 @@ export async function GET(req: NextRequest) {
     const sourceId = searchParams.get('sourceId') || undefined;
     const q = searchParams.get('q') || undefined;
     const refresh = searchParams.get('refresh') === 'true';
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 50);
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const limit = Math.min(Math.max(1, parseInt(searchParams.get('limit') || '24', 10)), 100);
 
     const result = await fetchNews({
       category,
@@ -23,10 +23,15 @@ export async function GET(req: NextRequest) {
       refresh,
     });
 
+    const totalPages = Math.ceil(result.total / limit);
+
     const response = {
       items: result.items,
       source: result.fromStore ? 'sqlite_local_store' : 'upstream',
       total: result.total,
+      page,
+      limit,
+      totalPages,
       isRealTime: result.isRealTime,
       updatedAt: new Date().toISOString(),
     };

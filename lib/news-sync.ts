@@ -283,12 +283,14 @@ export async function syncNewsSources(options: SyncOptions = {}): Promise<SyncEx
 
         itemsFetched++;
 
-        // Category mapping
-        let effectiveCategory = source.category || 'Notícias Gerais';
-        if (source.id === '8281449136684') effectiveCategory = 'Política';
-        else if (source.id === '6389841444633' || source.id === '3815913481419') effectiveCategory = 'Esporte';
-        else if (source.id === '3422817479195') effectiveCategory = 'Economia';
-        else if (source.id === '8833539123215') effectiveCategory = 'Cultura';
+        // Category mapping - prioritize live category from API item
+        let effectiveCategory = (item.category && item.category.trim()) || source.category || 'Notícias Gerais';
+        if (!item.category) {
+          if (source.id === '8281449136684') effectiveCategory = 'Política';
+          else if (source.id === '6389841444633' || source.id === '3815913481419') effectiveCategory = 'Esporte';
+          else if (source.id === '3422817479195') effectiveCategory = 'Economia';
+          else if (source.id === '8833539123215') effectiveCategory = 'Cultura';
+        }
 
         effectiveCategory = fixEncoding(effectiveCategory);
         const categoryId = categorySlugify(effectiveCategory);

@@ -5,11 +5,21 @@ import { renderSitemapHtml, SitemapEntry } from '@/lib/sitemap-viewer';
 
 export const dynamic = 'force-dynamic';
 
+function escapeXml(unsafe: string): string {
+  if (!unsafe) return '';
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 export async function GET(req: NextRequest) {
   const baseUrl = getBaseUrl(req);
   const acceptHeader = req.headers.get('accept') || '';
 
-  const { items } = await fetchNews({ category: 'all', limit: 50 });
+  const { items } = await fetchNews({ category: 'all', limit: 500 });
 
   const entries: SitemapEntry[] = items.map(item => ({
     url: `${baseUrl}/noticia/${item.slug}`,
@@ -22,7 +32,7 @@ export async function GET(req: NextRequest) {
   if (acceptHeader.includes('text/html')) {
     const html = renderSitemapHtml({
       title: 'Sitemap de Matérias e Reportagens',
-      description: 'Listagem canônica de todas as notícias ativas no portal Norma Jurídica.',
+      description: `Listagem canônica de ${entries.length} notícias persistidas e ativas no portal Norma Jurídica.`,
       entries,
       type: 'posts',
     });
@@ -36,10 +46,10 @@ export async function GET(req: NextRequest) {
 ${entries
   .map(
     e => `  <url>
-    <loc>${e.url}</loc>
-    <lastmod>${e.lastmod}</lastmod>
-    <changefreq>${e.changefreq}</changefreq>
-    <priority>${e.priority}</priority>
+    <loc>${escapeXml(e.url)}</loc>
+    <lastmod>${escapeXml(e.lastmod || '')}</lastmod>
+    <changefreq>${escapeXml(e.changefreq || 'hourly')}</changefreq>
+    <priority>${escapeXml(String(e.priority || '1.0'))}</priority>
   </url>`
   )
   .join('\n')}

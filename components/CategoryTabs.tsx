@@ -17,7 +17,7 @@ import {
   MapPin,
   Bookmark,
   Coins,
-  Sparkles,
+  Film,
 } from 'lucide-react';
 import { categorySlugify } from '@/lib/slug';
 import { useBookmarksCount } from '@/lib/accessibility';
@@ -40,7 +40,7 @@ export const THEMATIC_CATEGORIES: PopularCategory[] = [
   { id: 'Esporte', name: 'Esporte', slug: 'esporte', icon: Trophy },
   { id: 'Tecnologia e Games', name: 'Tecnologia & Games', slug: 'tecnologia-e-games', icon: Gamepad2 },
   { id: 'Finanças', name: 'Finanças', slug: 'financas', icon: Coins },
-  { id: 'Pop & Arte', name: 'Pop & Arte', slug: 'pop-e-arte', icon: Sparkles },
+  { id: 'Pop & Arte', name: 'Pop & Arte', slug: 'pop-e-arte', icon: Film },
 ];
 
 export const REGIONAL_CATEGORIES: PopularCategory[] = [
@@ -52,8 +52,8 @@ export const REGIONAL_CATEGORIES: PopularCategory[] = [
   { id: 'Maranhão', name: 'Maranhão', slug: 'maranhao', icon: MapPin },
   { id: 'Rio Grande do Sul', name: 'Rio Grande do Sul', slug: 'rio-grande-do-sul', icon: MapPin },
   { id: 'Amazonas', name: 'Amazonas', slug: 'amazonas', icon: MapPin },
+  { id: 'Minas Gerais', name: 'Minas Gerais', slug: 'grande-minas', icon: MapPin },
   { id: 'Mundo', name: 'Mundo', slug: 'mundo', icon: Globe2 },
-  { id: 'favoritos', name: 'Minha Lista', slug: 'favoritos', icon: Bookmark },
 ];
 
 export const POPULAR_CATEGORIES: PopularCategory[] = [

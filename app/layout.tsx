@@ -116,9 +116,20 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${inter.variable} ${sourceSerif.variable} antialiased`} suppressHydrationWarning>
       <head>
-        {/* DNS prefetch & preconnect */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* DNS-prefetch & preconnect para Fontes de Notícias e CDNs de Imagens */}
+        <link rel="dns-prefetch" href="https://news-sources-api.vercel.app" />
+        <link rel="dns-prefetch" href="https://s2-g1.glbimg.com" />
+        <link rel="dns-prefetch" href="https://i.s3.glbimg.com" />
+        <link rel="dns-prefetch" href="https://gazetaesportiva.com" />
+        <link rel="dns-prefetch" href="https://www.gazetaesportiva.com" />
+        <link rel="dns-prefetch" href="https://g1.globo.com" />
+        <link rel="dns-prefetch" href={baseUrl} />
+
+        <link rel="preconnect" href="https://news-sources-api.vercel.app" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://s2-g1.glbimg.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://i.s3.glbimg.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://gazetaesportiva.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://www.gazetaesportiva.com" crossOrigin="anonymous" />
         {adsenseClientId && (
           <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
         )}

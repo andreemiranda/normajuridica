@@ -74,6 +74,33 @@ export const INSTITUTIONAL_PAGES: Record<string, WordPressPage> = {
       <p>Para abrir uma manifestação agora, utilize nossa página de <a href="/contato" class="text-brand-600 dark:text-brand-400 font-semibold underline">Contato Oficial</a>.</p>
     `,
   },
+  'ouvidoria-geral': {
+    id: 'ouvidoria-geral',
+    slug: 'ouvidoria-geral',
+    title: 'Ouvidoria Geral e Atendimento ao Cidadão',
+    category: 'Atendimento',
+    lead: 'Canal permanente de escuta para críticas, elogios, sugestões de pauta e solicitações da sociedade.',
+    contentHtml: `
+      <h2>Canal Direto com o Cidadão</h2>
+      <p>A Ouvidoria Geral do <strong>${SITE_CONFIG.name}</strong> é o órgão responsável por receber manifestações relativas à conduta editorial, à precisão de reportagens e ao atendimento ao público leitor.</p>
+      <h2>Prazos e Protocolo</h2>
+      <p>Todas as demandas enviadas por meio de nosso formulário eletrônico oficial recebem um <strong>número de protocolo exclusivo de 13 dígitos</strong> para acompanhamento seguro. Nosso compromisso é responder formalmente em até 48 horas úteis.</p>
+      <p>Para abrir uma manifestação agora, utilize nossa página de <a href="/contato" class="text-brand-600 dark:text-brand-400 font-semibold underline">Contato Oficial</a>.</p>
+    `,
+  },
+  'gestao-publica-municipal': {
+    id: 'gestao-publica-municipal',
+    slug: 'gestao-publica-municipal',
+    title: 'Gestão Pública Municipal e Atos Oficiais',
+    category: 'Gestão Pública',
+    lead: 'Acompanhamento analítico e institucional da administração pública municipal, licitações, decretos e governança local.',
+    contentHtml: `
+      <h2>Acompanhamento Institucional Municipal</h2>
+      <p>Nesta seção, o <strong>${SITE_CONFIG.name}</strong> reúne reportagens analíticas e dados de utilidade pública sobre a gestão municipal, atos do Executivo, licitações públicas, prestação de contas e serviços prestados à população.</p>
+      <h2>Fiscalização e Interesse Local</h2>
+      <p>O jornalismo cívico é indispensável para que os munícipes conheçam a destinação de tributos, o andamento de obras e as políticas públicas municipais de saúde, educação e infraestrutura.</p>
+    `,
+  },
   'cadastro-certo': {
     id: 'cadastro-certo',
     slug: 'cadastro-certo',

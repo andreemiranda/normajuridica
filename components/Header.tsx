@@ -1,20 +1,27 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  Layers,
-  FileText,
-  Mail,
+  ShieldCheck,
+  Headphones,
+  CheckCircle2,
+  Building2,
   Sun,
   Moon,
   Search,
   RotateCw,
   Bookmark,
   Type,
+  X,
+  MapPin,
+  Newspaper,
+  ChevronRight,
+  ExternalLink,
 } from 'lucide-react';
 import { SITE_CONFIG } from '@/lib/site-config';
+import { ALL_CATEGORIES } from '@/lib/sources';
 import {
   useIsClient,
   useTheme,
@@ -45,8 +52,14 @@ export function Header({
   const theme = useTheme();
   const fontSize = useFontSize();
   const storeBookmarksCount = useBookmarksCount();
-  const bookmarksCount = typeof propBookmarksCount === 'number' && propBookmarksCount > 0 ? propBookmarksCount : storeBookmarksCount;
+  const bookmarksCount =
+    typeof propBookmarksCount === 'number' && propBookmarksCount >= 0
+      ? propBookmarksCount
+      : storeBookmarksCount;
+
   const [searchQuery, setSearchQuery] = useState('');
+  const [isListDrawerOpen, setIsListDrawerOpen] = useState(false);
+  const drawerRef = useRef<HTMLDivElement>(null);
 
   const [clock, setClock] = useState({ date: 'Brasília, DF', time: '12:00:00' });
 
@@ -77,6 +90,15 @@ export function Header({
     return () => clearInterval(interval);
   }, []);
 
+  // Close drawer on escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsListDrawerOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const toggleTheme = () => {
     const next = theme === 'light' ? 'dark' : 'light';
     setStoredTheme(next);
@@ -97,7 +119,12 @@ export function Header({
     }
   };
 
-  const handleBookmarksClick = () => {
+  const handleMinhaListaClick = () => {
+    setIsListDrawerOpen(prev => !prev);
+  };
+
+  const handleViewSavedFeed = () => {
+    setIsListDrawerOpen(false);
     if (onBookmarksClick) {
       onBookmarksClick();
     } else {
@@ -105,8 +132,11 @@ export function Header({
     }
   };
 
+  const thematicCategories = ALL_CATEGORIES.filter(c => c.group === 'tema');
+  const regionalCategories = ALL_CATEGORIES.filter(c => c.group === 'regiao');
+
   return (
-    <header className="w-full bg-white dark:bg-zinc-950 border-b border-slate-200 dark:border-zinc-800">
+    <header className="w-full bg-white dark:bg-zinc-950 border-b border-slate-200 dark:border-zinc-800 relative z-50">
       {/* Top Utility Bar */}
       <div className="bg-zinc-950 text-slate-300 text-xs py-1.5 px-4 border-b border-zinc-800/80">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
@@ -121,30 +151,38 @@ export function Header({
             </span>
           </div>
 
-          {/* Utility links and controls */}
+          {/* New Editorial & Public Policy Menus */}
           <div className="flex items-center gap-4 flex-wrap justify-center">
             <Link
-              href="/categoria"
+              href="/pagina/transparencia"
               className="hover:text-white flex items-center gap-1 text-[11px] font-medium transition-colors"
             >
-              <Layers className="w-3.5 h-3.5 text-brand-400" />
-              <span>Editorias</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-brand-400" />
+              <span>Transparência</span>
             </Link>
 
             <Link
-              href="/pagina"
+              href="/pagina/ouvidoria-geral"
               className="hover:text-white flex items-center gap-1 text-[11px] font-medium transition-colors"
             >
-              <FileText className="w-3.5 h-3.5 text-brand-400" />
-              <span>Institucional</span>
+              <Headphones className="w-3.5 h-3.5 text-brand-400" />
+              <span>Ouvidoria Geral</span>
             </Link>
 
             <Link
-              href="/contato"
+              href="/pagina/cadastro-certo"
               className="hover:text-white flex items-center gap-1 text-[11px] font-medium transition-colors"
             >
-              <Mail className="w-3.5 h-3.5 text-brand-400" />
-              <span>Contato</span>
+              <CheckCircle2 className="w-3.5 h-3.5 text-brand-400" />
+              <span>Cadastro Certo</span>
+            </Link>
+
+            <Link
+              href="/pagina/gestao-publica-municipal"
+              className="hover:text-white flex items-center gap-1 text-[11px] font-medium transition-colors"
+            >
+              <Building2 className="w-3.5 h-3.5 text-brand-400" />
+              <span>Gestão Pública Municipal</span>
             </Link>
 
             <span className="text-zinc-700 hidden sm:inline">|</span>
@@ -239,21 +277,128 @@ export function Header({
               </button>
             )}
 
-            {/* Minha Lista (Bookmarks) */}
-            <button
-              id="bookmarks-tab-button"
-              type="button"
-              onClick={handleBookmarksClick}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-zinc-900 hover:bg-brand-50 dark:hover:bg-brand-950/60 text-slate-700 dark:text-zinc-300 hover:text-brand-700 dark:hover:text-brand-400 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs md:text-sm font-bold transition-all cursor-pointer focus:outline-none focus-visible:ring-2 ring-brand-500"
-              title="Acessar Minha Lista de matérias salvas"
-              aria-label="Minha Lista de matérias salvas"
-            >
-              <Bookmark className={`w-4 h-4 ${bookmarksCount > 0 ? 'text-brand-700 dark:text-brand-400 fill-current' : 'text-slate-400'}`} />
-              <span className="hidden sm:inline">Minha Lista</span>
-              <span className="bg-brand-700 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full" suppressHydrationWarning>
-                {bookmarksCount}
-              </span>
-            </button>
+            {/* Minha Lista no Canto Superior Direito (Abrindo Menu de Categorias e Itens Salvos) */}
+            <div className="relative">
+              <button
+                id="bookmarks-tab-button"
+                type="button"
+                onClick={handleMinhaListaClick}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs md:text-sm font-bold transition-all cursor-pointer focus:outline-none focus-visible:ring-2 ring-brand-500 ${
+                  isListDrawerOpen
+                    ? 'bg-brand-700 text-white border-brand-700 shadow-md'
+                    : 'bg-slate-100 dark:bg-zinc-900 hover:bg-brand-50 dark:hover:bg-brand-950/60 text-slate-700 dark:text-zinc-300 hover:text-brand-700 dark:hover:text-brand-400 border-slate-200 dark:border-zinc-800'
+                }`}
+                title="Acessar Minha Lista e Todas as Categorias"
+                aria-label="Minha Lista e Todas as Categorias"
+                aria-expanded={isListDrawerOpen}
+              >
+                <Bookmark className={`w-4 h-4 ${isListDrawerOpen || bookmarksCount > 0 ? 'text-brand-300 dark:text-brand-400 fill-current' : 'text-slate-400'}`} />
+                <span>Minha Lista</span>
+              </button>
+
+              {/* Minha Lista Dropdown & Category Hub Modal */}
+              {isListDrawerOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 bg-black/40 z-40 backdrop-blur-xs"
+                    onClick={() => setIsListDrawerOpen(false)}
+                  />
+
+                  <div
+                    ref={drawerRef}
+                    className="absolute right-0 top-full mt-2 w-[340px] sm:w-[480px] max-h-[85vh] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-50 overflow-y-auto flex flex-col"
+                  >
+                    {/* Header */}
+                    <div className="p-4 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between sticky top-0 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md z-10">
+                      <div className="flex items-center gap-2">
+                        <Bookmark className="w-4 h-4 text-brand-600 dark:text-brand-400 fill-current" />
+                        <h3 className="text-sm font-black text-slate-900 dark:text-zinc-100">
+                          Minha Lista &amp; Todas as Categorias
+                        </h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsListDrawerOpen(false)}
+                        className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 rounded-lg"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="p-4 space-y-5">
+                      {/* Section 1: Saved Articles Action */}
+                      <div className="p-3.5 bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200 dark:border-brand-900/60 rounded-xl">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-black uppercase tracking-wider text-brand-800 dark:text-brand-300">
+                            Matérias Salvas
+                          </span>
+                          <span className="text-xs font-bold text-brand-600 dark:text-brand-400">
+                            {bookmarksCount} {bookmarksCount === 1 ? 'matéria' : 'matérias'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-zinc-400 mb-3">
+                          {bookmarksCount > 0
+                            ? 'Acesse a listagem completa com todas as matérias adicionadas à sua lista de leitura.'
+                            : 'Você ainda não salvou matérias. Clique no ícone de marcador nas notícias para salvá-las aqui.'}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handleViewSavedFeed}
+                          className="w-full py-2 px-3 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <span>Ver Minha Lista no Feed</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      {/* Section 2: Todas as Categorias Temáticas */}
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-2.5">
+                          <Newspaper className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" />
+                          <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-zinc-300">
+                            Categorias Temáticas ({thematicCategories.length})
+                          </h4>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {thematicCategories.map(cat => (
+                            <Link
+                              key={cat.id}
+                              href={cat.slug === 'todas' ? '/' : `/categoria/${cat.slug}`}
+                              onClick={() => setIsListDrawerOpen(false)}
+                              className="px-2.5 py-1.5 rounded-lg text-xs text-slate-700 dark:text-zinc-300 hover:text-brand-700 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-zinc-800/80 transition-colors truncate"
+                            >
+                              • {cat.name}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Section 3: Todas as Coberturas Regionais e Estados */}
+                      <div className="border-t border-slate-100 dark:border-zinc-800 pt-4">
+                        <div className="flex items-center gap-1.5 mb-2.5">
+                          <MapPin className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" />
+                          <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-zinc-300">
+                            Estados &amp; Regiões do Brasil ({regionalCategories.length})
+                          </h4>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {regionalCategories.map(cat => (
+                            <Link
+                              key={cat.id}
+                              href={`/categoria/${cat.slug}`}
+                              onClick={() => setIsListDrawerOpen(false)}
+                              className="px-2.5 py-1.5 rounded-lg text-xs text-slate-700 dark:text-zinc-300 hover:text-brand-700 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-zinc-800/80 transition-colors truncate"
+                            >
+                              • {cat.name}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

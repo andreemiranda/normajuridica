@@ -16,7 +16,11 @@ export async function generateMetadata({ params }: CatchAllPageProps): Promise<M
   const { slug } = await params;
   const path = slug.join('/');
 
-  if (slug[0] === 'videos') {
+  const first = slug[0] || '';
+  if (
+    first === 'videos' ||
+    /\.(ico|png|jpg|jpeg|gif|svg|webp|txt|xml|json|map|css|js)$/i.test(first)
+  ) {
     return { title: 'Página Não Encontrada' };
   }
 
@@ -54,8 +58,11 @@ export async function generateMetadata({ params }: CatchAllPageProps): Promise<M
 export default async function CatchAllPage({ params }: CatchAllPageProps) {
   const { slug } = await params;
 
-  // Strict Rule 3: /videos MUST return 404
-  if (slug[0] === 'videos') {
+  const first = slug[0] || '';
+  if (
+    first === 'videos' ||
+    /\.(ico|png|jpg|jpeg|gif|svg|webp|txt|xml|json|map|css|js)$/i.test(first)
+  ) {
     notFound();
   }
 

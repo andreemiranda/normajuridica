@@ -19,30 +19,32 @@ export async function GET(req: NextRequest) {
   const baseUrl = getBaseUrl(req);
   const acceptHeader = req.headers.get('accept') || '';
 
-  const { items } = await fetchNews({ category: 'all', limit: 50 });
+  const { items } = await fetchNews({ category: 'all', limit: 500 });
 
-  const entries: SitemapEntry[] = items.map(item => {
-    const rawImages = item.images && item.images.length > 0 ? item.images : [item.imageUrl || `${baseUrl}/cover.png`];
-    const itemImages = rawImages.map(img => ({
-      loc: img.startsWith('http') ? img : `${baseUrl}${img}`,
-      title: item.title,
-      caption: item.imageCaption || `Registro editorial Norma Jurídica • ${item.category}`,
-    }));
+  const entries: SitemapEntry[] = items
+    .filter(item => item.imageUrl || (item.images && item.images.length > 0))
+    .map(item => {
+      const rawImages = item.images && item.images.length > 0 ? item.images : [item.imageUrl].filter(Boolean) as string[];
+      const itemImages = rawImages.map(img => ({
+        loc: img.startsWith('http') ? img : `${baseUrl}${img.startsWith('/') ? '' : '/'}${img}`,
+        title: item.title,
+        caption: item.imageCaption || `Registro editorial Norma Jurídica • ${item.category}`,
+      }));
 
-    return {
-      url: `${baseUrl}/noticia/${item.slug}`,
-      title: item.title,
-      lastmod: item.isoDate || item.pubDate || new Date().toISOString(),
-      changefreq: 'hourly',
-      priority: '0.8',
-      images: itemImages,
-    };
-  });
+      return {
+        url: `${baseUrl}/noticia/${item.slug}`,
+        title: item.title,
+        lastmod: item.isoDate || item.pubDate || new Date().toISOString(),
+        changefreq: 'hourly',
+        priority: '0.8',
+        images: itemImages,
+      };
+    });
 
   if (acceptHeader.includes('text/html')) {
     const html = renderSitemapHtml({
       title: 'Sitemap de Imagens e Registros Visuais',
-      description: 'Acervo fotográfico e registros editoriais do portal Norma Jurídica.',
+      description: `Acervo fotográfico e registros editoriais com ${entries.length} matérias ilustradas no portal Norma Jurídica.`,
       entries,
       type: 'images',
     });
