@@ -54,6 +54,11 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   const decodedSlug = decodeURIComponent(slug);
   const cleanSlug = categorySlugify(decodedSlug);
 
+  // Redirect legacy noticias-gerais to brasil
+  if (cleanSlug === 'noticias-gerais') {
+    redirect('/categoria/brasil');
+  }
+
   // If the URL contains accented or non-canonical characters (e.g. justi%C3%A7a), redirect 308 to clean slug
   if (decodedSlug !== cleanSlug) {
     redirect(`/categoria/${cleanSlug}`);

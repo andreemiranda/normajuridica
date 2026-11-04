@@ -18,6 +18,7 @@ import {
   Bookmark,
   Coins,
   Film,
+  Flag,
 } from 'lucide-react';
 import { categorySlugify } from '@/lib/slug';
 import { useBookmarksCount } from '@/lib/accessibility';
@@ -31,6 +32,8 @@ export interface PopularCategory {
 
 export const THEMATIC_CATEGORIES: PopularCategory[] = [
   { id: 'all', name: 'Todas as Notícias', slug: 'todas', icon: Newspaper },
+  { id: 'Mundo', name: 'Mundo', slug: 'mundo', icon: Globe2 },
+  { id: 'Brasil', name: 'Brasil', slug: 'brasil', icon: Flag },
   { id: 'Política', name: 'Política', slug: 'politica', icon: Landmark },
   { id: 'Economia', name: 'Economia', slug: 'economia', icon: TrendingUp },
   { id: 'Justiça', name: 'Justiça', slug: 'justica', icon: Scale },
@@ -53,7 +56,6 @@ export const REGIONAL_CATEGORIES: PopularCategory[] = [
   { id: 'Rio Grande do Sul', name: 'Rio Grande do Sul', slug: 'rio-grande-do-sul', icon: MapPin },
   { id: 'Amazonas', name: 'Amazonas', slug: 'amazonas', icon: MapPin },
   { id: 'Minas Gerais', name: 'Minas Gerais', slug: 'grande-minas', icon: MapPin },
-  { id: 'Mundo', name: 'Mundo', slug: 'mundo', icon: Globe2 },
 ];
 
 export const POPULAR_CATEGORIES: PopularCategory[] = [

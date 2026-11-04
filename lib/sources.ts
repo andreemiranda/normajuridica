@@ -5,6 +5,8 @@ import { categorySlugify } from './slug';
 
 export const ALL_CATEGORIES: CategoryInfo[] = [
   { id: 'all', name: 'Todas as Notícias', slug: 'todas', group: 'tema' },
+  { id: 'Mundo', name: 'Mundo', slug: 'mundo', highlight: true, group: 'tema' },
+  { id: 'Brasil', name: 'Brasil', slug: 'brasil', highlight: true, group: 'tema' },
   { id: 'Política', name: 'Política', slug: 'politica', highlight: true, group: 'tema' },
   { id: 'Economia', name: 'Economia', slug: 'economia', highlight: true, group: 'tema' },
   { id: 'Justiça', name: 'Justiça', slug: 'justica', highlight: true, group: 'tema' },
@@ -13,7 +15,6 @@ export const ALL_CATEGORIES: CategoryInfo[] = [
   { id: 'Cultura', name: 'Cultura', slug: 'cultura', group: 'tema' },
   { id: 'Esporte', name: 'Esporte', slug: 'esporte', highlight: true, group: 'tema' },
   { id: 'Tecnologia e Games', name: 'Tecnologia & Games', slug: 'tecnologia-e-games', group: 'tema' },
-  { id: 'Notícias Gerais', name: 'Gerais', slug: 'noticias-gerais', group: 'tema' },
   { id: 'Finanças', name: 'Finanças', slug: 'financas', group: 'tema' },
   { id: 'Palmeiras', name: 'Palmeiras', slug: 'palmeiras', group: 'tema' },
   { id: 'Autoesporte', name: 'Autoesporte', slug: 'autoesporte', group: 'tema' },
@@ -36,7 +37,6 @@ export const ALL_CATEGORIES: CategoryInfo[] = [
   { id: 'Rondônia', name: 'Rondônia', slug: 'rondonia', group: 'regiao' },
   { id: 'Roraima', name: 'Roraima', slug: 'roraima', group: 'regiao' },
   { id: 'Sergipe', name: 'Sergipe', slug: 'sergipe', group: 'regiao' },
-  { id: 'Mundo', name: 'Mundo', slug: 'mundo', group: 'regiao' },
   { id: 'Campinas e região', name: 'Campinas e Região', slug: 'campinas-e-regiao', group: 'regiao' },
   { id: 'Bauru e Marília', name: 'Bauru e Marília', slug: 'bauru-e-marilia', group: 'regiao' },
   { id: 'Santos e Região', name: 'Santos e Região', slug: 'santos-e-regiao', group: 'regiao' },
@@ -116,6 +116,9 @@ export function cleanCategoryName(name: string): string {
 
 export function resolveCategoryDisplayName(slugOrId: string): string {
   const norm = normalizeCategoryText(slugOrId);
+  if (norm === 'noticias-gerais' || norm === 'brasil') {
+    return 'Brasil';
+  }
   const found = ALL_CATEGORIES.find(
     c => c.slug === norm || normalizeCategoryText(c.id) === norm || normalizeCategoryText(c.name) === norm
   );
@@ -142,6 +145,25 @@ export function getSourcesByCategory(category: string): NewsApiSourceItem[] {
   if (exact.length > 0) return exact;
 
   // 2. Strict editorial mappings (without cross-polluting other categories)
+  if (norm === 'brasil' || norm === 'noticias-gerais') {
+    return ALL_NEWS_SOURCES.filter(
+      s => s.active !== false && (
+        normalizeCategoryText(s.category) === 'brasil' ||
+        normalizeCategoryText(s.category) === 'noticias-gerais' ||
+        ['1144428532544', '6242412692949', '8281449136684', '9886348421411'].includes(s.id)
+      )
+    );
+  }
+
+  if (norm === 'mundo') {
+    return ALL_NEWS_SOURCES.filter(
+      s => s.active !== false && (
+        normalizeCategoryText(s.category) === 'mundo' ||
+        s.id === '2431124818641'
+      )
+    );
+  }
+
   if (norm === 'politica') {
     return ALL_NEWS_SOURCES.filter(
       s => s.active !== false && (s.id === '8281449136684' || normalizeCategoryText(s.category).includes('politica'))
