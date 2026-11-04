@@ -164,7 +164,7 @@ export function HomePageClient() {
 
   const categoryTitle =
     activeCategory === 'favoritos'
-      ? 'Minha Lista • Matérias Salvas'
+      ? 'Minha Lista'
       : activeCategory === 'all' || activeCategory === 'todas'
       ? 'Destaques'
       : resolveCategoryDisplayName(activeCategory);
@@ -218,11 +218,6 @@ export function HomePageClient() {
               {searchQuery && (
                 <span className="text-sm font-normal text-slate-500">
                   (busca por: &quot;{searchQuery}&quot;)
-                </span>
-              )}
-              {totalCount > 0 && (
-                <span className="text-xs font-semibold text-slate-400 dark:text-zinc-500">
-                  ({totalCount} {totalCount === 1 ? 'notícia' : 'notícias'})
                 </span>
               )}
             </h2>

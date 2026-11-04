@@ -106,18 +106,26 @@ export function normalizeCategoryText(text: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
+export function cleanCategoryName(name: string): string {
+  if (!name) return '';
+  return name
+    .replace(/^Editoria\s+de\s+/i, '')
+    .replace(/^Editoria\s+/i, '')
+    .trim();
+}
+
 export function resolveCategoryDisplayName(slugOrId: string): string {
   const norm = normalizeCategoryText(slugOrId);
   const found = ALL_CATEGORIES.find(
     c => c.slug === norm || normalizeCategoryText(c.id) === norm || normalizeCategoryText(c.name) === norm
   );
-  if (found) return found.name;
+  if (found) return cleanCategoryName(found.name);
 
   // Capitalize hyphenated slug
-  return slugOrId
+  return cleanCategoryName(slugOrId
     .split('-')
     .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
+    .join(' '));
 }
 
 export function getSourcesByCategory(category: string): NewsApiSourceItem[] {

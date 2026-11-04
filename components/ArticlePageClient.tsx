@@ -37,8 +37,25 @@ export function ArticlePageClient({
   relatedNews,
   mostReadNews,
 }: ArticlePageClientProps) {
-  // Gallery state
-  const images = article.images && article.images.length > 0 ? article.images : [article.imageUrl].filter(Boolean) as string[];
+  // Gallery state: aggregate all images from metadata and HTML content
+  const contentImages: string[] = [];
+  if (article.contentHtml) {
+    const imgRegex = /<img\b[^>]*src=["']([^"']+)["'][^>]*>/gi;
+    let match;
+    while ((match = imgRegex.exec(article.contentHtml)) !== null) {
+      if (match[1] && match[1].startsWith('http')) {
+        contentImages.push(match[1]);
+      }
+    }
+  }
+
+  const rawImages = [
+    ...(article.images || []),
+    article.imageUrl,
+    ...contentImages,
+  ].filter(Boolean) as string[];
+
+  const images = Array.from(new Set(rawImages));
   const [selectedImage, setSelectedImage] = useState<string>(images[0] || article.imageUrl || '');
 
   // Bookmarking via external store subscription

@@ -1,11 +1,36 @@
 // lib/news-fetcher.ts
 import 'server-only';
+import fs from 'node:fs';
+import path from 'node:path';
 
 import { NewsItem } from './types';
 import { getNewsStore, formatTimeAgo } from './news-store';
 import { syncNewsSources, triggerBackgroundSyncIfNeeded } from './news-sync';
 
 export { formatTimeAgo };
+
+let cachedSeedItems: NewsItem[] | null = null;
+
+function getSeedItems(): NewsItem[] {
+  if (cachedSeedItems) return cachedSeedItems;
+  const candidates = [
+    path.join(process.cwd(), 'data', 'seed-news.json'),
+    path.join(__dirname, '..', 'data', 'seed-news.json'),
+    path.join(__dirname, '..', '..', 'data', 'seed-news.json'),
+    path.join('/app/applet', 'data', 'seed-news.json'),
+    '/data/seed-news.json',
+  ];
+  for (const c of candidates) {
+    try {
+      if (fs.existsSync(c)) {
+        const data = fs.readFileSync(c, 'utf8');
+        cachedSeedItems = JSON.parse(data);
+        return cachedSeedItems || [];
+      }
+    } catch {}
+  }
+  return [];
+}
 
 export interface FetchNewsOptions {
   category?: string;
@@ -69,20 +94,22 @@ export async function fetchNews(options: FetchNewsOptions = {}): Promise<FetchNe
     page,
   });
 
-  // 2. Empty Store Recovery (Initial boot / fresh install)
-  if (storeRes.total === 0 && (!category || category === 'all' || category === 'todas') && !searchQuery) {
+  // 2. Empty Store Recovery (Initial boot / fresh serverless cold-start)
+  if (storeRes.total === 0) {
     try {
-      // Cold-start initial sync
-      await syncNewsSources({ limitPerSource: 20 });
-      storeRes = await store.getNews({
-        category,
-        sourceId,
-        searchQuery,
-        limit,
-        page,
-      });
+      const seeds = getSeedItems();
+      if (seeds.length > 0) {
+        await store.upsertNews(seeds);
+        storeRes = await store.getNews({
+          category,
+          sourceId,
+          searchQuery,
+          limit,
+          page,
+        });
+      }
     } catch (err) {
-      console.error('Falha no bootstrap inicial de sincronização:', err);
+      console.warn('[news-fetcher] Aviso ao aplicar seed de recuperação:', err);
     }
   }
 
@@ -108,18 +135,27 @@ export async function fetchNews(options: FetchNewsOptions = {}): Promise<FetchNe
 export async function getNewsItemBySlugOrId(slugOrId: string): Promise<NewsItem | null> {
   if (!slugOrId) return null;
 
+  const decoded = decodeURIComponent(slugOrId).toLowerCase().trim();
   const store = getNewsStore();
   await store.init();
 
   // 1. Query Local Persistent Store
-  const item = await store.getNewsBySlugOrId(slugOrId);
+  const item = await store.getNewsBySlugOrId(decoded);
   if (item) {
     return item;
   }
 
-  // 2. Fallback: If not found in store, check if background sync is needed
-  triggerBackgroundSyncIfNeeded();
+  // 2. Fallback: Search bundled seed items
+  const seeds = getSeedItems();
+  const seedMatch = seeds.find(
+    s => s.slug.toLowerCase() === decoded || s.id.toLowerCase() === decoded
+  );
+  if (seedMatch) {
+    store.upsertNews([seedMatch]).catch(() => {});
+    return seedMatch;
+  }
 
-  // Re-check once if background sync was needed or item was recently inserted
-  return await store.getNewsBySlugOrId(slugOrId);
+  // 3. Trigger background sync if needed and re-check
+  triggerBackgroundSyncIfNeeded();
+  return await store.getNewsBySlugOrId(decoded);
 }

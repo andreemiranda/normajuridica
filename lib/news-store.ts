@@ -99,6 +99,50 @@ function parseDateToTimestamp(dateStr?: string): number {
   return isNaN(parsed) ? Date.now() : parsed;
 }
 
+export function cleanCategoryName(name: string): string {
+  if (!name) return '';
+  return name
+    .replace(/^Editoria\s+de\s+/i, '')
+    .replace(/^Editoria\s+/i, '')
+    .trim();
+}
+
+function findSeedDbPath(): string | null {
+  const candidates = [
+    path.join(process.cwd(), 'data', 'news.db'),
+    path.join(__dirname, '..', 'data', 'news.db'),
+    path.join(__dirname, '..', '..', 'data', 'news.db'),
+    path.join('/app/applet', 'data', 'news.db'),
+    '/data/news.db',
+  ];
+  for (const c of candidates) {
+    try {
+      if (fs.existsSync(c) && fs.statSync(c).size > 100000) {
+        return c;
+      }
+    } catch {}
+  }
+  return null;
+}
+
+function findSeedJsonPath(): string | null {
+  const candidates = [
+    path.join(process.cwd(), 'data', 'seed-news.json'),
+    path.join(__dirname, '..', 'data', 'seed-news.json'),
+    path.join(__dirname, '..', '..', 'data', 'seed-news.json'),
+    path.join('/app/applet', 'data', 'seed-news.json'),
+    '/data/seed-news.json',
+  ];
+  for (const c of candidates) {
+    try {
+      if (fs.existsSync(c) && fs.statSync(c).size > 1000) {
+        return c;
+      }
+    } catch {}
+  }
+  return null;
+}
+
 export function getSqliteDbPath(): { dbPath: string; isEphemeral: boolean } {
   if (process.env.NEWS_SQLITE_PATH && process.env.NEWS_SQLITE_PATH.trim()) {
     return {
@@ -171,6 +215,19 @@ export class SqliteNewsStore implements INewsStore {
         this.isEphemeral = true;
       }
 
+      // In serverless environment, copy bundled database to /tmp on cold boot
+      if (this.isEphemeral) {
+        const seedDb = findSeedDbPath();
+        const targetNeedsSeed = !fs.existsSync(resolvedPath) || fs.statSync(resolvedPath).size < 10000;
+        if (seedDb && targetNeedsSeed && seedDb !== resolvedPath) {
+          try {
+            fs.copyFileSync(seedDb, resolvedPath);
+          } catch (copyErr) {
+            console.warn('[SqliteNewsStore] Erro ao copiar seedDb para /tmp:', copyErr);
+          }
+        }
+      }
+
       try {
         this.db = new Database(resolvedPath, {
           timeout: 5000,
@@ -232,6 +289,23 @@ export class SqliteNewsStore implements INewsStore {
       `);
 
       this.initialized = true;
+
+      // Seed fallback from seed-news.json if database has 0 items
+      try {
+        const countRow = this.db.prepare('SELECT COUNT(*) as count FROM news').get() as { count: number } | undefined;
+        if (!countRow || countRow.count === 0) {
+          const seedJson = findSeedJsonPath();
+          if (seedJson) {
+            const raw = fs.readFileSync(seedJson, 'utf8');
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              await this.upsertNews(parsed);
+            }
+          }
+        }
+      } catch (seedErr) {
+        console.warn('[SqliteNewsStore] Aviso ao carregar seed inicial:', seedErr);
+      }
     } catch (err) {
       console.error('Falha ao inicializar SQLite store:', err);
       throw err;
@@ -265,6 +339,7 @@ export class SqliteNewsStore implements INewsStore {
     }
 
     const pubDate = String(row.pub_date || new Date().toISOString());
+    const categoryName = cleanCategoryName(String(row.category || ''));
 
     return {
       id: String(row.id),
@@ -274,7 +349,7 @@ export class SqliteNewsStore implements INewsStore {
       pubDate,
       isoDate: row.iso_date ? String(row.iso_date) : pubDate,
       timeAgo: formatTimeAgo(pubDate),
-      category: String(row.category),
+      category: categoryName,
       categoryId: String(row.category_id),
       source: String(row.source || 'Norma Jurídica'),
       summary: String(row.summary || ''),

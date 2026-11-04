@@ -71,20 +71,13 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8">
         {/* Category Header */}
-        <div className="mb-8 pb-4 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-zinc-100 tracking-tight">
-              {categoryName}
-            </h1>
-            <p className="text-sm text-slate-500 dark:text-zinc-400 mt-2">
-              Cobertura analítica e factual sobre {categoryName.toLowerCase()}, decisões oficiais e acontecimentos em tempo real.
-            </p>
-          </div>
-          {total > 0 && (
-            <div className="text-xs font-semibold text-slate-500 dark:text-zinc-400">
-              {total} {total === 1 ? 'notícia disponível' : 'notícias disponíveis'}
-            </div>
-          )}
+        <div className="mb-8 pb-4 border-b border-slate-200 dark:border-zinc-800">
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-zinc-100 tracking-tight">
+            {categoryName}
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-zinc-400 mt-2">
+            Cobertura analítica e factual sobre {categoryName.toLowerCase()}, decisões oficiais e acontecimentos em tempo real.
+          </p>
         </div>
 
         {/* Ad Banner */}

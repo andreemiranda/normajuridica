@@ -24,6 +24,7 @@ export function OptimizedImage({
   sizes,
   className = '',
 }: OptimizedImageProps) {
+  const [useDirectFallback, setUseDirectFallback] = useState(false);
   const [imgError, setImgError] = useState(false);
 
   // If there is no image url from the API or failed, don't show artificial fallback images
@@ -31,12 +32,12 @@ export function OptimizedImage({
     return null;
   }
 
-  // Detect gazetaesportiva.com domain to render direct unoptimized <img> tag
+  // Detect gazetaesportiva.com domain or fallback when Next image optimizer fails
   const isGazetaEsportiva = src.toLowerCase().includes('gazetaesportiva.com');
 
-  if (isGazetaEsportiva) {
+  if (isGazetaEsportiva || useDirectFallback) {
     return (
-      // Direct unoptimized image embedding for gazetaesportiva.com
+      // Direct unoptimized image embedding
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
@@ -54,7 +55,7 @@ export function OptimizedImage({
     );
   }
 
-  // All other sources continue using Next.js optimized next_image mode
+  // All other sources start with Next.js optimized next_image mode, with auto-fallback to direct <img>
   return (
     <Image
       src={src}
@@ -68,7 +69,7 @@ export function OptimizedImage({
       data-pin-nopin="true"
       data-pin-no-hover="true"
       suppressHydrationWarning
-      onError={() => setImgError(true)}
+      onError={() => setUseDirectFallback(true)}
       className={`transition-transform duration-500 ease-out group-hover:scale-105 hover:scale-105 ${className}`}
     />
   );
