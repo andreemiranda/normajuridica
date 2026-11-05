@@ -177,7 +177,7 @@ export async function syncNewsSources(options: SyncOptions = {}): Promise<SyncEx
     const store = getNewsStore();
     await store.init();
 
-    const limitPerSource = options.limitPerSource || 25;
+    const limitPerSource = options.limitPerSource || 50;
     let targetSources = ALL_NEWS_SOURCES;
 
     if (options.sourcesSubset && options.sourcesSubset.length > 0) {
@@ -284,12 +284,16 @@ export async function syncNewsSources(options: SyncOptions = {}): Promise<SyncEx
         itemsFetched++;
 
         // Category mapping - prioritize live category from API item
-        let effectiveCategory = (item.category && item.category.trim()) || source.category || 'Notícias Gerais';
+        let effectiveCategory = (item.category && item.category.trim()) || source.category || 'Brasil';
+        if (effectiveCategory === 'Notícias Gerais' || effectiveCategory === 'noticias-gerais') {
+          effectiveCategory = 'Brasil';
+        }
         if (!item.category) {
           if (source.id === '8281449136684') effectiveCategory = 'Política';
           else if (source.id === '6389841444633' || source.id === '3815913481419') effectiveCategory = 'Esporte';
           else if (source.id === '3422817479195') effectiveCategory = 'Economia';
           else if (source.id === '8833539123215') effectiveCategory = 'Cultura';
+          else if (source.id === '8346116142997') effectiveCategory = 'Saúde';
         }
 
         effectiveCategory = fixEncoding(effectiveCategory);

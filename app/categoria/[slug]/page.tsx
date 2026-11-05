@@ -65,8 +65,8 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   }
 
   const categoryName = resolveCategoryDisplayName(cleanSlug);
-  const limit = 24;
-  const { items, total } = await fetchNews({ category: categoryName, page, limit });
+  const limit = 12;
+  const { items, total } = await fetchNews({ category: cleanSlug, page, limit });
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
@@ -93,10 +93,10 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         {items.length === 0 ? (
           <div className="text-center py-16 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl p-8">
             <h2 className="text-lg font-black text-slate-900 dark:text-zinc-100 mb-2">
-              Nenhuma matéria recente em {categoryName}
+              Edição em apuração • {categoryName}
             </h2>
             <p className="text-sm text-slate-500 max-w-md mx-auto">
-              Nossa redação segue monitorando novas publicações oficiais desta editoria.
+              A redação do Norma Jurídica está processando e checando novas matérias oficiais para esta editoria em tempo real.
             </p>
           </div>
         ) : (

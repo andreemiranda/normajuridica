@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     const q = searchParams.get('q') || undefined;
     const refresh = searchParams.get('refresh') === 'true';
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-    const limit = Math.min(Math.max(1, parseInt(searchParams.get('limit') || '24', 10)), 100);
+    const limit = Math.min(Math.max(1, parseInt(searchParams.get('limit') || '12', 10)), 100);
 
     const result = await fetchNews({
       category,

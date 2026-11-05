@@ -5,6 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import Database from 'better-sqlite3';
 import { NewsItem } from './types';
+import { getCategoryAliases, getCategorySourceIds } from './sources';
 
 export function formatTimeAgo(dateStr: string): string {
   try {
@@ -112,6 +113,7 @@ function findSeedDbPath(): string | null {
     path.join(process.cwd(), 'data', 'news.db'),
     path.join(__dirname, '..', 'data', 'news.db'),
     path.join(__dirname, '..', '..', 'data', 'news.db'),
+    path.join(os.tmpdir(), 'norma-juridica-data', 'news.db'),
     path.join('/app/applet', 'data', 'news.db'),
     '/data/news.db',
   ];
@@ -144,13 +146,6 @@ function findSeedJsonPath(): string | null {
 }
 
 export function getSqliteDbPath(): { dbPath: string; isEphemeral: boolean } {
-  if (process.env.NEWS_SQLITE_PATH && process.env.NEWS_SQLITE_PATH.trim()) {
-    return {
-      dbPath: process.env.NEWS_SQLITE_PATH.trim(),
-      isEphemeral: false,
-    };
-  }
-
   // Detect serverless or ephemeral filesystems (Vercel, Netlify, AWS Lambda)
   const isServerless = Boolean(
     process.env.VERCEL ||
@@ -161,16 +156,40 @@ export function getSqliteDbPath(): { dbPath: string; isEphemeral: boolean } {
 
   if (isServerless) {
     return {
-      dbPath: '/tmp/norma-juridica-news.db',
+      dbPath: path.join(os.tmpdir(), 'norma-juridica-news.db'),
       isEphemeral: true,
     };
   }
 
+  const explicitPath = process.env.NEWS_SQLITE_PATH && process.env.NEWS_SQLITE_PATH.trim();
+  if (explicitPath) {
+    try {
+      const resolved = path.isAbsolute(explicitPath) ? explicitPath : path.resolve(process.cwd(), explicitPath);
+      const dir = path.dirname(resolved);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      return { dbPath: resolved, isEphemeral: false };
+    } catch {
+      return { dbPath: path.join(os.tmpdir(), 'norma-juridica-news.db'), isEphemeral: true };
+    }
+  }
+
   const defaultDir = path.join(process.cwd(), 'data');
-  return {
-    dbPath: path.join(defaultDir, 'news.db'),
-    isEphemeral: false,
-  };
+  try {
+    if (!fs.existsSync(defaultDir)) {
+      fs.mkdirSync(defaultDir, { recursive: true });
+    }
+    return {
+      dbPath: path.join(defaultDir, 'news.db'),
+      isEphemeral: false,
+    };
+  } catch {
+    return {
+      dbPath: path.join(os.tmpdir(), 'norma-juridica-news.db'),
+      isEphemeral: true,
+    };
+  }
 }
 
 export class SqliteNewsStore implements INewsStore {
@@ -189,6 +208,48 @@ export class SqliteNewsStore implements INewsStore {
     return { path: this.dbPath, isEphemeral: this.isEphemeral };
   }
 
+  private setupSchema(db: Database.Database): void {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS news (
+        id TEXT PRIMARY KEY,
+        slug TEXT NOT NULL UNIQUE,
+        title TEXT NOT NULL,
+        link TEXT NOT NULL,
+        pub_date TEXT NOT NULL,
+        pub_date_timestamp INTEGER NOT NULL,
+        iso_date TEXT,
+        category TEXT NOT NULL,
+        category_id TEXT NOT NULL,
+        source TEXT NOT NULL,
+        source_id TEXT,
+        summary TEXT NOT NULL,
+        content_html TEXT,
+        image_url TEXT,
+        images_json TEXT,
+        image_caption TEXT,
+        author TEXT,
+        original_category TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS sync_meta (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_news_slug ON news (slug);
+      CREATE INDEX IF NOT EXISTS idx_news_category ON news (category);
+      CREATE INDEX IF NOT EXISTS idx_news_category_id ON news (category_id);
+      CREATE INDEX IF NOT EXISTS idx_news_source_id ON news (source_id);
+      CREATE INDEX IF NOT EXISTS idx_news_pub_date_ts ON news (pub_date_timestamp DESC);
+      CREATE INDEX IF NOT EXISTS idx_news_category_pub_ts ON news (category_id, pub_date_timestamp DESC);
+      CREATE INDEX IF NOT EXISTS idx_news_source_pub_ts ON news (source_id, pub_date_timestamp DESC);
+      CREATE INDEX IF NOT EXISTS idx_news_link ON news (link);
+    `);
+  }
+
   public async init(): Promise<void> {
     if (this.initialized && this.db) return;
 
@@ -202,20 +263,14 @@ export class SqliteNewsStore implements INewsStore {
         if (!fs.existsSync(dir)) {
           fs.mkdirSync(dir, { recursive: true });
         }
-      } catch (err) {
-        console.warn(`[SqliteNewsStore] Aviso: Diretório ${dir} inacessível, utilizando os.tmpdir()`, err);
-        const tmpDir = path.join(os.tmpdir(), 'norma-juridica-data');
-        if (!fs.existsSync(tmpDir)) {
-          try {
-            fs.mkdirSync(tmpDir, { recursive: true });
-          } catch {}
-        }
-        resolvedPath = path.join(tmpDir, 'news.db');
+      } catch {
+        const tmpDir = os.tmpdir();
+        resolvedPath = path.join(tmpDir, 'norma-juridica-news.db');
         this.dbPath = resolvedPath;
         this.isEphemeral = true;
       }
 
-      // In serverless environment, copy bundled database to /tmp on cold boot
+      // In serverless / ephemeral environment, copy bundled database to /tmp on cold boot
       if (this.isEphemeral) {
         const seedDb = findSeedDbPath();
         const targetNeedsSeed = !fs.existsSync(resolvedPath) || fs.statSync(resolvedPath).size < 10000;
@@ -232,8 +287,7 @@ export class SqliteNewsStore implements INewsStore {
         this.db = new Database(resolvedPath, {
           timeout: 5000,
         });
-      } catch (dbErr) {
-        console.warn(`[SqliteNewsStore] Falha ao abrir ${resolvedPath}, usando fallback em /tmp`, dbErr);
+      } catch {
         const fallbackPath = path.join(os.tmpdir(), 'norma-juridica-news-fallback.db');
         this.db = new Database(fallbackPath, {
           timeout: 5000,
@@ -243,51 +297,13 @@ export class SqliteNewsStore implements INewsStore {
       }
 
       // Enable Write-Ahead Logging (WAL) for high concurrency
-      this.db.pragma('journal_mode = WAL');
-      this.db.pragma('synchronous = NORMAL');
-      this.db.pragma('busy_timeout = 5000');
+      try {
+        this.db.pragma('journal_mode = WAL');
+        this.db.pragma('synchronous = NORMAL');
+        this.db.pragma('busy_timeout = 5000');
+      } catch {}
 
-      // Create news table
-      this.db.exec(`
-        CREATE TABLE IF NOT EXISTS news (
-          id TEXT PRIMARY KEY,
-          slug TEXT NOT NULL UNIQUE,
-          title TEXT NOT NULL,
-          link TEXT NOT NULL,
-          pub_date TEXT NOT NULL,
-          pub_date_timestamp INTEGER NOT NULL,
-          iso_date TEXT,
-          category TEXT NOT NULL,
-          category_id TEXT NOT NULL,
-          source TEXT NOT NULL,
-          source_id TEXT,
-          summary TEXT NOT NULL,
-          content_html TEXT,
-          image_url TEXT,
-          images_json TEXT,
-          image_caption TEXT,
-          author TEXT,
-          original_category TEXT,
-          created_at INTEGER NOT NULL,
-          updated_at INTEGER NOT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS sync_meta (
-          key TEXT PRIMARY KEY,
-          value TEXT NOT NULL,
-          updated_at INTEGER NOT NULL
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_news_slug ON news (slug);
-        CREATE INDEX IF NOT EXISTS idx_news_category ON news (category);
-        CREATE INDEX IF NOT EXISTS idx_news_category_id ON news (category_id);
-        CREATE INDEX IF NOT EXISTS idx_news_source_id ON news (source_id);
-        CREATE INDEX IF NOT EXISTS idx_news_pub_date_ts ON news (pub_date_timestamp DESC);
-        CREATE INDEX IF NOT EXISTS idx_news_category_pub_ts ON news (category_id, pub_date_timestamp DESC);
-        CREATE INDEX IF NOT EXISTS idx_news_source_pub_ts ON news (source_id, pub_date_timestamp DESC);
-        CREATE INDEX IF NOT EXISTS idx_news_link ON news (link);
-      `);
-
+      this.setupSchema(this.db);
       this.initialized = true;
 
       // Seed fallback from seed-news.json if database has 0 items
@@ -314,16 +330,44 @@ export class SqliteNewsStore implements INewsStore {
 
   private ensureDb(): Database.Database {
     if (!this.db || !this.initialized) {
-      // Synchronous initialization fallback if not awaited
-      const dir = path.dirname(this.dbPath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
+      try {
+        let dir = path.dirname(this.dbPath);
+        if (!fs.existsSync(dir)) {
+          try {
+            fs.mkdirSync(dir, { recursive: true });
+          } catch {
+            this.dbPath = path.join(os.tmpdir(), 'norma-juridica-news.db');
+            this.isEphemeral = true;
+          }
+        }
+
+        // On cold-boot in ephemeral path, copy bundled seed db if available
+        if (this.isEphemeral && (!fs.existsSync(this.dbPath) || fs.statSync(this.dbPath).size < 10000)) {
+          const seedDb = findSeedDbPath();
+          if (seedDb && seedDb !== this.dbPath) {
+            try {
+              fs.copyFileSync(seedDb, this.dbPath);
+            } catch {}
+          }
+        }
+
+        this.db = new Database(this.dbPath, { timeout: 5000 });
+        try {
+          this.db.pragma('journal_mode = WAL');
+          this.db.pragma('synchronous = NORMAL');
+          this.db.pragma('busy_timeout = 5000');
+        } catch {}
+        this.setupSchema(this.db);
+        this.initialized = true;
+      } catch (err) {
+        console.warn('[SqliteNewsStore] Falha em ensureDb, usando fallback tmpdir:', err);
+        const fallbackPath = path.join(os.tmpdir(), 'norma-juridica-news-fallback.db');
+        this.db = new Database(fallbackPath, { timeout: 5000 });
+        this.dbPath = fallbackPath;
+        this.isEphemeral = true;
+        this.setupSchema(this.db);
+        this.initialized = true;
       }
-      this.db = new Database(this.dbPath, { timeout: 5000 });
-      this.db.pragma('journal_mode = WAL');
-      this.db.pragma('synchronous = NORMAL');
-      this.db.pragma('busy_timeout = 5000');
-      this.init();
     }
     return this.db;
   }
@@ -380,9 +424,33 @@ export class SqliteNewsStore implements INewsStore {
     const params: (string | number)[] = [];
 
     if (category && category !== 'all' && category !== 'todas') {
+      const aliases = getCategoryAliases(category);
+      const sourceIds = getCategorySourceIds(category);
+      const categoryClauses: string[] = [];
+
+      if (aliases.length > 0) {
+        const qMarks = aliases.map(() => '?').join(',');
+        categoryClauses.push(`category_id IN (${qMarks})`);
+        params.push(...aliases);
+        categoryClauses.push(`category IN (${qMarks})`);
+        params.push(...aliases);
+        categoryClauses.push(`original_category IN (${qMarks})`);
+        params.push(...aliases);
+      }
+
+      if (sourceIds.length > 0) {
+        const qMarks = sourceIds.map(() => '?').join(',');
+        categoryClauses.push(`source_id IN (${qMarks})`);
+        params.push(...sourceIds);
+      }
+
       const cleanCat = category.trim().toLowerCase();
-      whereClauses.push('(LOWER(category) = ? OR LOWER(category_id) = ? OR LOWER(original_category) = ?)');
-      params.push(cleanCat, cleanCat, cleanCat);
+      categoryClauses.push('LOWER(category) = ?');
+      params.push(cleanCat);
+      categoryClauses.push('LOWER(category_id) = ?');
+      params.push(cleanCat);
+
+      whereClauses.push(`(${categoryClauses.join(' OR ')})`);
     }
 
     if (sourceId) {
@@ -576,9 +644,9 @@ export class SqliteNewsStore implements INewsStore {
   } = {}): Promise<PruneResult> {
     const db = this.ensureDb();
 
-    const maxItems = options.maxItems ?? parseInt(process.env.NEWS_STORE_MAX_ITEMS || '5000', 10);
-    const maxPerSource = options.maxPerSource ?? parseInt(process.env.NEWS_STORE_MAX_PER_SOURCE || '100', 10);
-    const retentionDays = options.retentionDays ?? parseInt(process.env.NEWS_RETENTION_DAYS || '30', 10);
+    const maxItems = options.maxItems ?? parseInt(process.env.NEWS_STORE_MAX_ITEMS || '15000', 10);
+    const maxPerSource = options.maxPerSource ?? parseInt(process.env.NEWS_STORE_MAX_PER_SOURCE || '350', 10);
+    const retentionDays = options.retentionDays ?? parseInt(process.env.NEWS_RETENTION_DAYS || '90', 10);
 
     let prunedByRetention = 0;
     let prunedBySourceLimit = 0;
@@ -683,12 +751,35 @@ export class SqliteNewsStore implements INewsStore {
   public async count(category?: string): Promise<number> {
     const db = this.ensureDb();
     if (category && category !== 'all' && category !== 'todas') {
-      const clean = category.trim().toLowerCase();
-      const stmt = db.prepare(`
-        SELECT COUNT(*) as count FROM news
-        WHERE LOWER(category) = ? OR LOWER(category_id) = ?
-      `);
-      const row = stmt.get(clean, clean) as { count: number } | undefined;
+      const aliases = getCategoryAliases(category);
+      const sourceIds = getCategorySourceIds(category);
+      const categoryClauses: string[] = [];
+      const params: (string | number)[] = [];
+
+      if (aliases.length > 0) {
+        const qMarks = aliases.map(() => '?').join(',');
+        categoryClauses.push(`category_id IN (${qMarks})`);
+        params.push(...aliases);
+        categoryClauses.push(`category IN (${qMarks})`);
+        params.push(...aliases);
+        categoryClauses.push(`original_category IN (${qMarks})`);
+        params.push(...aliases);
+      }
+
+      if (sourceIds.length > 0) {
+        const qMarks = sourceIds.map(() => '?').join(',');
+        categoryClauses.push(`source_id IN (${qMarks})`);
+        params.push(...sourceIds);
+      }
+
+      const cleanCat = category.trim().toLowerCase();
+      categoryClauses.push('LOWER(category) = ?');
+      params.push(cleanCat);
+      categoryClauses.push('LOWER(category_id) = ?');
+      params.push(cleanCat);
+
+      const stmt = db.prepare(`SELECT COUNT(*) as count FROM news WHERE (${categoryClauses.join(' OR ')})`);
+      const row = stmt.get(...params) as { count: number } | undefined;
       return row ? row.count : 0;
     }
     const stmt = db.prepare('SELECT COUNT(*) as count FROM news');

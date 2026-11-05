@@ -53,7 +53,7 @@ export function HomePageClient() {
       setError(null);
       try {
         const params = new URLSearchParams();
-        const limit = activeCategory === 'favoritos' ? 100 : 28;
+        const limit = activeCategory === 'favoritos' ? 100 : (activeCategory === 'all' || activeCategory === 'todas') ? 24 : 12;
         params.set('page', String(currentPage));
         params.set('limit', String(limit));
 
@@ -91,7 +91,7 @@ export function HomePageClient() {
     setError(null);
     try {
       const params = new URLSearchParams();
-      const limit = activeCategory === 'favoritos' ? 100 : 28;
+      const limit = activeCategory === 'favoritos' ? 100 : (activeCategory === 'all' || activeCategory === 'todas') ? 24 : 12;
       params.set('page', String(currentPage));
       params.set('limit', String(limit));
 
@@ -281,12 +281,16 @@ export function HomePageClient() {
             <h3 className="text-lg font-black text-slate-900 dark:text-zinc-100 mb-2">
               {activeCategory === 'favoritos'
                 ? 'Nenhuma matéria salva ainda'
-                : 'Nenhuma matéria encontrada'}
+                : searchQuery
+                ? 'Nenhum resultado para a busca'
+                : `Edição em apuração • ${categoryTitle}`}
             </h3>
             <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">
               {activeCategory === 'favoritos'
                 ? 'Clique no ícone de marcador nas matérias que deseja salvar para leitura posterior.'
-                : 'Tente utilizar termos mais abrangentes ou selecione outra editoria.'}
+                : searchQuery
+                ? `Não encontramos registros para "${searchQuery}". Verifique a digitação ou consulte outras editorias.`
+                : 'A redação do Norma Jurídica está processando e checando novas matérias oficiais para esta editoria em tempo real.'}
             </p>
             <button
               type="button"

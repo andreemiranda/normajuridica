@@ -172,7 +172,11 @@ export function getSourcesByCategory(category: string): NewsApiSourceItem[] {
 
   if (norm === 'saude') {
     return ALL_NEWS_SOURCES.filter(
-      s => s.active !== false && (s.id === '9886348421411' || normalizeCategoryText(s.category).includes('saude'))
+      s => s.active !== false && (
+        s.id === '8346116142997' ||
+        s.id === '9886348421411' ||
+        normalizeCategoryText(s.category).includes('saude')
+      )
     );
   }
 
@@ -197,7 +201,7 @@ export function getSourcesByCategory(category: string): NewsApiSourceItem[] {
     );
   }
 
-  if (norm === 'economia') {
+  if (norm === 'economia' || norm === 'financas') {
     return ALL_NEWS_SOURCES.filter(
       s => s.active !== false && (
         normalizeCategoryText(s.category) === 'economia' ||
@@ -217,6 +221,106 @@ export function getSourcesByCategory(category: string): NewsApiSourceItem[] {
   if (subMatched.length > 0) return subMatched;
 
   return [];
+}
+
+export function getCategoryAliases(categoryOrSlug: string): string[] {
+  if (!categoryOrSlug) return [];
+  const norm = normalizeCategoryText(categoryOrSlug);
+  const terms = new Set<string>();
+
+  terms.add(categoryOrSlug);
+  terms.add(norm);
+
+  if (norm === 'brasil' || norm === 'noticias-gerais') {
+    terms.add('brasil');
+    terms.add('Brasil');
+    terms.add('noticias-gerais');
+    terms.add('Notícias Gerais');
+    terms.add('noticias gerais');
+  } else if (norm === 'mundo') {
+    terms.add('mundo');
+    terms.add('Mundo');
+  } else if (norm === 'saude') {
+    terms.add('saude');
+    terms.add('Saúde');
+    terms.add('saúde');
+  } else if (norm === 'financas') {
+    terms.add('financas');
+    terms.add('Finanças');
+    terms.add('economia');
+    terms.add('Economia');
+  } else if (norm === 'economia') {
+    terms.add('economia');
+    terms.add('Economia');
+    terms.add('financas');
+    terms.add('Finanças');
+  } else if (norm === 'pop-e-arte' || norm === 'cultura') {
+    terms.add('pop-e-arte');
+    terms.add('Pop & Arte');
+    terms.add('Pop e Arte');
+    terms.add('cultura');
+    terms.add('Cultura');
+  } else if (norm === 'esporte') {
+    terms.add('esporte');
+    terms.add('Esporte');
+    terms.add('palmeiras');
+    terms.add('Palmeiras');
+    terms.add('autoesporte');
+    terms.add('Autoesporte');
+  } else if (norm === 'tecnologia-e-games') {
+    terms.add('tecnologia-e-games');
+    terms.add('Tecnologia e Games');
+    terms.add('Tecnologia & Games');
+  } else if (norm === 'turismo-e-viagem') {
+    terms.add('turismo-e-viagem');
+    terms.add('Turismo e Viagem');
+    terms.add('Turismo & Viagem');
+  } else if (norm === 'vale-do-paraiba-e-regiao') {
+    terms.add('vale-do-paraiba-e-regiao');
+    terms.add('Vale do Paraíba');
+    terms.add('Vale do Paraíba e região');
+  } else if (norm === 'regiao-dos-lagos-fluminense') {
+    terms.add('regiao-dos-lagos-fluminense');
+    terms.add('Região dos Lagos');
+    terms.add('Região dos Lagos Fluminense');
+  } else if (norm === 'regiao-serrana-fluminense') {
+    terms.add('regiao-serrana-fluminense');
+    terms.add('Região Serrana RJ');
+    terms.add('Região Serrana Fluminense');
+  } else if (norm === 'sul-e-costa-verde-fluminense') {
+    terms.add('sul-e-costa-verde-fluminense');
+    terms.add('Costa Verde RJ');
+    terms.add('Sul e Costa Verde Fluminense');
+  } else if (norm === 'campos-gerais-e-sul-do-parana') {
+    terms.add('campos-gerais-e-sul-do-parana');
+    terms.add('Campos Gerais PR');
+    terms.add('Campos Gerais e Sul do Paraná');
+  } else if (norm === 'norte-e-noroeste-do-parana') {
+    terms.add('norte-e-noroeste-do-parana');
+    terms.add('Norte do Paraná');
+    terms.add('Norte e Noroeste do Paraná');
+  } else if (norm === 'oeste-e-sudoeste-do-parana') {
+    terms.add('oeste-e-sudoeste-do-parana');
+    terms.add('Oeste do Paraná');
+    terms.add('Oeste e Sudoeste do Paraná');
+  }
+
+  const catObj = ALL_CATEGORIES.find(
+    c => c.slug === norm || normalizeCategoryText(c.id) === norm || normalizeCategoryText(c.name) === norm
+  );
+  if (catObj) {
+    terms.add(catObj.id);
+    terms.add(catObj.name);
+    terms.add(catObj.slug);
+    terms.add(cleanCategoryName(catObj.name));
+  }
+
+  return Array.from(terms);
+}
+
+export function getCategorySourceIds(categoryOrSlug: string): string[] {
+  const sources = getSourcesByCategory(categoryOrSlug);
+  return sources.map(s => s.id);
 }
 
 export function getSourceById(id: string): NewsApiSourceItem | undefined {

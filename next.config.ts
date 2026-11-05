@@ -21,6 +21,9 @@ const nextConfig: NextConfig = {
     ],
   },
   output: 'standalone',
+  outputFileTracingIncludes: {
+    '/*': ['./data/**/*'],
+  },
   transpilePackages: ['motion'],
   async headers() {
     return [

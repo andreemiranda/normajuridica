@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   const baseUrl = getBaseUrl(req);
   const acceptHeader = req.headers.get('accept') || '';
 
-  const { items } = await fetchNews({ category: 'all', limit: 500 });
+  const { items } = await fetchNews({ category: 'all', limit: 2000 });
 
   const entries: SitemapEntry[] = items
     .filter(item => item.imageUrl || (item.images && item.images.length > 0))
