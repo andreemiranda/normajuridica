@@ -157,11 +157,6 @@ export default function ContatoPage() {
               </div>
             </div>
 
-            {/* Protocol Notice */}
-            <div className="p-5 bg-blue-50/70 dark:bg-brand-950/40 border border-blue-200 dark:border-brand-900/60 rounded-3xl text-xs text-blue-900 dark:text-blue-300 leading-relaxed">
-              <strong className="block font-black mb-1">Garantia de Protocolo Oficial</strong>
-              Toda mensagem enviada à nossa redação gera um número de protocolo exclusivo de 13 dígitos para garantir transparência e rastreabilidade da sua solicitação.
-            </div>
           </div>
 
           {/* Contact Form */}

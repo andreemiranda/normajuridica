@@ -48,7 +48,7 @@ export function NewsCard({
           className="relative w-28 h-20 sm:w-36 sm:h-24 flex-shrink-0 rounded-xl overflow-hidden bg-slate-100 dark:bg-zinc-800"
         >
           <OptimizedImage
-            src={news.imageUrl}
+            src={news.imageUrl || (news.images && news.images[0]) || '/cover.png'}
             alt={news.title}
             fill
             sizes="150px"
@@ -122,7 +122,7 @@ export function NewsCard({
         className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100 dark:bg-zinc-800 block focus:outline-none zoom-frame"
       >
         <OptimizedImage
-          src={news.imageUrl}
+          src={news.imageUrl || (news.images && news.images[0]) || '/cover.png'}
           alt={news.title}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

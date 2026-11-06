@@ -81,8 +81,30 @@ export function HomePageClient() {
 
     executeLoad();
 
+    // Sincronização automática minuto a minuto (60 segundos) na página inicial
+    const interval = setInterval(() => {
+      // Somente atualiza automaticamente na página 1 e se a aba estiver visível
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible' && currentPage === 1) {
+        executeLoad();
+      }
+    }, 60000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && currentPage === 1) {
+        executeLoad();
+      }
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+
     return () => {
       isMounted = false;
+      clearInterval(interval);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
     };
   }, [activeCategory, searchQuery, currentPage]);
 

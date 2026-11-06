@@ -113,14 +113,19 @@ function findSeedDbPath(): string | null {
     path.join(process.cwd(), 'data', 'news.db'),
     path.join(__dirname, '..', 'data', 'news.db'),
     path.join(__dirname, '..', '..', 'data', 'news.db'),
-    path.join(os.tmpdir(), 'norma-juridica-data', 'news.db'),
     path.join('/app/applet', 'data', 'news.db'),
-    '/data/news.db',
+    path.join(os.tmpdir(), 'norma-juridica-data', 'news.db'),
   ];
   for (const c of candidates) {
     try {
       if (fs.existsSync(c) && fs.statSync(c).size > 100000) {
-        return c;
+        // Verify database is healthy and not corrupt before returning it
+        const testDb = new Database(c, { readonly: true, timeout: 2000 });
+        const check = testDb.pragma('quick_check') as Array<{ quick_check: string }>;
+        testDb.close();
+        if (check && check.length > 0 && check[0].quick_check === 'ok') {
+          return c;
+        }
       }
     } catch {}
   }
@@ -287,12 +292,27 @@ export class SqliteNewsStore implements INewsStore {
         this.db = new Database(resolvedPath, {
           timeout: 5000,
         });
-      } catch {
-        const fallbackPath = path.join(os.tmpdir(), 'norma-juridica-news-fallback.db');
-        this.db = new Database(fallbackPath, {
-          timeout: 5000,
-        });
-        this.dbPath = fallbackPath;
+        // Validate database health
+        const check = this.db.pragma('quick_check') as Array<{ quick_check: string }>;
+        if (!check || check.length === 0 || check[0].quick_check !== 'ok') {
+          throw new Error('Database integrity check failed: ' + JSON.stringify(check));
+        }
+      } catch (openErr) {
+        console.warn('[SqliteNewsStore] Banco inicial malformado ou inacessível, recriando limpo:', openErr);
+        if (this.db) {
+          try { this.db.close(); } catch {}
+          this.db = null;
+        }
+        try {
+          if (fs.existsSync(resolvedPath)) {
+            fs.unlinkSync(resolvedPath);
+          }
+        } catch {}
+
+        // Fallback to fresh clean database
+        const cleanPath = path.join(os.tmpdir(), `norma-juridica-news-${Date.now()}.db`);
+        this.db = new Database(cleanPath, { timeout: 5000 });
+        this.dbPath = cleanPath;
         this.isEphemeral = true;
       }
 
@@ -321,10 +341,46 @@ export class SqliteNewsStore implements INewsStore {
         }
       } catch (seedErr) {
         console.warn('[SqliteNewsStore] Aviso ao carregar seed inicial:', seedErr);
+        // If the database threw an error (e.g. malformed), recreate it cleanly in tmp
+        try {
+          if (this.db) {
+            try { this.db.close(); } catch {}
+          }
+          const freshFallback = path.join(os.tmpdir(), `norma-juridica-fresh-${Date.now()}.db`);
+          this.db = new Database(freshFallback, { timeout: 5000 });
+          this.dbPath = freshFallback;
+          this.isEphemeral = true;
+          this.setupSchema(this.db);
+          const seedJson = findSeedJsonPath();
+          if (seedJson) {
+            const raw = fs.readFileSync(seedJson, 'utf8');
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              await this.upsertNews(parsed);
+            }
+          }
+        } catch (recoverErr) {
+          console.error('[SqliteNewsStore] Falha crítica ao recuperar banco:', recoverErr);
+        }
       }
     } catch (err) {
-      console.error('Falha ao inicializar SQLite store:', err);
-      throw err;
+      console.error('Falha ao inicializar SQLite store, usando fallback em memória:', err);
+      try {
+        const memoryFallback = path.join(os.tmpdir(), `norma-juridica-mem-${Date.now()}.db`);
+        this.db = new Database(memoryFallback, { timeout: 5000 });
+        this.dbPath = memoryFallback;
+        this.isEphemeral = true;
+        this.setupSchema(this.db);
+        this.initialized = true;
+        const seedJson = findSeedJsonPath();
+        if (seedJson) {
+          const raw = fs.readFileSync(seedJson, 'utf8');
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            await this.upsertNews(parsed);
+          }
+        }
+      } catch {}
     }
   }
 
@@ -352,6 +408,10 @@ export class SqliteNewsStore implements INewsStore {
         }
 
         this.db = new Database(this.dbPath, { timeout: 5000 });
+        const check = this.db.pragma('quick_check') as Array<{ quick_check: string }>;
+        if (!check || check.length === 0 || check[0].quick_check !== 'ok') {
+          throw new Error('Database integrity check failed in ensureDb: ' + JSON.stringify(check));
+        }
         try {
           this.db.pragma('journal_mode = WAL');
           this.db.pragma('synchronous = NORMAL');
@@ -361,12 +421,28 @@ export class SqliteNewsStore implements INewsStore {
         this.initialized = true;
       } catch (err) {
         console.warn('[SqliteNewsStore] Falha em ensureDb, usando fallback tmpdir:', err);
-        const fallbackPath = path.join(os.tmpdir(), 'norma-juridica-news-fallback.db');
+        if (this.db) {
+          try { this.db.close(); } catch {}
+          this.db = null;
+        }
+        const fallbackPath = path.join(os.tmpdir(), `norma-juridica-fresh-${Date.now()}.db`);
         this.db = new Database(fallbackPath, { timeout: 5000 });
         this.dbPath = fallbackPath;
         this.isEphemeral = true;
         this.setupSchema(this.db);
         this.initialized = true;
+
+        // Auto re-seed fallback from seed-news.json
+        try {
+          const seedJson = findSeedJsonPath();
+          if (seedJson && fs.existsSync(seedJson)) {
+            const raw = fs.readFileSync(seedJson, 'utf8');
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              this.upsertNews(parsed).catch(() => {});
+            }
+          }
+        } catch {}
       }
     }
     return this.db;
@@ -466,26 +542,73 @@ export class SqliteNewsStore implements INewsStore {
 
     const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-    // Total count for query
-    const countStmt = db.prepare(`SELECT COUNT(*) as count FROM news ${whereSql}`);
-    const countRow = countStmt.get(...params) as { count: number } | undefined;
-    const total = countRow ? countRow.count : 0;
+    try {
+      // Total count for query
+      const countStmt = db.prepare(`SELECT COUNT(*) as count FROM news ${whereSql}`);
+      const countRow = countStmt.get(...params) as { count: number } | undefined;
+      const total = countRow ? countRow.count : 0;
 
-    // Items query with pagination
-    const validOrder = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
-    const itemsSql = `
-      SELECT * FROM news
-      ${whereSql}
-      ORDER BY pub_date_timestamp ${validOrder}
-      LIMIT ? OFFSET ?
-    `;
+      // Items query with pagination
+      const validOrder = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+      const itemsSql = `
+        SELECT * FROM news
+        ${whereSql}
+        ORDER BY pub_date_timestamp ${validOrder}
+        LIMIT ? OFFSET ?
+      `;
 
-    const itemsStmt = db.prepare(itemsSql);
-    const rows = itemsStmt.all(...params, limit, offset) as Record<string, unknown>[];
+      const itemsStmt = db.prepare(itemsSql);
+      const rows = itemsStmt.all(...params, limit, offset) as Record<string, unknown>[];
 
-    const items = rows.map(r => this.rowToNewsItem(r));
+      const items = rows.map(r => this.rowToNewsItem(r));
 
-    return { items, total };
+      return { items, total };
+    } catch (queryErr) {
+      console.error('[SqliteNewsStore] Erro ao consultar notícias no SQLite:', queryErr);
+      // Fallback: If query fails due to malformed db, reset db connection and reseed
+      try {
+        if (this.db) {
+          try { this.db.close(); } catch {}
+          this.db = null;
+        }
+        this.initialized = false;
+        const seedJson = findSeedJsonPath();
+        if (seedJson && fs.existsSync(seedJson)) {
+          const raw = fs.readFileSync(seedJson, 'utf8');
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            let filtered = parsed;
+            if (category && category !== 'all' && category !== 'todas') {
+              const aliases = getCategoryAliases(category);
+              const sourceIds = getCategorySourceIds(category);
+              filtered = filtered.filter(item => {
+                const itemCat = (item.category || '').toLowerCase();
+                const itemCatId = (item.categoryId || '').toLowerCase();
+                const itemSourceId = (item.sourceId || '').toLowerCase();
+                return aliases.some(a => a.toLowerCase() === itemCat || a.toLowerCase() === itemCatId) ||
+                       sourceIds.some(s => s.toLowerCase() === itemSourceId) ||
+                       itemCat === category.toLowerCase() ||
+                       itemCatId === category.toLowerCase();
+              });
+            }
+            if (searchQuery && searchQuery.trim()) {
+              const q = searchQuery.toLowerCase();
+              filtered = filtered.filter(item =>
+                (item.title && item.title.toLowerCase().includes(q)) ||
+                (item.summary && item.summary.toLowerCase().includes(q))
+              );
+            }
+            return {
+              items: filtered.slice(offset, offset + limit),
+              total: filtered.length,
+            };
+          }
+        }
+      } catch (fbErr) {
+        console.error('[SqliteNewsStore] Erro no fallback de leitura JSON:', fbErr);
+      }
+      throw queryErr;
+    }
   }
 
   public async getNewsBySlugOrId(slugOrId: string): Promise<NewsItem | null> {
@@ -498,20 +621,45 @@ export class SqliteNewsStore implements INewsStore {
       LIMIT 1
     `);
 
-    const row = stmt.get(slugOrId, slugOrId, `%/noticia/${slugOrId}`) as Record<string, unknown> | undefined;
-    if (row) {
-      return this.rowToNewsItem(row);
+    try {
+      const row = stmt.get(slugOrId, slugOrId, `%/noticia/${slugOrId}`) as Record<string, unknown> | undefined;
+      if (row) {
+        return this.rowToNewsItem(row);
+      }
+
+      // Secondary approximate match if slug has trailing or leading dashes
+      const clean = slugOrId.replace(/^-+|-+$/g, '');
+      const approxStmt = db.prepare(`
+        SELECT * FROM news
+        WHERE slug LIKE ?
+        LIMIT 1
+      `);
+      const approxRow = approxStmt.get(`%${clean}%`) as Record<string, unknown> | undefined;
+      if (approxRow) return this.rowToNewsItem(approxRow);
+    } catch (err) {
+      console.error('[SqliteNewsStore] Erro ao buscar notícia por slug/id:', err);
     }
 
-    // Secondary approximate match if slug has trailing or leading dashes
-    const clean = slugOrId.replace(/^-+|-+$/g, '');
-    const approxStmt = db.prepare(`
-      SELECT * FROM news
-      WHERE slug LIKE ?
-      LIMIT 1
-    `);
-    const approxRow = approxStmt.get(`%${clean}%`) as Record<string, unknown> | undefined;
-    return approxRow ? this.rowToNewsItem(approxRow) : null;
+    // Fallback: search in seed-news.json
+    try {
+      const seedJson = findSeedJsonPath();
+      if (seedJson && fs.existsSync(seedJson)) {
+        const raw = fs.readFileSync(seedJson, 'utf8');
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          const clean = slugOrId.replace(/^-+|-+$/g, '').toLowerCase();
+          const found = parsed.find(item =>
+            item.id === slugOrId ||
+            item.slug === slugOrId ||
+            (item.slug && item.slug.toLowerCase().includes(clean)) ||
+            (item.link && item.link.toLowerCase().includes(clean))
+          );
+          if (found) return found;
+        }
+      }
+    } catch {}
+
+    return null;
   }
 
   public async upsertNews(items: NewsItem[]): Promise<UpsertResult> {

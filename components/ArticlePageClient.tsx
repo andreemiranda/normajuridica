@@ -56,7 +56,7 @@ export function ArticlePageClient({
   ].filter(Boolean) as string[];
 
   const images = Array.from(new Set(rawImages));
-  const [selectedImage, setSelectedImage] = useState<string>(images[0] || article.imageUrl || '');
+  const [selectedImage, setSelectedImage] = useState<string>(images[0] || article.imageUrl || '/cover.png');
 
   // Bookmarking via external store subscription
   const isBookmarked = useIsBookmarked(article.id || article.slug);
@@ -422,7 +422,7 @@ export function ArticlePageClient({
             <div className="flex items-center gap-2 mb-3">
               <BookOpen className="w-5 h-5 text-brand-700 dark:text-brand-400" />
               <h2 className="text-base font-black text-brand-900 dark:text-brand-300 uppercase tracking-tight">
-                Resumo da Notícia • Síntese Editorial
+                Resumo da Notícia
               </h2>
             </div>
 

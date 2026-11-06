@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err: unknown) {
+    console.error('API /api/news error details:', err);
     const errorMsg = err instanceof Error ? err.message : 'Erro ao processar notícias';
     return NextResponse.json(
       sanitizePublicData({ error: errorMsg, items: [] }),

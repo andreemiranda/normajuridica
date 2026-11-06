@@ -20,5 +20,11 @@
         }
       ]
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/sync?action=sync",
+      "schedule": "* * * * *"
+    }
   ]
 }

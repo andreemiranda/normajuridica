@@ -349,6 +349,18 @@ export async function syncNewsSources(options: SyncOptions = {}): Promise<SyncEx
         const slug = slugify(rawTitle, itemIdStr);
         const pubDate = item.pubDate || item.date || new Date().toISOString();
 
+        let finalImageUrl = images[0] || '';
+        if (!finalImageUrl) {
+          const pool = sharedCategoryImages.get(effectiveCategory) || allValidImages;
+          if (pool && pool.length > 0) {
+            finalImageUrl = pool[Math.abs(slug.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)) % pool.length];
+            images.push(finalImageUrl);
+          } else {
+            finalImageUrl = '/cover.png';
+            images.push('/cover.png');
+          }
+        }
+
         const newsItem: NewsItem & { sourceId: string } = {
           id: slug,
           slug,
@@ -363,7 +375,7 @@ export async function syncNewsSources(options: SyncOptions = {}): Promise<SyncEx
           sourceId: source.id,
           summary,
           contentHtml,
-          imageUrl: images[0] || '',
+          imageUrl: finalImageUrl,
           images,
           imageCaption: fixEncoding(item.alt || `Registro jornalístico editorial • ${effectiveCategory}`),
           author,

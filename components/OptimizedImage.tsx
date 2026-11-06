@@ -5,6 +5,7 @@ import Image from 'next/image';
 
 interface OptimizedImageProps {
   src?: string;
+  fallbackSrc?: string;
   alt: string;
   width?: number;
   height?: number;
@@ -16,6 +17,7 @@ interface OptimizedImageProps {
 
 export function OptimizedImage({
   src,
+  fallbackSrc = '/cover.png',
   alt,
   width,
   height,
@@ -24,23 +26,27 @@ export function OptimizedImage({
   sizes,
   className = '',
 }: OptimizedImageProps) {
-  const [useDirectFallback, setUseDirectFallback] = useState(false);
-  const [imgError, setImgError] = useState(false);
+  const cleanSrc = (src && typeof src === 'string' && src.trim() && src.trim() !== 'undefined' && src.trim() !== 'null')
+    ? src.trim()
+    : '';
 
-  // If there is no image url from the API or failed, don't show artificial fallback images
-  if (!src || imgError) {
-    return null;
-  }
+  const initialSrc = cleanSrc || fallbackSrc;
+  const isGazetaEsportiva = initialSrc.toLowerCase().includes('gazetaesportiva.com');
+  const isLocal = initialSrc.startsWith('/');
 
-  // Detect gazetaesportiva.com domain or fallback when Next image optimizer fails
-  const isGazetaEsportiva = src.toLowerCase().includes('gazetaesportiva.com');
+  // Load mode: 'next_image' | 'direct_img' | 'fallback'
+  const [loadMode, setLoadMode] = useState<'next_image' | 'direct_img' | 'fallback'>(
+    isGazetaEsportiva || isLocal || !cleanSrc ? 'direct_img' : 'next_image'
+  );
 
-  if (isGazetaEsportiva || useDirectFallback) {
+  const activeSrc = loadMode === 'fallback' ? fallbackSrc : initialSrc;
+
+  // Direct unoptimized image embedding (for gazetaesportiva.com, local assets, fallback, or when Next optimizer fails)
+  if (loadMode === 'direct_img' || loadMode === 'fallback') {
     return (
-      // Direct unoptimized image embedding
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={src}
+        src={activeSrc}
         alt={alt || 'Norma Jurídica'}
         loading={priority ? 'eager' : 'lazy'}
         decoding="async"
@@ -48,17 +54,21 @@ export function OptimizedImage({
         data-pin-nopin="true"
         data-pin-no-hover="true"
         suppressHydrationWarning
-        onError={() => setImgError(true)}
+        onError={() => {
+          if (loadMode !== 'fallback') {
+            setLoadMode('fallback');
+          }
+        }}
         className={`${fill ? 'absolute inset-0 w-full h-full object-cover' : ''} transition-transform duration-500 ease-out group-hover:scale-105 hover:scale-105 ${className}`}
         style={!fill && (width || height) ? { width: width ? `${width}px` : undefined, height: height ? `${height}px` : undefined } : undefined}
       />
     );
   }
 
-  // All other sources start with Next.js optimized next_image mode, with auto-fallback to direct <img>
+  // All other sources start with Next.js optimized next_image mode, with auto-fallback to direct <img> then /cover.png
   return (
     <Image
-      src={src}
+      src={initialSrc}
       alt={alt || 'Norma Jurídica'}
       width={!fill ? width || 800 : undefined}
       height={!fill ? height || 450 : undefined}
@@ -69,7 +79,7 @@ export function OptimizedImage({
       data-pin-nopin="true"
       data-pin-no-hover="true"
       suppressHydrationWarning
-      onError={() => setUseDirectFallback(true)}
+      onError={() => setLoadMode('direct_img')}
       className={`transition-transform duration-500 ease-out group-hover:scale-105 hover:scale-105 ${className}`}
     />
   );
