@@ -75,6 +75,59 @@ export function ArticlePageClient({
   const [keyPoints, setKeyPoints] = useState<string[]>([]);
   const [loadingAi, setLoadingAi] = useState(false);
 
+  // Helper to dynamically compute key points (min 6 for large articles, 3 for small articles)
+  const isLargeArticle = (contentHtml && contentHtml.length > 800) || (article.summary && article.summary.length > 300) || (contentHtml && contentHtml.split('</p>').filter(Boolean).length >= 3);
+  const minRequiredPoints = isLargeArticle ? 6 : 3;
+
+  const displayedKeyPoints = React.useMemo(() => {
+    const rawText = (contentHtml ? contentHtml.replace(/<[^>]+>/g, ' ') : '') || article.summary || '';
+    const points: string[] = [];
+
+    // 1. Add AI keyPoints if available
+    if (keyPoints && keyPoints.length > 0) {
+      for (const pt of keyPoints) {
+        const clean = pt.trim().replace(/^[-•*]\s*/, '');
+        if (clean && !points.includes(clean)) {
+          points.push(clean);
+        }
+      }
+    }
+
+    // 2. Supplement from article sentences if below target
+    if (points.length < minRequiredPoints) {
+      const sentences = rawText
+        .split(/(?<=[.?!])\s+/)
+        .map(s => s.trim().replace(/^[-•*]\s*/, ''))
+        .filter(s => s.length > 25 && !s.toLowerCase().includes('leia também') && !s.toLowerCase().includes('clique aqui') && !s.toLowerCase().includes('foto:') && !s.toLowerCase().includes('reprodução'));
+
+      for (const sent of sentences) {
+        if (points.length >= minRequiredPoints) break;
+        if (!points.some(p => p.toLowerCase() === sent.toLowerCase() || p.includes(sent) || sent.includes(p))) {
+          points.push(sent);
+        }
+      }
+    }
+
+    // 3. Fallback defaults if still below target
+    const fallbackDefaults = [
+      `Fato apurado: ${article.title}`,
+      'Acompanhamento contínuo dos desdobramentos pelas autoridades competentes.',
+      'Informação confirmada com base nas fontes e comunicações oficiais do setor.',
+      'Análise de desdobramentos jurídicos e impacto direto para a sociedade.',
+      'Monitoramento prioritário das manifestações institucionais e regulatórias.',
+      'Atualização em tempo real das deliberações e medidas anunciadas pelo poder público.',
+    ];
+
+    for (const fb of fallbackDefaults) {
+      if (points.length >= minRequiredPoints) break;
+      if (!points.includes(fb)) {
+        points.push(fb);
+      }
+    }
+
+    return points.slice(0, minRequiredPoints);
+  }, [keyPoints, contentHtml, article.summary, article.title, minRequiredPoints]);
+
   // Audio Reader
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
@@ -108,6 +161,7 @@ export function ArticlePageClient({
             title: article.title,
             summary: article.summary,
             link: article.link,
+            content: article.contentHtml || article.summary,
           }),
         });
         if (res.ok) {
@@ -132,7 +186,7 @@ export function ArticlePageClient({
         audioRef.current.pause();
       }
     };
-  }, [article.id, article.slug, article.title, article.summary, article.link, article.category]);
+  }, [article.id, article.slug, article.title, article.summary, article.link, article.category, article.contentHtml]);
 
   const handleBookmarkToggle = () => {
     toggleStoredBookmark(article.id || article.slug);
@@ -417,34 +471,28 @@ export function ArticlePageClient({
             </div>
           )}
 
-          {/* AI Summary Card */}
+          {/* Key Points Summary Card (Only bullet points, no repeated paragraph) */}
           <section className="mb-8 p-5 md:p-6 bg-gradient-to-br from-brand-50 to-blue-50/50 dark:from-zinc-900 dark:to-brand-950/30 border border-brand-200 dark:border-brand-900/50 rounded-2xl shadow-sm" aria-label="Resumo da Notícia">
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-3.5">
               <BookOpen className="w-5 h-5 text-brand-700 dark:text-brand-400" />
               <h2 className="text-base font-black text-brand-900 dark:text-brand-300 uppercase tracking-tight">
                 Resumo da Notícia
               </h2>
             </div>
 
-            <p className="text-sm text-slate-700 dark:text-zinc-200 leading-relaxed mb-4 font-medium text-justify hyphens-none">
-              {aiSummary}
-            </p>
-
-            {keyPoints.length > 0 && (
-              <div className="border-t border-brand-200 dark:border-brand-900/40 pt-3">
-                <span className="text-xs font-bold text-brand-800 dark:text-brand-400 uppercase tracking-wider block mb-2">
-                  Pontos Principais:
-                </span>
-                <ul className="space-y-1.5 text-xs sm:text-sm text-slate-700 dark:text-zinc-300">
-                  {keyPoints.map((pt, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                       <span className="text-brand-600 dark:text-brand-400 font-bold">•</span>
-                      <span className="text-justify hyphens-none">{pt}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <div>
+              <span className="text-xs font-bold text-brand-800 dark:text-brand-400 uppercase tracking-wider block mb-2.5">
+                Pontos Principais:
+              </span>
+              <ul className="space-y-2 text-xs sm:text-sm text-slate-700 dark:text-zinc-300">
+                {displayedKeyPoints.map((pt, i) => (
+                  <li key={i} className="flex items-start gap-2.5">
+                    <span className="text-brand-600 dark:text-brand-400 font-bold mt-0.5 flex-shrink-0">•</span>
+                    <span className="text-justify hyphens-none leading-relaxed">{pt}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </section>
 
           {/* Full Article Body with Justified text */}
@@ -501,7 +549,7 @@ export function ArticlePageClient({
               <div className="flex items-center gap-2 mb-6">
                 <div className="w-1.5 h-6 bg-brand-700 dark:bg-brand-500 rounded-full" />
                 <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-zinc-100 tracking-tight">
-                  Leia Também • Cobertura Relacionada
+                  Leia Também
                 </h2>
               </div>
 

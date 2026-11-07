@@ -113,24 +113,24 @@ export function NewsCard({
   return (
     <article className="group flex flex-col bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
       {/* 16:9 Image container with zoom on hover */}
-      <Link
-        href={`/noticia/${news.slug}`}
-        prefetch={true}
-        suppressHydrationWarning
-        data-pin-nopin="true"
-        data-pin-no-hover="true"
-        className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100 dark:bg-zinc-800 block focus:outline-none zoom-frame"
-      >
-        <OptimizedImage
-          src={news.imageUrl || (news.images && news.images[0]) || '/cover.png'}
-          alt={news.title}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover group-hover:scale-110 hover:scale-110 transition-transform duration-500 ease-out"
-        />
+      <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100 dark:bg-zinc-800 block zoom-frame">
+        <Link
+          href={`/noticia/${news.slug}`}
+          prefetch={true}
+          className="absolute inset-0 block focus:outline-none"
+          aria-label={news.title}
+        >
+          <OptimizedImage
+            src={news.imageUrl || (news.images && news.images[0]) || '/cover.png'}
+            alt={news.title}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover group-hover:scale-110 hover:scale-110 transition-transform duration-500 ease-out"
+          />
+        </Link>
 
-        {/* Quick action buttons on image */}
-        <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity z-10">
+        {/* Quick action buttons on image - separate from Link to prevent invalid HTML nesting and hydration mismatches */}
+        <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity z-10 pointer-events-auto">
           {onPlayAudio && (
             <button
               type="button"
@@ -158,7 +158,7 @@ export function NewsCard({
             <Bookmark className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-current' : ''}`} />
           </button>
         </div>
-      </Link>
+      </div>
 
       {/* Card Content */}
       <div className="p-4 md:p-5 flex-1 flex flex-col justify-between">

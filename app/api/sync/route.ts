@@ -72,9 +72,9 @@ async function handleSyncRequest(req: NextRequest) {
 
   const durationMs = Date.now() - startTime;
 
-  const maxItems = parseInt(process.env.NEWS_STORE_MAX_ITEMS || '15000', 10);
-  const maxPerSource = parseInt(process.env.NEWS_STORE_MAX_PER_SOURCE || '350', 10);
-  const retentionDays = parseInt(process.env.NEWS_RETENTION_DAYS || '90', 10);
+  const maxItems = Math.max(15000, parseInt(process.env.NEWS_STORE_MAX_ITEMS || '15000', 10));
+  const maxPerSource = Math.max(350, parseInt(process.env.NEWS_STORE_MAX_PER_SOURCE || '350', 10));
+  const retentionDays = Math.max(90, parseInt(process.env.NEWS_RETENTION_DAYS || '90', 10));
   const syncIntervalSec = parseInt(process.env.NEWS_SYNC_INTERVAL_SECONDS || '60', 10);
 
   const payload = {

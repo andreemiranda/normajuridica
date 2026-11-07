@@ -53,6 +53,7 @@ let inMemoryShortCache: { key: string; result: FetchNewsResult; timestamp: numbe
 
 export function clearNewsCache() {
   inMemoryShortCache = null;
+  cachedSeedItems = null;
 }
 
 export async function fetchNews(options: FetchNewsOptions = {}): Promise<FetchNewsResult> {

@@ -326,10 +326,10 @@ export class SqliteNewsStore implements INewsStore {
       this.setupSchema(this.db);
       this.initialized = true;
 
-      // Seed fallback from seed-news.json if database has 0 items
+      // Seed fallback from seed-news.json if database has fewer than 15000 items
       try {
         const countRow = this.db.prepare('SELECT COUNT(*) as count FROM news').get() as { count: number } | undefined;
-        if (!countRow || countRow.count === 0) {
+        if (!countRow || countRow.count < 15000) {
           const seedJson = findSeedJsonPath();
           if (seedJson) {
             const raw = fs.readFileSync(seedJson, 'utf8');
@@ -792,9 +792,9 @@ export class SqliteNewsStore implements INewsStore {
   } = {}): Promise<PruneResult> {
     const db = this.ensureDb();
 
-    const maxItems = options.maxItems ?? parseInt(process.env.NEWS_STORE_MAX_ITEMS || '15000', 10);
-    const maxPerSource = options.maxPerSource ?? parseInt(process.env.NEWS_STORE_MAX_PER_SOURCE || '350', 10);
-    const retentionDays = options.retentionDays ?? parseInt(process.env.NEWS_RETENTION_DAYS || '90', 10);
+    const maxItems = Math.max(15000, options.maxItems ?? parseInt(process.env.NEWS_STORE_MAX_ITEMS || '15000', 10));
+    const maxPerSource = Math.max(350, options.maxPerSource ?? parseInt(process.env.NEWS_STORE_MAX_PER_SOURCE || '350', 10));
+    const retentionDays = Math.max(90, options.retentionDays ?? parseInt(process.env.NEWS_RETENTION_DAYS || '90', 10));
 
     let prunedByRetention = 0;
     let prunedBySourceLimit = 0;
