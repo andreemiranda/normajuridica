@@ -69,11 +69,9 @@ export function FeaturedNews({ news }: FeaturedNewsProps) {
       {/* Main Slide Card in 16:9 Format */}
       <div
         className="relative w-full aspect-[16/9] rounded-3xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-zinc-800 shadow-xl group"
-        suppressHydrationWarning
       >
         <div
           className="relative w-full h-full overflow-hidden zoom-frame"
-          suppressHydrationWarning
           data-pin-nopin="true"
           data-pin-no-hover="true"
         >

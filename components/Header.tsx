@@ -142,11 +142,11 @@ export function Header({
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
           {/* Date & Brasília live clock with seconds */}
           <div className="flex items-center gap-2.5">
-            <span className="font-medium text-slate-200" suppressHydrationWarning>
+            <span className="font-medium text-slate-200">
               {clock.date}
             </span>
             <span className="text-zinc-600">•</span>
-            <span className="font-mono font-semibold text-slate-300 text-xs tracking-wider" suppressHydrationWarning>
+            <span className="font-mono font-semibold text-slate-300 text-xs tracking-wider">
               {clock.time}
             </span>
           </div>
@@ -196,14 +196,13 @@ export function Header({
               aria-label="Ajustar tamanho da fonte"
             >
               <Type className="w-3 h-3 text-brand-400" />
-              <span suppressHydrationWarning>{fontSize === 'normal' ? 'A' : fontSize === 'large' ? 'A+' : 'A++'}</span>
+              <span>{fontSize === 'normal' ? 'A' : fontSize === 'large' ? 'A+' : 'A++'}</span>
             </button>
 
             {/* Dark / Light mode toggle */}
             <button
               type="button"
               onClick={toggleTheme}
-              suppressHydrationWarning
               className="hover:text-white flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors cursor-pointer"
               title={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
               aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}

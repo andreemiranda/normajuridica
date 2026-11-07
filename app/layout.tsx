@@ -84,6 +84,9 @@ export const metadata: Metadata = {
     images: [`${baseUrl}/cover.png`],
     creator: '@normajuridica',
   },
+  other: {
+    pinterest: 'nopin',
+  },
   robots: {
     index: true,
     follow: true,
@@ -116,6 +119,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${inter.variable} ${sourceSerif.variable} antialiased`} suppressHydrationWarning>
       <head>
+        {/* Instruction for browser extensions (Pinterest, etc.) to not inject hover buttons or mutate DOM */}
+        <meta name="pinterest" content="nopin" />
+        <meta name="pinterest" content="nohover" />
+
         {/* DNS-prefetch & preconnect para Fontes de Notícias e CDNs de Imagens */}
         <link rel="dns-prefetch" href="https://news-sources-api.vercel.app" />
         <link rel="dns-prefetch" href="https://s2-g1.glbimg.com" />

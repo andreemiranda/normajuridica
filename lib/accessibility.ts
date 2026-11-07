@@ -152,19 +152,39 @@ export function useIsClient(): boolean {
 }
 
 export function useTheme(): 'light' | 'dark' {
-  return useSyncExternalStore(
-    subscribeTheme,
-    getStoredTheme,
-    getServerTheme
-  );
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  useEffect(() => {
+    const sync = () => {
+      setTheme(getStoredTheme());
+    };
+    const timer = setTimeout(sync, 0);
+    const unsub = subscribeTheme(sync);
+    return () => {
+      clearTimeout(timer);
+      unsub();
+    };
+  }, []);
+
+  return theme;
 }
 
 export function useFontSize(): FontSizeLevel {
-  return useSyncExternalStore(
-    subscribeFontSize,
-    getStoredFontSize,
-    getServerFontSize
-  );
+  const [fontSize, setFontSize] = useState<FontSizeLevel>('normal');
+
+  useEffect(() => {
+    const sync = () => {
+      setFontSize(getStoredFontSize());
+    };
+    const timer = setTimeout(sync, 0);
+    const unsub = subscribeFontSize(sync);
+    return () => {
+      clearTimeout(timer);
+      unsub();
+    };
+  }, []);
+
+  return fontSize;
 }
 
 export function useBookmarksCount(): number {
@@ -174,9 +194,12 @@ export function useBookmarksCount(): number {
     const update = () => {
       setCount(getStoredBookmarks().length);
     };
-    update();
+    const timer = setTimeout(update, 0);
     const unsub = subscribeBookmarks(update);
-    return unsub;
+    return () => {
+      clearTimeout(timer);
+      unsub();
+    };
   }, []);
 
   return count;
@@ -191,9 +214,12 @@ export function useIsBookmarked(id: string): boolean {
       const list = getStoredBookmarks();
       setBookmarked(list.includes(String(id)));
     };
-    update();
+    const timer = setTimeout(update, 0);
     const unsub = subscribeBookmarks(update);
-    return unsub;
+    return () => {
+      clearTimeout(timer);
+      unsub();
+    };
   }, [id]);
 
   return bookmarked;
@@ -206,9 +232,12 @@ export function useAllBookmarks(): string[] {
     const update = () => {
       setBookmarks([...getStoredBookmarks()]);
     };
-    update();
+    const timer = setTimeout(update, 0);
     const unsub = subscribeBookmarks(update);
-    return unsub;
+    return () => {
+      clearTimeout(timer);
+      unsub();
+    };
   }, []);
 
   return bookmarks;

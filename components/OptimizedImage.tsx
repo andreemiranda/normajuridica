@@ -53,7 +53,6 @@ export function OptimizedImage({
         referrerPolicy="no-referrer"
         data-pin-nopin="true"
         data-pin-no-hover="true"
-        suppressHydrationWarning
         onError={() => {
           if (loadMode !== 'fallback') {
             setLoadMode('fallback');
@@ -78,7 +77,6 @@ export function OptimizedImage({
       referrerPolicy="no-referrer"
       data-pin-nopin="true"
       data-pin-no-hover="true"
-      suppressHydrationWarning
       onError={() => setLoadMode('direct_img')}
       className={`transition-transform duration-500 ease-out group-hover:scale-105 hover:scale-105 ${className}`}
     />
