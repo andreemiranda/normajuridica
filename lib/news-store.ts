@@ -197,16 +197,33 @@ export function getSqliteDbPath(): { dbPath: string; isEphemeral: boolean } {
   }
 }
 
+const FEED_SELECT_COLUMNS = `
+  id, slug, title, link, pub_date, pub_date_timestamp, iso_date,
+  category, category_id, source, source_id, summary, image_url,
+  images_json, image_caption, author, original_category, created_at, updated_at
+`;
+
+interface QueryCacheEntry {
+  items: NewsItem[];
+  total: number;
+  timestamp: number;
+}
+
 export class SqliteNewsStore implements INewsStore {
   private db: Database.Database | null = null;
   private dbPath: string;
   private isEphemeral: boolean;
   private initialized = false;
+  private queryCache = new Map<string, QueryCacheEntry>();
 
   constructor() {
     const loc = getSqliteDbPath();
     this.dbPath = loc.dbPath;
     this.isEphemeral = loc.isEphemeral;
+  }
+
+  public clearCache(): void {
+    this.queryCache.clear();
   }
 
   public getDbLocation(): { path: string; isEphemeral: boolean } {
@@ -316,11 +333,14 @@ export class SqliteNewsStore implements INewsStore {
         this.isEphemeral = true;
       }
 
-      // Enable Write-Ahead Logging (WAL) for high concurrency
+      // Enable Write-Ahead Logging (WAL) and memory optimizations for zero-copy concurrency
       try {
         this.db.pragma('journal_mode = WAL');
         this.db.pragma('synchronous = NORMAL');
         this.db.pragma('busy_timeout = 5000');
+        this.db.pragma('cache_size = -8000'); // 8MB in-memory page cache
+        this.db.pragma('mmap_size = 33554432'); // 32MB zero-copy memory map
+        this.db.pragma('temp_store = MEMORY'); // Temporary tables and sorts in RAM
       } catch {}
 
       this.setupSchema(this.db);
@@ -416,6 +436,9 @@ export class SqliteNewsStore implements INewsStore {
           this.db.pragma('journal_mode = WAL');
           this.db.pragma('synchronous = NORMAL');
           this.db.pragma('busy_timeout = 5000');
+          this.db.pragma('cache_size = -8000');
+          this.db.pragma('mmap_size = 33554432');
+          this.db.pragma('temp_store = MEMORY');
         } catch {}
         this.setupSchema(this.db);
         this.initialized = true;
@@ -542,16 +565,22 @@ export class SqliteNewsStore implements INewsStore {
 
     const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
+    const cacheKey = `${category || 'all'}|${sourceId || ''}|${searchQuery || ''}|${limit}|${offset}|${order}`;
+    const cached = this.queryCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < 20000) {
+      return { items: cached.items, total: cached.total };
+    }
+
     try {
       // Total count for query
       const countStmt = db.prepare(`SELECT COUNT(*) as count FROM news ${whereSql}`);
       const countRow = countStmt.get(...params) as { count: number } | undefined;
       const total = countRow ? countRow.count : 0;
 
-      // Items query with pagination
+      // Items query with pagination - selects only feed metadata columns, omitting large content_html
       const validOrder = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
       const itemsSql = `
-        SELECT * FROM news
+        SELECT ${FEED_SELECT_COLUMNS} FROM news
         ${whereSql}
         ORDER BY pub_date_timestamp ${validOrder}
         LIMIT ? OFFSET ?
@@ -561,6 +590,12 @@ export class SqliteNewsStore implements INewsStore {
       const rows = itemsStmt.all(...params, limit, offset) as Record<string, unknown>[];
 
       const items = rows.map(r => this.rowToNewsItem(r));
+
+      // Cache result with LRU bounds
+      if (this.queryCache.size > 200) {
+        this.queryCache.clear();
+      }
+      this.queryCache.set(cacheKey, { items, total, timestamp: Date.now() });
 
       return { items, total };
     } catch (queryErr) {
@@ -780,6 +815,7 @@ export class SqliteNewsStore implements INewsStore {
     });
 
     tx(items);
+    this.clearCache();
 
     const totalInStore = await this.count();
     return { inserted, updated, unchanged, totalInStore };
@@ -883,6 +919,7 @@ export class SqliteNewsStore implements INewsStore {
     });
 
     tx();
+    this.clearCache();
 
     const remaining = await this.count();
     const totalPruned = prunedByRetention + prunedBySourceLimit + prunedByMaxItems;

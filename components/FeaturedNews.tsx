@@ -19,39 +19,23 @@ export function FeaturedNews({ news }: FeaturedNewsProps) {
   const totalSlides = slides.length;
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto-advance slide every 6 seconds with progress bar
+  // Auto-advance slide every 6 seconds without triggering continuous React re-renders
   useEffect(() => {
-    if (totalSlides <= 1) return;
-
-    if (isPaused) {
+    if (totalSlides <= 1 || isPaused) {
       if (timerRef.current) clearTimeout(timerRef.current);
-      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
       return;
     }
 
-    const duration = 6000;
-    const intervalStep = 60;
-    let elapsed = 0;
-
-    progressIntervalRef.current = setInterval(() => {
-      elapsed += intervalStep;
-      setProgress((elapsed / duration) * 100);
-    }, intervalStep);
-
     timerRef.current = setTimeout(() => {
-      setProgress(0);
       setCurrentIndex(prev => (prev + 1) % totalSlides);
-    }, duration);
+    }, 6000);
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
-      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
     };
   }, [currentIndex, isPaused, totalSlides]);
 
@@ -140,11 +124,14 @@ export function FeaturedNews({ news }: FeaturedNewsProps) {
           </div>
         </div>
 
-        {/* Auto-Transition Progress Bar */}
+        {/* Auto-Transition Progress Bar - Hardware Accelerated GPU animation */}
         <div className="absolute bottom-0 left-0 right-0 bg-slate-800/80 h-1 overflow-hidden z-20">
           <div
-            className="h-full bg-gradient-to-r from-brand-600 via-brand-500 to-sky-400 transition-all duration-75 ease-linear"
-            style={{ width: `${progress}%` }}
+            key={currentIndex}
+            className="h-full bg-gradient-to-r from-brand-600 via-brand-500 to-sky-400 origin-left animate-slide-progress"
+            style={{
+              animationPlayState: isPaused ? 'paused' : 'running',
+            }}
           />
         </div>
       </div>

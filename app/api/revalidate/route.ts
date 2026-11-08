@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { clearNewsCache } from '@/lib/news-fetcher';
-import { sanitizePublicData } from '@/lib/security';
+import { sanitizePublicData, checkRateLimit, verifySecret } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +16,15 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleRevalidation(req: NextRequest) {
+  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip') || 'anonymous';
+  const rateLimit = checkRateLimit(`revalidate:${clientIp}`, 20, 60 * 1000);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      sanitizePublicData({ error: 'Muitas requisições de revalidação. Tente novamente em instantes.' }),
+      { status: 429 }
+    );
+  }
+
   const configuredSecret = process.env.REVALIDATE_SECRET || DEFAULT_SECRET;
 
   const url = req.nextUrl;
@@ -48,11 +57,11 @@ async function handleRevalidation(req: NextRequest) {
     } catch {}
   }
 
-  // Validate Secret: must match configuredSecret or DEFAULT_SECRET
+  // Constant-time secret validation to prevent timing attacks
   const isAuthorized =
-    secret === configuredSecret ||
-    secret === DEFAULT_SECRET ||
-    (process.env.REVALIDATE_SECRET && secret === process.env.REVALIDATE_SECRET);
+    verifySecret(secret, configuredSecret) ||
+    verifySecret(secret, DEFAULT_SECRET) ||
+    (process.env.REVALIDATE_SECRET ? verifySecret(secret, process.env.REVALIDATE_SECRET) : false);
 
   if (!isAuthorized) {
     return NextResponse.json(

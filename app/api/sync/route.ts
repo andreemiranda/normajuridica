@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getNewsStore } from '@/lib/news-store';
 import { syncNewsSources } from '@/lib/news-sync';
 import { getNewsApiConfig } from '@/lib/api-config';
-import { sanitizePublicData } from '@/lib/security';
+import { sanitizePublicData, checkRateLimit, verifySecret } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,10 +16,38 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleSyncRequest(req: NextRequest) {
+  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip') || 'anonymous';
   const searchParams = req.nextUrl.searchParams;
   const action = searchParams.get('action') || 'status';
   const format = searchParams.get('format') || '';
   const acceptHeader = req.headers.get('accept') || '';
+
+  // Rate limiting: protect server CPU from repeated sync/status polling
+  const rateLimit = checkRateLimit(`sync:${clientIp}`, 20, 60 * 1000);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      sanitizePublicData({ error: 'Muitas requisições ao serviço de sincronização. Tente novamente em instantes.' }),
+      { status: 429 }
+    );
+  }
+
+  // Authorization check for resource-heavy / mutating actions (sync, prune, export)
+  const isMutating = action === 'sync' || action === 'prune' || action === 'export';
+  if (isMutating) {
+    const configuredSecret = process.env.REVALIDATE_SECRET || process.env.CRON_SECRET;
+    if (configuredSecret) {
+      const authHeader = req.headers.get('authorization') || '';
+      const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+      const providedSecret = searchParams.get('secret') || searchParams.get('key') || bearer;
+
+      if (!verifySecret(providedSecret, configuredSecret)) {
+        return NextResponse.json(
+          sanitizePublicData({ error: 'Ação restrita. Segredo ou token de autorização não fornecido ou inválido.' }),
+          { status: 401 }
+        );
+      }
+    }
+  }
 
   const store = getNewsStore();
   await store.init();

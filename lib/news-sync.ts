@@ -192,18 +192,14 @@ export async function syncNewsSources(options: SyncOptions = {}): Promise<SyncEx
     const sharedCategoryImages = new Map<string, string[]>();
     const allValidImages: string[] = [];
 
-    // Parallel processing with concurrency limit of 8
-    const results = await asyncPool(8, targetSources, async (source: NewsApiSourceItem) => {
+    // Parallel processing with bounded concurrency of 6 to prevent server socket starvation
+    const results = await asyncPool(6, targetSources, async (source: NewsApiSourceItem) => {
       try {
-        const [newsRes, imagesRes] = await Promise.allSettled([
-          fetchWithRetryAndFallback<UpstreamSourceResponse | UpstreamArticleItem[]>(
-            `/api/news/${source.id}?limit=${limitPerSource}`,
-            5500
-          ),
-          fetchWithRetryAndFallback<unknown>(`/api/images/${source.id}`, 4000),
-        ]);
+        const rawData = await fetchWithRetryAndFallback<UpstreamSourceResponse | UpstreamArticleItem[]>(
+          `/api/news/${source.id}?limit=${limitPerSource}`,
+          5000
+        );
 
-        const rawData = newsRes.status === 'fulfilled' ? newsRes.value : null;
         let items: UpstreamArticleItem[] = [];
 
         if (rawData) {
@@ -218,9 +214,15 @@ export async function syncNewsSources(options: SyncOptions = {}): Promise<SyncEx
           return { source, items: [], imageMap: new Map<string, string[]>(), success: false };
         }
 
+        // Only fetch image registry if articles lack image URLs (saves up to 77 redundant network requests)
+        const needsImages = items.some(it => !it.imageUrl && !it.mediaUrl);
+        let imgRegistry: unknown = null;
+        if (needsImages) {
+          imgRegistry = await fetchWithRetryAndFallback<unknown>(`/api/images/${source.id}`, 3500);
+        }
+
         // Image Map
         const imageMap = new Map<string, string[]>();
-        const imgRegistry = imagesRes.status === 'fulfilled' ? imagesRes.value : null;
 
         if (imgRegistry) {
           let list: unknown[] = [];
@@ -461,7 +463,7 @@ export async function syncNewsSources(options: SyncOptions = {}): Promise<SyncEx
 // Background scheduler trigger helper
 export function triggerBackgroundSyncIfNeeded(): void {
   const syncIntervalSec = parseInt(process.env.NEWS_SYNC_INTERVAL_SECONDS || '60', 10);
-  const intervalMs = Math.max(10, syncIntervalSec) * 1000;
+  const intervalMs = Math.max(60, syncIntervalSec) * 1000;
 
   if (Date.now() - lastSyncTimestamp < intervalMs) {
     return;

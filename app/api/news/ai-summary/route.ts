@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { SITE_CONFIG } from '@/lib/site-config';
-import { sanitizePublicData } from '@/lib/security';
+import { sanitizePublicData, checkRateLimit } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +13,7 @@ interface SummaryCacheEntry {
 
 const summaryCache = new Map<string, SummaryCacheEntry>();
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const MAX_SUMMARY_CACHE_SIZE = 500;
 
 export async function GET() {
   const provider = SITE_CONFIG.aiSummary.endpoint
@@ -32,6 +33,15 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip') || 'anonymous';
+    const rateLimit = checkRateLimit(`ai-summary:${clientIp}`, 30, 5 * 60 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        sanitizePublicData({ error: 'Limite de requisições excedido. Tente novamente em instantes.' }),
+        { status: 429 }
+      );
+    }
+
     const body = await req.json().catch(() => ({}));
     const { title, summary, link, content } = body;
 
@@ -54,6 +64,12 @@ export async function POST(req: NextRequest) {
     const cached = summaryCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS && (!isLarge || cached.keyPoints.length >= 6)) {
       return NextResponse.json(sanitizePublicData({ ...cached, cached: true }));
+    }
+
+    // Ensure cache doesn't grow unbounded in memory
+    if (summaryCache.size > MAX_SUMMARY_CACHE_SIZE) {
+      const keysToDelete = Array.from(summaryCache.keys()).slice(0, 100);
+      keysToDelete.forEach(k => summaryCache.delete(k));
     }
 
     let generatedSummary = '';

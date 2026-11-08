@@ -74,7 +74,7 @@ export function NewsCard({
 
   if (variant === 'compact') {
     return (
-      <article className="group bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-3.5 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex gap-4 items-center">
+      <article className="content-auto group bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-3.5 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex gap-4 items-center">
         {/* Compact image container with overlay Link */}
         <div className="relative w-28 h-20 sm:w-36 sm:h-24 flex-shrink-0 rounded-xl overflow-hidden bg-slate-100 dark:bg-zinc-800">
           <OptimizedImage
@@ -146,7 +146,7 @@ export function NewsCard({
 
   // Grid variant
   return (
-    <article className="group flex flex-col bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+    <article className="content-auto group flex flex-col bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
       {/* 16:9 Image container with zoom on hover */}
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100 dark:bg-zinc-800 block zoom-frame">
         <OptimizedImage

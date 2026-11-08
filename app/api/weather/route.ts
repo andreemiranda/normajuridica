@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sanitizePublicData } from '@/lib/security';
+import { sanitizePublicData, checkRateLimit } from '@/lib/security';
 import { WeatherInfo } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -11,14 +11,28 @@ interface WeatherCacheEntry {
 
 const weatherCache = new Map<string, WeatherCacheEntry>();
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 min
+const MAX_WEATHER_CACHE_SIZE = 100;
 
 export async function GET(req: NextRequest) {
+  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip') || 'anonymous';
+  const rateLimit = checkRateLimit(`weather:${clientIp}`, 60, 60 * 1000);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      sanitizePublicData({ error: 'Muitas consultas de previsão do tempo. Tente novamente em instantes.' }),
+      { status: 429 }
+    );
+  }
+
   const query = req.nextUrl.searchParams.get('q') || 'Brasilia';
-  const cleanQuery = query.trim().toLowerCase();
+  const cleanQuery = query.trim().toLowerCase().slice(0, 50);
 
   const cached = weatherCache.get(cleanQuery);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
     return NextResponse.json(sanitizePublicData(cached.data));
+  }
+
+  if (weatherCache.size > MAX_WEATHER_CACHE_SIZE) {
+    weatherCache.clear();
   }
 
   const apiKey =

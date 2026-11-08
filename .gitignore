@@ -3,8 +3,17 @@ node_modules/
 coverage/
 .DS_Store
 *.log
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .env*
 !.env.example
+*.pem
+*.key
+*.cert
+credentials.json
 data/*.db-wal
 data/*.db-shm
 *.db-wal

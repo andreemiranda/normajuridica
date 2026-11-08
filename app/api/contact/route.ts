@@ -2,17 +2,37 @@ import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { SITE_CONFIG } from '@/lib/site-config';
 import { generateProtocolNumber } from '@/lib/protocol';
-import { sanitizePublicData } from '@/lib/security';
+import { sanitizePublicData, checkRateLimit, sanitizeInput } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip') || 'anonymous';
+    
+    // Rate limit: max 5 contact submissions per 10 minutes per IP
+    const rateLimit = checkRateLimit(`contact:${clientIp}`, 5, 10 * 60 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        sanitizePublicData({ error: 'Muitas tentativas de envio. Por segurança, aguarde alguns minutos antes de enviar uma nova mensagem.' }),
+        { status: 429 }
+      );
+    }
+
     const body = await req.json().catch(() => ({}));
-    const { name, email, subject, message } = body;
+    const rawName = typeof body.name === 'string' ? body.name : '';
+    const rawEmail = typeof body.email === 'string' ? body.email : '';
+    const rawSubject = typeof body.subject === 'string' ? body.subject : '';
+    const rawMessage = typeof body.message === 'string' ? body.message : '';
+
+    // Sanitize user inputs to prevent injection and header tampering
+    const name = sanitizeInput(rawName, 120);
+    const email = sanitizeInput(rawEmail, 150);
+    const cleanSubject = sanitizeInput(rawSubject, 150) || 'Contato Geral';
+    const message = sanitizeInput(rawMessage, 6000);
 
     // Validations (pt-BR)
-    if (!name || typeof name !== 'string' || name.trim().length < 2) {
+    if (!name || name.length < 2) {
       return NextResponse.json(
         sanitizePublicData({ error: 'O nome informado deve ter pelo menos 2 caracteres.' }),
         { status: 400 }
@@ -20,25 +40,23 @@ export async function POST(req: NextRequest) {
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || typeof email !== 'string' || !emailRegex.test(email.trim())) {
+    if (!email || !emailRegex.test(email)) {
       return NextResponse.json(
         sanitizePublicData({ error: 'Por favor, informe um endereço de e-mail válido.' }),
         { status: 400 }
       );
     }
 
-    if (!message || typeof message !== 'string' || message.trim().length < 10) {
+    if (!message || message.length < 10) {
       return NextResponse.json(
         sanitizePublicData({ error: 'A mensagem deve conter pelo menos 10 caracteres detalhando a solicitação.' }),
         { status: 400 }
       );
     }
 
-    const cleanSubject = subject || 'Contato Geral';
     const { formatted: protocolNumber } = generateProtocolNumber();
 
-    const clientIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'Não identificado';
-    const userAgent = req.headers.get('user-agent') || 'Não identificado';
+    const userAgent = sanitizeInput(req.headers.get('user-agent'), 200) || 'Não identificado';
     const dateFormatted = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
     // Send email via nodemailer if SMTP configured

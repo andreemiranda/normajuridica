@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sanitizePublicData } from '@/lib/security';
+import { sanitizePublicData, checkRateLimit } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +15,15 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip') || 'anonymous';
+    const rateLimit = checkRateLimit(`audio:${clientIp}`, 15, 5 * 60 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        sanitizePublicData({ enabled: false, fallback: 'web-speech', error: 'Limite de requisições atingido. Utilizando síntese nativa.' }),
+        { status: 429 }
+      );
+    }
+
     const body = await req.json().catch(() => ({}));
     const text = (body.text || '').slice(0, 4000).trim();
 

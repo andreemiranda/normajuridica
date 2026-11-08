@@ -158,8 +158,31 @@ nav a:hover,
   -webkit-hyphens: none;
 }
 
+/* GPU-accelerated hardware transition for carousel progress */
+@keyframes slideProgressBar {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+.animate-slide-progress {
+  animation: slideProgressBar 6s linear forwards;
+  transform-origin: left;
+  will-change: transform;
+}
+
+/* Offscreen rendering optimization to reduce client-side CPU and memory usage */
+.content-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 380px;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-marquee {
+  .animate-marquee,
+  .animate-slide-progress {
     animation: none;
   }
   * {

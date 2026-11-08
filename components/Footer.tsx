@@ -10,8 +10,16 @@ export function Footer() {
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 350);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const isOver = window.scrollY > 350;
+          setShowScrollTop(prev => (prev !== isOver ? isOver : prev));
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
