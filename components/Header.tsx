@@ -4,10 +4,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  ShieldCheck,
-  Headphones,
-  CheckCircle2,
-  Building2,
+  BookOpen,
+  Users,
+  Mail,
+  Scale,
   Sun,
   Moon,
   Search,
@@ -53,9 +53,9 @@ export function Header({
   const fontSize = useFontSize();
   const storeBookmarksCount = useBookmarksCount();
   const bookmarksCount =
-    typeof propBookmarksCount === 'number' && propBookmarksCount >= 0
-      ? propBookmarksCount
-      : storeBookmarksCount;
+    storeBookmarksCount > 0
+      ? storeBookmarksCount
+      : (typeof propBookmarksCount === 'number' && propBookmarksCount > 0 ? propBookmarksCount : storeBookmarksCount);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isListDrawerOpen, setIsListDrawerOpen] = useState(false);
@@ -170,38 +170,38 @@ export function Header({
             </span>
           </div>
 
-          {/* New Editorial & Public Policy Menus */}
+          {/* New Editorial Menus */}
           <div className="flex items-center gap-4 flex-wrap justify-center">
             <Link
-              href="/pagina/transparencia"
+              href="/pagina/editorial"
               className="hover:text-white flex items-center gap-1 text-[11px] font-medium transition-colors"
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-brand-400" />
-              <span>Transparência</span>
+              <BookOpen className="w-3.5 h-3.5 text-brand-400" />
+              <span>Editorial</span>
             </Link>
 
             <Link
-              href="/pagina/ouvidoria-geral"
+              href="/pagina/expediente"
               className="hover:text-white flex items-center gap-1 text-[11px] font-medium transition-colors"
             >
-              <Headphones className="w-3.5 h-3.5 text-brand-400" />
-              <span>Ouvidoria Geral</span>
+              <Users className="w-3.5 h-3.5 text-brand-400" />
+              <span>Expediente</span>
             </Link>
 
             <Link
-              href="/pagina/cadastro-certo"
+              href="/pagina/fale-conosco"
               className="hover:text-white flex items-center gap-1 text-[11px] font-medium transition-colors"
             >
-              <CheckCircle2 className="w-3.5 h-3.5 text-brand-400" />
-              <span>Cadastro Certo</span>
+              <Mail className="w-3.5 h-3.5 text-brand-400" />
+              <span>Fale Conosco</span>
             </Link>
 
             <Link
-              href="/pagina/gestao-publica-municipal"
+              href="/pagina/linha-editorial"
               className="hover:text-white flex items-center gap-1 text-[11px] font-medium transition-colors"
             >
-              <Building2 className="w-3.5 h-3.5 text-brand-400" />
-              <span>Gestão Pública Municipal</span>
+              <Scale className="w-3.5 h-3.5 text-brand-400" />
+              <span>Linha Editorial</span>
             </Link>
 
             <span className="text-zinc-700 hidden sm:inline">|</span>
@@ -312,6 +312,16 @@ export function Header({
               >
                 <Bookmark className={`w-4 h-4 ${isListDrawerOpen || bookmarksCount > 0 ? 'text-brand-300 dark:text-brand-400 fill-current' : 'text-slate-400'}`} />
                 <span>Minha Lista</span>
+                <span
+                  className={`text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center transition-colors ${
+                    bookmarksCount > 0
+                      ? 'bg-brand-700 dark:bg-brand-600 text-white'
+                      : 'bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400'
+                  }`}
+                  suppressHydrationWarning
+                >
+                  {bookmarksCount}
+                </span>
               </button>
 
               {/* Minha Lista Dropdown & Category Hub Modal */}

@@ -15,6 +15,22 @@ interface OptimizedImageProps {
   className?: string;
 }
 
+function extractCleanUrl(raw?: string): string {
+  if (!raw || typeof raw !== 'string') return '';
+  let str = raw.trim();
+  if (str === 'undefined' || str === 'null') return '';
+
+  // If passed an HTML fragment with <img src="..."
+  const imgMatch = str.match(/src=["']([^"']+)["']/i);
+  if (imgMatch && imgMatch[1]) {
+    str = imgMatch[1];
+  }
+
+  // Restore any accidentally sanitized glbimg URLs
+  str = str.replace(/s2-Norma\s*Jur[ií]dica/gi, 's2-globo');
+  return str.trim();
+}
+
 export function OptimizedImage({
   src,
   fallbackSrc = '/cover.png',
@@ -26,45 +42,36 @@ export function OptimizedImage({
   sizes,
   className = '',
 }: OptimizedImageProps) {
-  const cleanSrc = (src && typeof src === 'string' && src.trim() && src.trim() !== 'undefined' && src.trim() !== 'null')
-    ? src.trim()
-    : '';
-
+  const cleanSrc = extractCleanUrl(src);
   const initialSrc = cleanSrc || fallbackSrc;
   const isGazetaEsportiva = initialSrc.toLowerCase().includes('gazetaesportiva.com');
   const isLocal = initialSrc.startsWith('/');
 
-  // Load mode: 'next_image' | 'direct_img' | 'fallback'
-  const [loadMode, setLoadMode] = useState<'next_image' | 'direct_img' | 'fallback'>(
-    isGazetaEsportiva || isLocal || !cleanSrc ? 'direct_img' : 'next_image'
+  // Direct image loading for gazetaesportiva.com or local paths
+  // Next.js optimized loading with direct img fallback for all other sources
+  const [useDirectImg, setUseDirectImg] = useState<boolean>(
+    isGazetaEsportiva || isLocal || !cleanSrc
   );
 
-  const activeSrc = loadMode === 'fallback' ? fallbackSrc : initialSrc;
-
-  // Direct unoptimized image embedding (for gazetaesportiva.com, local assets, fallback, or when Next optimizer fails)
-  if (loadMode === 'direct_img' || loadMode === 'fallback') {
+  // If gazetaesportiva.com, local, or Next image optimization failed, render native <img> with original direct URL
+  if (useDirectImg) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={activeSrc}
+        src={initialSrc}
         alt={alt || 'Norma Jurídica'}
         loading={priority ? 'eager' : 'lazy'}
         decoding="async"
         referrerPolicy="no-referrer"
         data-pin-nopin="true"
         data-pin-no-hover="true"
-        onError={() => {
-          if (loadMode !== 'fallback') {
-            setLoadMode('fallback');
-          }
-        }}
         className={`${fill ? 'absolute inset-0 w-full h-full object-cover' : ''} transition-transform duration-500 ease-out group-hover:scale-105 hover:scale-105 ${className}`}
         style={!fill && (width || height) ? { width: width ? `${width}px` : undefined, height: height ? `${height}px` : undefined } : undefined}
       />
     );
   }
 
-  // All other sources start with Next.js optimized next_image mode, with auto-fallback to direct <img> then /cover.png
+  // Next.js optimized next_image mode with graceful fallback to native direct <img> upon error
   return (
     <Image
       src={initialSrc}
@@ -77,7 +84,7 @@ export function OptimizedImage({
       referrerPolicy="no-referrer"
       data-pin-nopin="true"
       data-pin-no-hover="true"
-      onError={() => setLoadMode('direct_img')}
+      onError={() => setUseDirectImg(true)}
       className={`transition-transform duration-500 ease-out group-hover:scale-105 hover:scale-105 ${className}`}
     />
   );

@@ -6,7 +6,7 @@ import { getNewsApiConfig, getNewsApiHeaders } from './api-config';
 import { ALL_NEWS_SOURCES } from './sources';
 import { NewsItem, NewsApiSourceItem } from './types';
 import { slugify, categorySlugify } from './slug';
-import { cleanTitle, cleanFullNewsText, isForbiddenVideoPost, removeTruncationMarkers, fixEncoding } from './sanitizer';
+import { cleanTitle, cleanFullNewsText, isForbiddenVideoPost, removeTruncationMarkers, fixEncoding, repairAndSanitizeArticleHtml, extractAllImagesFromHtml, stripHtmlTags } from './sanitizer';
 import { ensureCompleteArticleText } from './article-extractor';
 
 interface UpstreamArticleItem {
@@ -301,44 +301,52 @@ export async function syncNewsSources(options: SyncOptions = {}): Promise<SyncEx
         effectiveCategory = fixEncoding(effectiveCategory);
         const categoryId = categorySlugify(effectiveCategory);
 
-        // Summary
-        let summary = item.description || rawContent.replace(/<[^>]+>/g, ' ');
+        // Extract potential image from raw description if it contains <img
+        const descImgMatch = (item.description || '').match(/<img\b[^>]*src=["']([^"']+)["'][^>]*>/i) ||
+                             (item.description || '').match(/&lt;img\b[^&]*src=[&"']([^&"']+)[&"'][^&]*&gt;/i);
+        let extractedFromDesc = '';
+        if (descImgMatch && descImgMatch[1]) {
+          extractedFromDesc = descImgMatch[1].replace(/s2-Norma\s*Jur[ií]dica/gi, 's2-globo').trim();
+        }
+
+        // Summary - strictly stripped of all HTML tags and attributes
+        const rawDesc = item.description || rawContent || '';
+        let summary = stripHtmlTags(rawDesc);
         summary = fixEncoding(removeTruncationMarkers(cleanFullNewsText(summary)));
+        summary = summary.replace(/<[^>]+>/g, '').replace(/&lt;[^&]+&gt;/g, '').replace(/\s+/g, ' ').trim();
         if (summary.length > 260) {
           summary = summary.substring(0, 260).replace(/\s+[^\s]*$/, '') + '…';
         }
 
-        // Full content HTML
-        const contentHtml = fixEncoding(
-          ensureCompleteArticleText(
-            item.content ? item.content.split(/\n\n+/).map(p => `<p>${cleanFullNewsText(p)}</p>`).join('') : summary,
-            rawTitle,
-            effectiveCategory
-          )
+        // Full content HTML with repaired figures and closed attributes
+        const rawContentHtml = ensureCompleteArticleText(
+          item.content ? item.content.split(/\n\n+/).map(p => `<p>${cleanFullNewsText(p)}</p>`).join('') : summary,
+          rawTitle,
+          effectiveCategory
         );
+        const contentHtml = repairAndSanitizeArticleHtml(rawContentHtml);
 
-        // Collect article images
+        // Collect article images strictly belonging to this specific article
         const images: string[] = [];
         const addImg = (u?: string) => {
           if (isValidImageUrl(u) && !images.includes(u!)) {
-            images.push(u!);
-            const pool = sharedCategoryImages.get(effectiveCategory) || [];
-            if (!pool.includes(u!)) pool.push(u!);
-            sharedCategoryImages.set(effectiveCategory, pool);
-            if (!allValidImages.includes(u!)) allValidImages.push(u!);
+            images.push(u!.replace(/s2-Norma\s*Jur[ií]dica/gi, 's2-globo'));
           }
         };
 
         if (item.imageUrl) addImg(item.imageUrl);
         if (item.mediaUrl) addImg(item.mediaUrl);
+        if (extractedFromDesc) addImg(extractedFromDesc);
 
+        // Strict lookup by exact article unique identifiers (id, slug, exact title)
         const lookupKeys = [String(item.id || ''), String(item.slug || ''), item.title].filter(Boolean);
         for (const k of lookupKeys) {
           const found = imageMap.get(k as string);
           if (found) found.forEach(addImg);
         }
 
-        extractImagesFromContent(item.content).forEach(addImg);
+        // Only genuine <img> in the article's own content
+        extractAllImagesFromHtml(item.content || '').forEach(addImg);
 
         // Author sanitization
         let author = (item.author || '').trim();
@@ -351,17 +359,8 @@ export async function syncNewsSources(options: SyncOptions = {}): Promise<SyncEx
         const slug = slugify(rawTitle, itemIdStr);
         const pubDate = item.pubDate || item.date || new Date().toISOString();
 
+        // Strict image association: genuine image from upstream API / article
         let finalImageUrl = images[0] || '';
-        if (!finalImageUrl) {
-          const pool = sharedCategoryImages.get(effectiveCategory) || allValidImages;
-          if (pool && pool.length > 0) {
-            finalImageUrl = pool[Math.abs(slug.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)) % pool.length];
-            images.push(finalImageUrl);
-          } else {
-            finalImageUrl = '/cover.png';
-            images.push('/cover.png');
-          }
-        }
 
         const newsItem: NewsItem & { sourceId: string } = {
           id: slug,

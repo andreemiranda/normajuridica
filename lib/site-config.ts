@@ -43,9 +43,13 @@ export const SITE_CONFIG = {
         process.env.GOOGLE_ADSENSE_SLOT_SIDEBAR ||
         '',
       sidebarBottom:
-        process.env.GOOGLE_ADSENSE_SLOT_SIDEBAR_BOTTOM || '',
+        process.env.NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR_BOTTOM ||
+        process.env.GOOGLE_ADSENSE_SLOT_SIDEBAR_BOTTOM ||
+        '',
       inArticle:
-        process.env.GOOGLE_ADSENSE_SLOT_IN_ARTICLE || '',
+        process.env.NEXT_PUBLIC_ADSENSE_SLOT_IN_ARTICLE ||
+        process.env.GOOGLE_ADSENSE_SLOT_IN_ARTICLE ||
+        '',
       footer:
         process.env.NEXT_PUBLIC_ADSENSE_SLOT_FOOTER ||
         process.env.GOOGLE_ADSENSE_SLOT_FOOTER ||

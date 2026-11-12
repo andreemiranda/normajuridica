@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getNewsItemBySlugOrId } from '@/lib/news-fetcher';
 import { fetchFullArticleBody, ensureCompleteArticleText } from '@/lib/article-extractor';
 import { sanitizePublicData } from '@/lib/security';
+import { repairAndSanitizeArticleHtml } from '@/lib/sanitizer';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,11 +38,14 @@ export async function GET(req: NextRequest) {
       contentHtml = ensureCompleteArticleText(text || contentHtml, title, category);
     }
 
+    // 4. Sanitize and repair any corrupted gallery markup or unclosed image attributes
+    const cleanHtml = repairAndSanitizeArticleHtml(contentHtml);
+
     return NextResponse.json(
       sanitizePublicData({
         success: true,
         slug,
-        contentHtml,
+        contentHtml: cleanHtml,
       }),
       {
         headers: {

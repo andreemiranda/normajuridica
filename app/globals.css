@@ -31,10 +31,12 @@ html[data-font-size="xlarge"] {
   font-size: 21px;
 }
 
-/* Custom Scrollbar */
+/* Global Typography & Scrollbar */
 * {
   scrollbar-width: thin;
   scrollbar-color: #1d4ed8 #f4f4f5;
+  hyphens: none !important;
+  -webkit-hyphens: none !important;
 }
 
 .dark * {

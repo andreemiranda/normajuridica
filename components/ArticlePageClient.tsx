@@ -25,50 +25,48 @@ import { AdSenseBanner } from './AdSenseBanner';
 import { NewsCard } from './NewsCard';
 import { toggleStoredBookmark, useIsBookmarked, useFontSize, setStoredFontSize, FontSizeLevel } from '@/lib/accessibility';
 import { SITE_CONFIG } from '@/lib/site-config';
+import { repairAndSanitizeArticleHtml, extractAllImagesFromHtml } from '@/lib/sanitizer';
 
 interface ArticlePageClientProps {
   article: NewsItem;
   relatedNews: NewsItem[];
   mostReadNews: NewsItem[];
+  adsenseSlots?: {
+    header?: string;
+    sidebar?: string;
+    sidebarBottom?: string;
+    inArticle?: string;
+    footer?: string;
+  };
 }
 
 export function ArticlePageClient({
   article,
   relatedNews,
   mostReadNews,
+  adsenseSlots,
 }: ArticlePageClientProps) {
-  // Gallery state: aggregate all images from metadata and HTML content
-  const contentImages: string[] = [];
-  if (article.contentHtml) {
-    const imgRegex = /<img\b[^>]*src=["']([^"']+)["'][^>]*>/gi;
-    let match;
-    while ((match = imgRegex.exec(article.contentHtml)) !== null) {
-      if (match[1] && match[1].startsWith('http')) {
-        contentImages.push(match[1]);
-      }
-    }
-  }
+  const inArticleSlot = adsenseSlots?.inArticle || SITE_CONFIG.adsense.slots.inArticle;
+  const sidebarSlot = adsenseSlots?.sidebar || SITE_CONFIG.adsense.slots.sidebar;
+  const sidebarBottomSlot = adsenseSlots?.sidebarBottom || SITE_CONFIG.adsense.slots.sidebarBottom;
 
-  const rawImages = [
-    ...(article.images || []),
-    article.imageUrl,
-    ...contentImages,
-  ].filter(Boolean) as string[];
+  // Full body content sanitized to fix corrupted gallery tags, unclosed attributes, and hotlink resilient images
+  const [contentHtml, setContentHtml] = useState<string>(() =>
+    repairAndSanitizeArticleHtml(article.contentHtml || '')
+  );
 
-  const images = Array.from(new Set(rawImages));
-  const [selectedImage, setSelectedImage] = useState<string>(images[0] || article.imageUrl || '/cover.png');
+  // Featured image strictly associated with this article's own metadata
+  const featuredImage = article.imageUrl || (article.images && article.images[0]) || '';
 
   // Bookmarking via external store subscription
   const isBookmarked = useIsBookmarked(article.id || article.slug);
 
   // Copy link feedback
   const [copied, setCopied] = useState(false);
+  const [instagramFeedback, setInstagramFeedback] = useState(false);
 
   // Font size via external store subscription
   const fontSize = useFontSize();
-
-  // Full body content (enriched/scraped if necessary)
-  const [contentHtml, setContentHtml] = useState<string>(article.contentHtml || '');
 
   // AI Summary
   const [aiSummary, setAiSummary] = useState<string>(article.summary);
@@ -144,7 +142,7 @@ export function ArticlePageClient({
         if (res.ok) {
           const data = await res.json();
           if (data.contentHtml && data.contentHtml.length > 250) {
-            setContentHtml(data.contentHtml);
+            setContentHtml(repairAndSanitizeArticleHtml(data.contentHtml));
           }
         }
       } catch {}
@@ -282,6 +280,17 @@ export function ArticlePageClient({
   const shareWhatsApp = `https://api.whatsapp.com/send?text=${shareTitle}%20${encodeURIComponent(pageUrl)}`;
   const shareTwitter = `https://twitter.com/intent/tweet?text=${shareTitle}&url=${encodeURIComponent(pageUrl)}`;
   const shareFacebook = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`;
+
+  const handleShareInstagram = () => {
+    if (typeof navigator !== 'undefined') {
+      try {
+        navigator.clipboard?.writeText?.(`${article.title}\n${pageUrl}`);
+      } catch {}
+      setInstagramFeedback(true);
+      setTimeout(() => setInstagramFeedback(false), 3500);
+      window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer');
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -427,7 +436,7 @@ export function ArticlePageClient({
               data-pin-no-hover="true"
             >
               <OptimizedImage
-                src={selectedImage}
+                src={featuredImage}
                 alt={article.title}
                 fill
                 priority={true}
@@ -439,37 +448,6 @@ export function ArticlePageClient({
               {article.imageCaption || `Registro jornalístico editorial • ${article.category}`}
             </p>
           </div>
-
-          {/* Gallery Thumbnails (Parte 14 requirement: when images.length > 1) */}
-          {images.length > 1 && (
-            <div className="mb-8 p-4 bg-slate-50 dark:bg-zinc-900/60 rounded-2xl border border-slate-200 dark:border-zinc-800">
-              <span className="text-xs font-black uppercase tracking-wider text-brand-700 dark:text-brand-400 block mb-3">
-                Galeria de Fotos da Matéria ({images.length} fotos)
-              </span>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                {images.map((imgUrl, idx) => (
-                  <button
-                    key={`${imgUrl}-${idx}`}
-                    type="button"
-                    onClick={() => setSelectedImage(imgUrl)}
-                    className={`zoom-frame group relative aspect-[16/10] rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
-                      selectedImage === imgUrl
-                        ? 'border-brand-600 ring-2 ring-brand-400'
-                        : 'border-transparent opacity-75 hover:opacity-100 hover:border-slate-400'
-                    }`}
-                  >
-                    <OptimizedImage
-                      src={imgUrl}
-                      alt={`Imagem ${idx + 1} - ${article.title}`}
-                      fill
-                      sizes="120px"
-                      className="object-cover group-hover:scale-110 hover:scale-110 transition-transform duration-500"
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Key Points Summary Card (Only bullet points, no repeated paragraph) */}
           <section className="mb-8 p-5 md:p-6 bg-gradient-to-br from-brand-50 to-blue-50/50 dark:from-zinc-900 dark:to-brand-950/30 border border-brand-200 dark:border-brand-900/50 rounded-2xl shadow-sm" aria-label="Resumo da Notícia">
@@ -502,43 +480,94 @@ export function ArticlePageClient({
           />
 
           {/* In-Article Advertisement Banner */}
-          <div className="my-8">
-            <AdSenseBanner slot={SITE_CONFIG.adsense.slots.inArticle} />
-          </div>
+          {inArticleSlot ? (
+            <div className="my-8">
+              <AdSenseBanner slot={inArticleSlot} />
+            </div>
+          ) : null}
 
-          {/* Social Sharing Section */}
-          <div className="p-5 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl mb-12">
+          {/* Social Sharing Section with authentic network logos & Instagram */}
+          <div className="p-5 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl mb-12 shadow-sm">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-zinc-300 flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <Share2 className="w-4 h-4 text-brand-600" />
-                Compartilhe esta informação
-              </span>
+                <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-zinc-200">
+                  Compartilhe esta informação
+                </span>
+                {(instagramFeedback || copied) && (
+                  <span className="ml-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 animate-pulse">
+                    Link copiado!
+                  </span>
+                )}
+              </div>
 
-              <div className="flex items-center gap-2 flex-wrap">
+              {/* Logos das Redes Sociais */}
+              <div className="flex items-center gap-2.5 flex-wrap">
+                {/* WhatsApp */}
                 <a
                   href={shareWhatsApp}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors"
+                  className="w-10 h-10 rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white flex items-center justify-center transition-all hover:scale-110 shadow-sm cursor-pointer"
+                  title="Compartilhar no WhatsApp"
+                  aria-label="Compartilhar no WhatsApp"
                 >
-                  WhatsApp
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.694.074-2.109-.508-1.745-.719-2.87-2.488-2.958-2.604-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.174.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.144.39-.086s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824zM12 2C6.477 2 2 6.477 2 12c0 1.891.524 3.66 1.434 5.176L2 22l4.954-1.399C8.423 21.492 10.155 22 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2z" />
+                  </svg>
                 </a>
+
+                {/* X (antigo Twitter) */}
                 <a
                   href={shareTwitter}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1.5 bg-slate-900 dark:bg-zinc-800 hover:bg-black text-white text-xs font-bold rounded-xl transition-colors"
+                  className="w-10 h-10 rounded-full bg-slate-900 dark:bg-zinc-800 hover:bg-black text-white flex items-center justify-center transition-all hover:scale-110 shadow-sm cursor-pointer"
+                  title="Compartilhar no X (Twitter)"
+                  aria-label="Compartilhar no X"
                 >
-                  X (Twitter)
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
                 </a>
+
+                {/* Facebook */}
                 <a
                   href={shareFacebook}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-colors"
+                  className="w-10 h-10 rounded-full bg-[#1877F2] hover:bg-[#166fe5] text-white flex items-center justify-center transition-all hover:scale-110 shadow-sm cursor-pointer"
+                  title="Compartilhar no Facebook"
+                  aria-label="Compartilhar no Facebook"
                 >
-                  Facebook
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                  </svg>
                 </a>
+
+                {/* Instagram */}
+                <button
+                  type="button"
+                  onClick={handleShareInstagram}
+                  className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 text-white flex items-center justify-center transition-all hover:scale-110 shadow-sm cursor-pointer"
+                  title="Compartilhar no Instagram"
+                  aria-label="Compartilhar no Instagram"
+                >
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                  </svg>
+                </button>
+
+                {/* Copiar Link */}
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="w-10 h-10 rounded-full bg-slate-200 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 flex items-center justify-center transition-all hover:scale-110 shadow-sm cursor-pointer"
+                  title="Copiar link da matéria"
+                  aria-label="Copiar link da matéria"
+                >
+                  {copied ? <Check className="w-5 h-5 text-emerald-600" /> : <Copy className="w-5 h-5" />}
+                </button>
               </div>
             </div>
           </div>
@@ -566,7 +595,7 @@ export function ArticlePageClient({
         <aside className="lg:col-span-4 space-y-8">
           {/* Sidebar Advertisement */}
           <div className="sticky top-20 space-y-8">
-            <AdSenseBanner slot={SITE_CONFIG.adsense.slots.sidebar} />
+            <AdSenseBanner slot={sidebarSlot} />
 
             {/* "Mais Lidas • Em Alta" */}
             {mostReadNews.length > 0 && (
@@ -607,7 +636,7 @@ export function ArticlePageClient({
             )}
 
             {/* Bottom Sidebar Advertisement */}
-            <AdSenseBanner slot={SITE_CONFIG.adsense.slots.sidebarBottom} />
+            <AdSenseBanner slot={sidebarBottomSlot} />
           </div>
         </aside>
       </div>

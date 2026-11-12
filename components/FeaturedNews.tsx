@@ -61,7 +61,7 @@ export function FeaturedNews({ news }: FeaturedNewsProps) {
         >
           <OptimizedImage
             key={currentArticle.slug}
-            src={currentArticle.imageUrl || (currentArticle.images && currentArticle.images[0]) || '/cover.png'}
+            src={currentArticle.imageUrl || (currentArticle.images && currentArticle.images[0]) || ''}
             alt={currentArticle.title}
             fill
             priority={true}

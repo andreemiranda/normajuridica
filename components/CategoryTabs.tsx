@@ -36,11 +36,11 @@ export interface PopularCategory {
 
 export const THEMATIC_CATEGORIES: PopularCategory[] = [
   { id: 'all', name: 'Todas as Notícias', slug: 'todas', icon: Newspaper },
-  { id: 'Mundo', name: 'Mundo', slug: 'mundo', icon: Globe2 },
   { id: 'Brasil', name: 'Brasil', slug: 'brasil', icon: Flag },
   { id: 'Política', name: 'Política', slug: 'politica', icon: Landmark },
   { id: 'Economia', name: 'Economia', slug: 'economia', icon: TrendingUp },
   { id: 'Justiça', name: 'Justiça', slug: 'justica', icon: Scale },
+  { id: 'Mundo', name: 'Mundo', slug: 'mundo', icon: Globe2 },
   { id: 'Saúde', name: 'Saúde', slug: 'saude', icon: HeartPulse },
   { id: 'Educação', name: 'Educação', slug: 'educacao', icon: GraduationCap },
   { id: 'Cultura', name: 'Cultura', slug: 'cultura', icon: Palette },
@@ -58,8 +58,14 @@ export const REGIONAL_CATEGORIES: PopularCategory[] = [
   { id: 'Paraná', name: 'Paraná', slug: 'parana', icon: MapPin },
   { id: 'Maranhão', name: 'Maranhão', slug: 'maranhao', icon: MapPin },
   { id: 'Rio Grande do Sul', name: 'Rio Grande do Sul', slug: 'rio-grande-do-sul', icon: MapPin },
-  { id: 'Amazonas', name: 'Amazonas', slug: 'amazonas', icon: MapPin },
   { id: 'Minas Gerais', name: 'Minas Gerais', slug: 'grande-minas', icon: MapPin },
+  { id: 'Amazonas', name: 'Amazonas', slug: 'amazonas', icon: MapPin },
+  { id: 'Bahia', name: 'Bahia', slug: 'bahia', icon: MapPin },
+  { id: 'São Paulo', name: 'São Paulo', slug: 'sao-paulo', icon: MapPin },
+  { id: 'Rio de Janeiro', name: 'Rio de Janeiro', slug: 'rio-de-janeiro', icon: MapPin },
+  { id: 'Distrito Federal', name: 'Distrito Federal', slug: 'distrito-federal', icon: MapPin },
+  { id: 'Ceará', name: 'Ceará', slug: 'ceara', icon: MapPin },
+  { id: 'Pernambuco', name: 'Pernambuco', slug: 'pernambuco', icon: MapPin },
 ];
 
 export const POPULAR_CATEGORIES: PopularCategory[] = [
@@ -121,7 +127,6 @@ export function CategoryTabs({
   };
 
   const renderTabItem = (cat: PopularCategory) => {
-    const isFavorite = cat.id === 'favoritos';
     const isActive =
       normActive === cat.slug ||
       (cat.slug === 'todas' && (normActive === 'all' || normActive === 'todas'));
@@ -140,20 +145,10 @@ export function CategoryTabs({
           className={`w-3.5 h-3.5 flex-shrink-0 ${
             isActive
               ? 'text-brand-700 dark:text-brand-400'
-              : isFavorite
-              ? 'text-amber-500'
               : 'text-slate-400 dark:text-zinc-500'
           }`}
         />
         <span>{cat.name}</span>
-        {isFavorite && (
-          <span
-            className="bg-brand-700 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full min-w-[18px] text-center"
-            suppressHydrationWarning
-          >
-            {bookmarksCount}
-          </span>
-        )}
         {isActive && (
           <motion.span
             layoutId="activeCategoryUnderline"
@@ -302,14 +297,14 @@ export function CategoryTabs({
         {/* DESKTOP & TABLET HORIZONTAL BAR (Visível em sm+) */}
         <div className="hidden sm:block space-y-1.5">
           {/* Linha 1: Grandes Temas e Editorias Centrais */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth flex-wrap sm:flex-nowrap lg:flex-wrap">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             {THEMATIC_CATEGORIES.map(renderTabItem)}
           </div>
 
           {/* Linha 2: Estados e Regiões do Brasil */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth flex-wrap sm:flex-nowrap lg:flex-wrap pt-1 border-t border-slate-100 dark:border-zinc-800/60">
-            <span className="text-[10px] uppercase font-black tracking-wider text-slate-400 dark:text-zinc-500 mr-1 hidden md:inline">
-              Regiões:
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1.5 border-t border-slate-100 dark:border-zinc-800/60">
+            <span className="text-[10px] uppercase font-black tracking-wider text-slate-400 dark:text-zinc-500 mr-1 hidden lg:inline">
+              Estados:
             </span>
             {REGIONAL_CATEGORIES.map(renderTabItem)}
           </div>

@@ -78,7 +78,7 @@ export function NewsCard({
         {/* Compact image container with overlay Link */}
         <div className="relative w-28 h-20 sm:w-36 sm:h-24 flex-shrink-0 rounded-xl overflow-hidden bg-slate-100 dark:bg-zinc-800">
           <OptimizedImage
-            src={news.imageUrl || (news.images && news.images[0]) || '/cover.png'}
+            src={news.imageUrl || (news.images && news.images[0]) || ''}
             alt={news.title}
             fill
             sizes="150px"
@@ -150,7 +150,7 @@ export function NewsCard({
       {/* 16:9 Image container with zoom on hover */}
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100 dark:bg-zinc-800 block zoom-frame">
         <OptimizedImage
-          src={news.imageUrl || (news.images && news.images[0]) || '/cover.png'}
+          src={news.imageUrl || (news.images && news.images[0]) || ''}
           alt={news.title}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -212,7 +212,7 @@ export function NewsCard({
 
           {/* Justified Summary without right-edge hyphenation */}
           <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 line-clamp-3 leading-relaxed mb-4 font-normal text-justify hyphens-none">
-            {news.summary}
+            {(news.summary || '').replace(/<[^>]+>/g, '').replace(/&lt;[^&]+&gt;/g, '').trim()}
           </p>
         </div>
 

@@ -150,6 +150,20 @@ function findSeedJsonPath(): string | null {
   return null;
 }
 
+function isDirectoryWritable(dirPath: string): boolean {
+  try {
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+    const testFile = path.join(dirPath, `.write_check_${process.pid}_${Date.now()}`);
+    fs.writeFileSync(testFile, 'ok');
+    fs.unlinkSync(testFile);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function getSqliteDbPath(): { dbPath: string; isEphemeral: boolean } {
   // Detect serverless or ephemeral filesystems (Vercel, Netlify, AWS Lambda)
   const isServerless = Boolean(
@@ -171,30 +185,27 @@ export function getSqliteDbPath(): { dbPath: string; isEphemeral: boolean } {
     try {
       const resolved = path.isAbsolute(explicitPath) ? explicitPath : path.resolve(process.cwd(), explicitPath);
       const dir = path.dirname(resolved);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
+      if (isDirectoryWritable(dir)) {
+        return { dbPath: resolved, isEphemeral: false };
       }
-      return { dbPath: resolved, isEphemeral: false };
-    } catch {
-      return { dbPath: path.join(os.tmpdir(), 'norma-juridica-news.db'), isEphemeral: true };
-    }
+    } catch {}
+    return { dbPath: path.join(os.tmpdir(), 'norma-juridica-news.db'), isEphemeral: true };
   }
 
-  const defaultDir = path.join(process.cwd(), 'data');
   try {
-    if (!fs.existsSync(defaultDir)) {
-      fs.mkdirSync(defaultDir, { recursive: true });
+    const defaultDir = path.join(process.cwd(), 'data');
+    if (isDirectoryWritable(defaultDir)) {
+      return {
+        dbPath: path.join(defaultDir, 'news.db'),
+        isEphemeral: false,
+      };
     }
-    return {
-      dbPath: path.join(defaultDir, 'news.db'),
-      isEphemeral: false,
-    };
-  } catch {
-    return {
-      dbPath: path.join(os.tmpdir(), 'norma-juridica-news.db'),
-      isEphemeral: true,
-    };
-  }
+  } catch {}
+
+  return {
+    dbPath: path.join(os.tmpdir(), 'norma-juridica-news.db'),
+    isEphemeral: true,
+  };
 }
 
 const FEED_SELECT_COLUMNS = `
@@ -281,11 +292,7 @@ export class SqliteNewsStore implements INewsStore {
         : path.resolve(process.cwd(), this.dbPath);
 
       const dir = path.dirname(resolvedPath);
-      try {
-        if (!fs.existsSync(dir)) {
-          fs.mkdirSync(dir, { recursive: true });
-        }
-      } catch {
+      if (!isDirectoryWritable(dir)) {
         const tmpDir = os.tmpdir();
         resolvedPath = path.join(tmpDir, 'norma-juridica-news.db');
         this.dbPath = resolvedPath;
@@ -295,7 +302,12 @@ export class SqliteNewsStore implements INewsStore {
       // In serverless / ephemeral environment, copy bundled database to /tmp on cold boot
       if (this.isEphemeral) {
         const seedDb = findSeedDbPath();
-        const targetNeedsSeed = !fs.existsSync(resolvedPath) || fs.statSync(resolvedPath).size < 10000;
+        let targetNeedsSeed = true;
+        try {
+          targetNeedsSeed = !fs.existsSync(resolvedPath) || fs.statSync(resolvedPath).size < 10000;
+        } catch {
+          targetNeedsSeed = true;
+        }
         if (seedDb && targetNeedsSeed && seedDb !== resolvedPath) {
           try {
             fs.copyFileSync(seedDb, resolvedPath);

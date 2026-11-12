@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   const baseUrl = getBaseUrl(req);
   const acceptHeader = req.headers.get('accept') || '';
 
-  const { items } = await fetchNews({ category: 'all', limit: 2000 });
+  const { items } = await fetchNews({ category: 'all', limit: 15000 });
 
   const entries: SitemapEntry[] = items.map(item => ({
     url: `${baseUrl}/noticia/${item.slug}`,

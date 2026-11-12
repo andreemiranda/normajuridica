@@ -69,9 +69,9 @@ export const INSTITUTIONAL_PAGES: Record<string, WordPressPage> = {
     contentHtml: `
       <h2>Canal Direto com o Cidadão</h2>
       <p>A Ouvidoria Geral do <strong>${SITE_CONFIG.name}</strong> é o órgão responsável por receber manifestações relativas à conduta editorial, à precisão de reportagens e ao atendimento ao público leitor.</p>
-      <h2>Prazos e Protocolo</h2>
-      <p>Todas as demandas enviadas por meio de nosso formulário eletrônico oficial recebem um <strong>número de protocolo exclusivo de 13 dígitos</strong> para acompanhamento seguro. Nosso compromisso é responder formalmente em até 48 horas úteis.</p>
-      <p>Para abrir uma manifestação agora, utilize nossa página de <a href="/contato" class="text-brand-600 dark:text-brand-400 font-semibold underline">Contato Oficial</a>.</p>
+      <h2>Prazos e Atendimento</h2>
+      <p>Nosso compromisso editorial é responder formalmente a todas as manifestações em até 48 horas úteis.</p>
+      <p>Para abrir uma manifestação, utilize nossa página de <a href="/contato" class="text-brand-600 dark:text-brand-400 font-semibold underline">Contato Oficial</a>.</p>
     `,
   },
   'ouvidoria-geral': {
@@ -83,9 +83,9 @@ export const INSTITUTIONAL_PAGES: Record<string, WordPressPage> = {
     contentHtml: `
       <h2>Canal Direto com o Cidadão</h2>
       <p>A Ouvidoria Geral do <strong>${SITE_CONFIG.name}</strong> é o órgão responsável por receber manifestações relativas à conduta editorial, à precisão de reportagens e ao atendimento ao público leitor.</p>
-      <h2>Prazos e Protocolo</h2>
-      <p>Todas as demandas enviadas por meio de nosso formulário eletrônico oficial recebem um <strong>número de protocolo exclusivo de 13 dígitos</strong> para acompanhamento seguro. Nosso compromisso é responder formalmente em até 48 horas úteis.</p>
-      <p>Para abrir uma manifestação agora, utilize nossa página de <a href="/contato" class="text-brand-600 dark:text-brand-400 font-semibold underline">Contato Oficial</a>.</p>
+      <h2>Prazos e Atendimento</h2>
+      <p>Nosso compromisso editorial é responder formalmente a todas as manifestações em até 48 horas úteis.</p>
+      <p>Para abrir uma manifestação, utilize nossa página de <a href="/contato" class="text-brand-600 dark:text-brand-400 font-semibold underline">Contato Oficial</a>.</p>
     `,
   },
   'gestao-publica-municipal': {
@@ -135,10 +135,57 @@ export const INSTITUTIONAL_PAGES: Record<string, WordPressPage> = {
     lead: 'Fale com nossos jornalistas, envie sugestões de pauta ou acione o setor comercial.',
     contentHtml: `
       <h2>Canais de Atendimento</h2>
-      <p>Nossa redação está disponível para receber releases, sugestões de pauta e dúvidas. Acesse o formulário interativo em <a href="/contato" class="text-brand-600 dark:text-brand-400 font-semibold underline">/contato</a> para obter protocolo oficial.</p>
+      <p>Nossa redação está disponível para receber releases, sugestões de pauta e dúvidas. Acesse o formulário interativo em <a href="/contato" class="text-brand-600 dark:text-brand-400 font-semibold underline">/contato</a> para atendimento oficial.</p>
       <p><strong>Telefone:</strong> ${SITE_CONFIG.institutional.phone}<br>
       <strong>E-mail:</strong> ${SITE_CONFIG.institutional.email}<br>
       <strong>Endereço:</strong> ${SITE_CONFIG.institutional.address}</p>
+    `,
+  },
+  'editorial': {
+    id: 'editorial',
+    slug: 'editorial',
+    title: 'Editorial e Compromisso Jornalístico',
+    category: 'Institucional',
+    lead: 'Apresentação editorial, princípios de apuração factual e o posicionamento institucional do portal Norma Jurídica.',
+    contentHtml: `
+      <h2>A Força do Jornalismo Factual e Independente</h2>
+      <p>O <strong>${SITE_CONFIG.name}</strong> dedica-se diariamente à produção e difusão de notícias fidedignas, análises jurídicas aprofundadas e reportagens de alto impacto sobre o Brasil e o mundo.</p>
+      <h2>Critérios de Apuração</h2>
+      <p>Nosso editorial orienta-se pela escuta plural, pela confirmação documental de fontes primárias e pela separação estrita entre informação factual e manifestação opinativa.</p>
+      <h2>Compromisso com o Leitor</h2>
+      <p>A confiança da sociedade é nosso maior patrimônio. Mantemos rotinas rigorosas de checagem e atualização contínua em tempo real.</p>
+    `,
+  },
+  'expediente': {
+    id: 'expediente',
+    slug: 'expediente',
+    title: 'Expediente e Corpo Editorial',
+    category: 'Institucional',
+    lead: 'Conheça a equipe responsável pela direção editorial, reportagem, edição e conformidade legal do portal.',
+    contentHtml: `
+      <h2>Corpo Editorial e Direção</h2>
+      <p><strong>Direção Geral e Editorial:</strong> Redação Norma Jurídica<br>
+      <strong>Editoria de Política e Justiça:</strong> Equipe de Apuração em Brasília-DF<br>
+      <strong>Editoria de Economia e Negócios:</strong> Seção Econômica e Mercado<br>
+      <strong>Editoria de Tecnologia e Cultura:</strong> Núcleo de Inovação e Sociedade</p>
+      <h2>Atendimento e Contato</h2>
+      <p><strong>Sede:</strong> ${SITE_CONFIG.institutional.address}<br>
+      <strong>Telefone Institucional:</strong> ${SITE_CONFIG.institutional.phone}<br>
+      <strong>E-mail Geral:</strong> ${SITE_CONFIG.institutional.email}</p>
+    `,
+  },
+  'fale-conosco': {
+    id: 'fale-conosco',
+    slug: 'fale-conosco',
+    title: 'Fale Conosco e Atendimento ao Leitor',
+    category: 'Atendimento',
+    lead: 'Entre em contato direto com a redação do Norma Jurídica para sugestões de pauta, correções e informações.',
+    contentHtml: `
+      <h2>Canais Diretos de Relacionamento</h2>
+      <p>Para enviar comunicados de imprensa, sugerir coberturas ou solicitar esclarecimentos à nossa equipe, utilize nossa página oficial de <a href="/contato" class="text-brand-600 dark:text-brand-400 font-semibold underline">Contato da Redação</a>.</p>
+      <p><strong>E-mail Oficial:</strong> ${SITE_CONFIG.institutional.email}<br>
+      <strong>Central Telefônica:</strong> ${SITE_CONFIG.institutional.phone}<br>
+      <strong>Horário de Atendimento:</strong> Segunda a sexta, das 8h às 18h (Horário de Brasília).</p>
     `,
   },
 };

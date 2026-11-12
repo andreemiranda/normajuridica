@@ -124,6 +124,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         article={article}
         relatedNews={related}
         mostReadNews={mostRead}
+        adsenseSlots={SITE_CONFIG.adsense.slots}
       />
 
       <Footer />

@@ -21,6 +21,32 @@ const nextConfig: NextConfig = {
     ],
   },
   output: 'standalone',
+  env: {
+    NEXT_PUBLIC_ADSENSE_ID:
+      process.env.NEXT_PUBLIC_ADSENSE_ID ||
+      process.env.GOOGLE_ADSENSE_CLIENT_ID ||
+      'ca-pub-7059730627018047',
+    NEXT_PUBLIC_ADSENSE_SLOT_HEADER:
+      process.env.NEXT_PUBLIC_ADSENSE_SLOT_HEADER ||
+      process.env.GOOGLE_ADSENSE_SLOT_HEADER ||
+      '',
+    NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR:
+      process.env.NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR ||
+      process.env.GOOGLE_ADSENSE_SLOT_SIDEBAR ||
+      '',
+    NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR_BOTTOM:
+      process.env.NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR_BOTTOM ||
+      process.env.GOOGLE_ADSENSE_SLOT_SIDEBAR_BOTTOM ||
+      '',
+    NEXT_PUBLIC_ADSENSE_SLOT_IN_ARTICLE:
+      process.env.NEXT_PUBLIC_ADSENSE_SLOT_IN_ARTICLE ||
+      process.env.GOOGLE_ADSENSE_SLOT_IN_ARTICLE ||
+      '',
+    NEXT_PUBLIC_ADSENSE_SLOT_FOOTER:
+      process.env.NEXT_PUBLIC_ADSENSE_SLOT_FOOTER ||
+      process.env.GOOGLE_ADSENSE_SLOT_FOOTER ||
+      '',
+  },
   poweredByHeader: false,
   compress: true,
   outputFileTracingIncludes: {
