@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getNewsStore } from '@/lib/news-store';
 import { syncNewsSources } from '@/lib/news-sync';
-import { getNewsApiConfig } from '@/lib/api-config';
+import { getNewsApiConfig, getNewsApiHeaders } from '@/lib/api-config';
 import { sanitizePublicData, checkRateLimit, verifySecret } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
@@ -90,7 +90,11 @@ async function handleSyncRequest(req: NextRequest) {
 
   try {
     const probeStart = Date.now();
-    const probeRes = await fetch(`${baseUrl}/api/types`, { cache: 'no-store' });
+    const probeRes = await fetch(`${baseUrl}/api/types`, {
+      headers: getNewsApiHeaders(),
+      cache: 'no-store',
+      signal: AbortSignal.timeout(3000),
+    });
     upstreamLatencyMs = Date.now() - probeStart;
     if (!probeRes.ok) upstreamStatus = `alerta (HTTP ${probeRes.status})`;
   } catch {

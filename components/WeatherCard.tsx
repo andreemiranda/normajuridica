@@ -16,13 +16,27 @@ export function WeatherCard() {
         let query = 'Brasilia';
 
         if (typeof window !== 'undefined' && 'geolocation' in navigator) {
+          let geoAllowed = true;
           try {
-            const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-              navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3000 });
-            });
-            query = `${pos.coords.latitude},${pos.coords.longitude}`;
-          } catch {
-            // Geolocation rejected or timed out, falls back to default
+            const docPolicy = document as unknown as {
+              permissionsPolicy?: { allowsFeature?: (feature: string) => boolean };
+              featurePolicy?: { allowsFeature?: (feature: string) => boolean };
+            };
+            const policy = docPolicy.permissionsPolicy || docPolicy.featurePolicy;
+            if (policy && typeof policy.allowsFeature === 'function') {
+              geoAllowed = policy.allowsFeature('geolocation');
+            }
+          } catch {}
+
+          if (geoAllowed) {
+            try {
+              const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3000 });
+              });
+              query = `${pos.coords.latitude},${pos.coords.longitude}`;
+            } catch {
+              // Geolocation rejected or timed out, falls back to default
+            }
           }
         }
 

@@ -43,38 +43,54 @@ export function OptimizedImage({
   className = '',
 }: OptimizedImageProps) {
   const cleanSrc = extractCleanUrl(src);
-  const initialSrc = cleanSrc || fallbackSrc;
-  const isGazetaEsportiva = initialSrc.toLowerCase().includes('gazetaesportiva.com');
-  const isLocal = initialSrc.startsWith('/');
+  const isGazetaEsportiva = cleanSrc.toLowerCase().includes('gazetaesportiva.com');
+  const isLocal = cleanSrc.startsWith('/');
 
-  // Direct image loading for gazetaesportiva.com or local paths
-  // Next.js optimized loading with direct img fallback for all other sources
+  // State machine:
+  // 1) Non-Gazeta external: Next.js <Image> -> onError -> direct <img> (original URL) -> onError -> fallbackSrc (/cover.png)
+  // 2) Gazeta Esportiva: direct <img> (original URL, NO next_image) -> onError -> fallbackSrc (/cover.png)
+  // 3) No cleanSrc: fallbackSrc (/cover.png) as absolute last resort
+  const [prevSrc, setPrevSrc] = useState<string>(cleanSrc);
   const [useDirectImg, setUseDirectImg] = useState<boolean>(
     isGazetaEsportiva || isLocal || !cleanSrc
   );
+  const [useCoverFallback, setUseCoverFallback] = useState<boolean>(!cleanSrc);
 
-  // If gazetaesportiva.com, local, or Next image optimization failed, render native <img> with original direct URL
-  if (useDirectImg) {
+  if (prevSrc !== cleanSrc) {
+    setPrevSrc(cleanSrc);
+    setUseDirectImg(isGazetaEsportiva || isLocal || !cleanSrc);
+    setUseCoverFallback(!cleanSrc);
+  }
+
+  const effectiveSrc = useCoverFallback || !cleanSrc ? fallbackSrc : cleanSrc;
+
+  // Render native <img> for gazetaesportiva.com, local paths, direct fallback after next_image block, or last-resort /cover.png
+  if (useDirectImg || useCoverFallback || !cleanSrc) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={initialSrc}
+        src={effectiveSrc}
         alt={alt || 'Norma Jurídica'}
         loading={priority ? 'eager' : 'lazy'}
         decoding="async"
         referrerPolicy="no-referrer"
         data-pin-nopin="true"
         data-pin-no-hover="true"
+        onError={() => {
+          if (!useCoverFallback && effectiveSrc !== fallbackSrc) {
+            setUseCoverFallback(true);
+          }
+        }}
         className={`${fill ? 'absolute inset-0 w-full h-full object-cover' : ''} transition-transform duration-500 ease-out group-hover:scale-105 hover:scale-105 ${className}`}
         style={!fill && (width || height) ? { width: width ? `${width}px` : undefined, height: height ? `${height}px` : undefined } : undefined}
       />
     );
   }
 
-  // Next.js optimized next_image mode with graceful fallback to native direct <img> upon error
+  // Next.js optimized next_image mode with graceful fallback to native direct <img> upon block/error
   return (
     <Image
-      src={initialSrc}
+      src={cleanSrc}
       alt={alt || 'Norma Jurídica'}
       width={!fill ? width || 800 : undefined}
       height={!fill ? height || 450 : undefined}

@@ -5,7 +5,14 @@ import path from 'node:path';
 
 import { NewsItem } from './types';
 import { getNewsStore, formatTimeAgo } from './news-store';
-import { syncNewsSources, triggerBackgroundSyncIfNeeded } from './news-sync';
+import {
+  syncNewsSources,
+  triggerBackgroundSyncIfNeeded,
+  findAndImportNewsItemFromApi,
+  resolveSourceNewsSlugsWithApi,
+} from './news-sync';
+import { extractUnresolvedSourceNewsCandidates, repairAndSanitizeArticleHtml } from './sanitizer';
+import { SITE_CONFIG } from './site-config';
 
 export { formatTimeAgo };
 
@@ -133,30 +140,87 @@ export async function fetchNews(options: FetchNewsOptions = {}): Promise<FetchNe
   return result;
 }
 
-export async function getNewsItemBySlugOrId(slugOrId: string): Promise<NewsItem | null> {
+export async function getNewsItemBySlugOrId(
+  slugOrId: string,
+  options?: { resolveApiLinks?: boolean }
+): Promise<NewsItem | null> {
   if (!slugOrId) return null;
 
   const decoded = decodeURIComponent(slugOrId).toLowerCase().trim();
   const store = getNewsStore();
   await store.init();
+  const shouldResolveApiLinks = Boolean(options?.resolveApiLinks);
 
   // 1. Query Local Persistent Store
-  const item = await store.getNewsBySlugOrId(decoded);
-  if (item) {
-    return item;
-  }
+  let item = await store.getNewsBySlugOrId(decoded, {
+    deferMissingLinkFallback: shouldResolveApiLinks,
+  });
 
   // 2. Fallback: Search bundled seed items
-  const seeds = getSeedItems();
-  const seedMatch = seeds.find(
-    s => s.slug.toLowerCase() === decoded || s.id.toLowerCase() === decoded
-  );
-  if (seedMatch) {
-    store.upsertNews([seedMatch]).catch(() => {});
-    return seedMatch;
+  if (!item) {
+    const seeds = getSeedItems();
+    const seedMatch = seeds.find(
+      s => s.slug.toLowerCase() === decoded || s.id.toLowerCase() === decoded
+    );
+    if (seedMatch) {
+      store.upsertNews([seedMatch]).catch(() => {});
+      item = seedMatch;
+    }
   }
 
-  // 3. Trigger background sync if needed and re-check
-  triggerBackgroundSyncIfNeeded();
-  return await store.getNewsBySlugOrId(decoded);
+  // 3. Fallback: Search upstream API on-demand and import to SQLite if found
+  if (!item) {
+    item = await findAndImportNewsItemFromApi(decoded);
+  }
+
+  // 4. Final check after triggering background sync if still missing
+  if (!item) {
+    triggerBackgroundSyncIfNeeded();
+    item = await store.getNewsBySlugOrId(decoded, {
+      deferMissingLinkFallback: shouldResolveApiLinks,
+    });
+  }
+
+  if (!item) {
+    return null;
+  }
+
+  // If requested (article page / API endpoint), resolve any embedded source-news links via API + DB
+  if (shouldResolveApiLinks && item.contentHtml) {
+    const unresolved = extractUnresolvedSourceNewsCandidates(item.contentHtml, {
+      currentArticleSlug: item.slug,
+      resolveSlugInDb: (c) => store.resolveSourceArticleSlug(c),
+    });
+
+    const apiResolved =
+      unresolved.length > 0
+        ? await resolveSourceNewsSlugsWithApi(unresolved, item.category)
+        : new Map<string, string>();
+
+    const rawAppUrl = (process.env.APP_URL || '').trim();
+    const appUrl =
+      rawAppUrl && !rawAppUrl.includes('MY_APP_URL')
+        ? rawAppUrl.replace(/\/+$/, '')
+        : '';
+
+    const finalHtml = repairAndSanitizeArticleHtml(
+      item.contentHtml,
+      item.imageUrl ? [item.imageUrl] : [],
+      {
+        appUrl,
+        appDomain: SITE_CONFIG.domain,
+        currentArticleSlug: item.slug,
+        resolveSlugInDb: (candidate) =>
+          store.resolveSourceArticleSlug(candidate) ?? apiResolved.get(candidate) ?? null,
+        deferMissingLinkFallback: false,
+      }
+    );
+
+    return {
+      ...item,
+      contentHtml: finalHtml,
+    };
+  }
+
+  return item;
 }

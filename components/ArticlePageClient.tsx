@@ -25,12 +25,13 @@ import { AdSenseBanner } from './AdSenseBanner';
 import { NewsCard } from './NewsCard';
 import { toggleStoredBookmark, useIsBookmarked, useFontSize, setStoredFontSize, FontSizeLevel } from '@/lib/accessibility';
 import { SITE_CONFIG } from '@/lib/site-config';
-import { repairAndSanitizeArticleHtml, extractAllImagesFromHtml } from '@/lib/sanitizer';
+import { repairAndSanitizeArticleHtml, splitArticleHtmlIntoBlocks, stripHtmlTags } from '@/lib/sanitizer';
 
 interface ArticlePageClientProps {
   article: NewsItem;
   relatedNews: NewsItem[];
   mostReadNews: NewsItem[];
+  appUrl?: string;
   adsenseSlots?: {
     header?: string;
     sidebar?: string;
@@ -44,19 +45,34 @@ export function ArticlePageClient({
   article,
   relatedNews,
   mostReadNews,
+  appUrl = '',
   adsenseSlots,
 }: ArticlePageClientProps) {
   const inArticleSlot = adsenseSlots?.inArticle || SITE_CONFIG.adsense.slots.inArticle;
   const sidebarSlot = adsenseSlots?.sidebar || SITE_CONFIG.adsense.slots.sidebar;
   const sidebarBottomSlot = adsenseSlots?.sidebarBottom || SITE_CONFIG.adsense.slots.sidebarBottom;
 
-  // Full body content sanitized to fix corrupted gallery tags, unclosed attributes, and hotlink resilient images
-  const [contentHtml, setContentHtml] = useState<string>(() =>
-    repairAndSanitizeArticleHtml(article.contentHtml || '')
-  );
-
   // Featured image strictly associated with this article's own metadata
   const featuredImage = article.imageUrl || (article.images && article.images[0]) || '';
+
+  const linkOpts = React.useMemo(
+    () => ({
+      appUrl,
+      appDomain: SITE_CONFIG.domain,
+      currentArticleSlug: article.slug,
+    }),
+    [appUrl, article.slug]
+  );
+
+  // Full body content sanitized to fix corrupted gallery tags, unclosed attributes, and deduplicate images
+  const [contentHtml, setContentHtml] = useState<string>(() =>
+    repairAndSanitizeArticleHtml(article.contentHtml || '', featuredImage ? [featuredImage] : [], linkOpts)
+  );
+
+  const bodyBlocks = React.useMemo(
+    () => splitArticleHtmlIntoBlocks(contentHtml, featuredImage ? [featuredImage] : [], linkOpts),
+    [contentHtml, featuredImage, linkOpts]
+  );
 
   // Bookmarking via external store subscription
   const isBookmarked = useIsBookmarked(article.id || article.slug);
@@ -142,7 +158,9 @@ export function ArticlePageClient({
         if (res.ok) {
           const data = await res.json();
           if (data.contentHtml && data.contentHtml.length > 250) {
-            setContentHtml(repairAndSanitizeArticleHtml(data.contentHtml));
+            setContentHtml(
+              repairAndSanitizeArticleHtml(data.contentHtml, featuredImage ? [featuredImage] : [], linkOpts)
+            );
           }
         }
       } catch {}
@@ -184,7 +202,7 @@ export function ArticlePageClient({
         audioRef.current.pause();
       }
     };
-  }, [article.id, article.slug, article.title, article.summary, article.link, article.category, article.contentHtml]);
+  }, [article.id, article.slug, article.title, article.summary, article.link, article.category, article.contentHtml, featuredImage, linkOpts]);
 
   const handleBookmarkToggle = () => {
     toggleStoredBookmark(article.id || article.slug);
@@ -327,7 +345,7 @@ export function ArticlePageClient({
 
           {/* Lead / Subhead */}
           <p className="text-base sm:text-lg text-slate-600 dark:text-zinc-300 font-normal leading-relaxed mb-6 border-l-4 border-brand-700 pl-4 text-justify hyphens-none">
-            {article.summary}
+            {stripHtmlTags(article.summary || '')}
           </p>
 
           {/* Author, Date, and Source Metadata */}
@@ -473,11 +491,51 @@ export function ArticlePageClient({
             </div>
           </section>
 
-          {/* Full Article Body with Justified text */}
-          <article
-            className="article-body prose prose-slate dark:prose-invert max-w-none text-slate-800 dark:text-zinc-200 font-serif leading-8 text-base md:text-lg mb-8 text-justify hyphens-none [text-align:justify]"
-            dangerouslySetInnerHTML={{ __html: contentHtml }}
-          />
+          {/* Full Article Body with Justified text and contextual in-body images via OptimizedImage */}
+          <article className="article-body prose prose-slate dark:prose-invert prose-a:text-brand-700 dark:prose-a:text-brand-400 prose-a:underline prose-a:font-medium max-w-none text-slate-800 dark:text-zinc-200 font-serif leading-8 text-base md:text-lg mb-8 text-justify hyphens-none [text-align:justify]">
+            {bodyBlocks.map((block, idx) =>
+              block.type === 'image' ? (
+                <figure key={`body-img-${idx}`} className="my-6 not-prose">
+                  <div className="relative w-full overflow-hidden rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800">
+                    {block.linkHref ? (
+                      <a
+                        href={block.linkHref}
+                        target={block.linkExternal ? '_blank' : undefined}
+                        rel={block.linkExternal ? 'noopener noreferrer' : undefined}
+                        data-app-link={!block.linkExternal ? 'true' : undefined}
+                        className="block"
+                      >
+                        <OptimizedImage
+                          src={block.src}
+                          alt={block.alt || article.title}
+                          width={900}
+                          height={506}
+                          sizes="(max-width: 1024px) 100vw, 66vw"
+                          className="w-full h-auto object-cover rounded-xl"
+                        />
+                      </a>
+                    ) : (
+                      <OptimizedImage
+                        src={block.src}
+                        alt={block.alt || article.title}
+                        width={900}
+                        height={506}
+                        sizes="(max-width: 1024px) 100vw, 66vw"
+                        className="w-full h-auto object-cover rounded-xl"
+                      />
+                    )}
+                  </div>
+                  {block.alt && block.alt !== 'Imagem da matéria' && (
+                    <figcaption className="text-xs text-slate-500 dark:text-zinc-400 mt-2 italic px-1">
+                      {block.alt}
+                    </figcaption>
+                  )}
+                </figure>
+              ) : (
+                <div key={`body-html-${idx}`} dangerouslySetInnerHTML={{ __html: block.html }} />
+              )
+            )}
+          </article>
 
           {/* In-Article Advertisement Banner */}
           {inArticleSlot ? (

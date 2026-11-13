@@ -4,8 +4,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import Database from 'better-sqlite3';
-import { NewsItem } from './types';
-import { getCategoryAliases, getCategorySourceIds } from './sources';
+import { NewsItem, CategoryInfo } from './types';
+import { ALL_CATEGORIES, getCategoryAliases, getCategorySourceIds, mergeDynamicCategories } from './sources';
+import { stripHtmlTags, normalizeImageKey, extractAllImagesFromHtml, repairAndSanitizeArticleHtml } from './sanitizer';
+import { SITE_CONFIG } from './site-config';
 
 export function formatTimeAgo(dateStr: string): string {
   try {
@@ -76,7 +78,8 @@ export interface SyncMetadata {
 export interface INewsStore {
   init(): Promise<void>;
   getNews(options?: GetNewsOptions): Promise<{ items: NewsItem[]; total: number }>;
-  getNewsBySlugOrId(slugOrId: string): Promise<NewsItem | null>;
+  getNewsBySlugOrId(slugOrId: string, options?: { deferMissingLinkFallback?: boolean }): Promise<NewsItem | null>;
+  resolveSourceArticleSlug(candidateSlug: string): string | null;
   upsertNews(items: NewsItem[]): Promise<UpsertResult>;
   prune(options?: {
     maxItems?: number;
@@ -86,6 +89,9 @@ export interface INewsStore {
   count(category?: string): Promise<number>;
   countBySource(): Promise<Record<string, number>>;
   getDistinctCategories(): Promise<string[]>;
+  getDynamicCategories(): Promise<CategoryInfo[]>;
+  setDynamicCategories(categories: CategoryInfo[]): Promise<void>;
+  getCategoryCounts(): Promise<Record<string, number>>;
   getSyncMetadata(): Promise<SyncMetadata | null>;
   setSyncMetadata(meta: SyncMetadata): Promise<void>;
   exportBackup(): Promise<NewsItem[]>;
@@ -226,6 +232,7 @@ export class SqliteNewsStore implements INewsStore {
   private isEphemeral: boolean;
   private initialized = false;
   private queryCache = new Map<string, QueryCacheEntry>();
+  private sourceSlugCache = new Map<string, string | null>();
 
   constructor() {
     const loc = getSqliteDbPath();
@@ -235,6 +242,48 @@ export class SqliteNewsStore implements INewsStore {
 
   public clearCache(): void {
     this.queryCache.clear();
+    this.sourceSlugCache.clear();
+  }
+
+  public resolveSourceArticleSlug(candidateSlug: string): string | null {
+    if (!candidateSlug) return null;
+    const clean = candidateSlug.toLowerCase().trim().replace(/^-+|-+$/g, '');
+    if (clean.length < 6) return null;
+
+    if (this.sourceSlugCache.has(clean)) {
+      return this.sourceSlugCache.get(clean) ?? null;
+    }
+
+    let matched: string | null = null;
+    try {
+      const db = this.ensureDb();
+      let truncated = clean;
+      if (truncated.length > 85) {
+        truncated = truncated.substring(0, 85).replace(/-[^-]*$/, '');
+      }
+
+      const exactRow = db
+        .prepare('SELECT slug FROM news WHERE slug = ? OR id = ? OR slug = ? OR id = ? LIMIT 1')
+        .get(clean, clean, truncated, truncated) as { slug: string } | undefined;
+
+      if (exactRow && exactRow.slug) {
+        matched = exactRow.slug;
+      } else if (truncated.length >= 24) {
+        const prefix = truncated.slice(0, Math.min(truncated.length, 48));
+        const rangeRow = db
+          .prepare('SELECT slug FROM news WHERE slug >= ? AND slug < ? LIMIT 1')
+          .get(prefix, `${prefix}\uffff`) as { slug: string } | undefined;
+        if (rangeRow && rangeRow.slug) {
+          matched = rangeRow.slug;
+        }
+      }
+    } catch {}
+
+    if (this.sourceSlugCache.size > 3000) {
+      this.sourceSlugCache.clear();
+    }
+    this.sourceSlugCache.set(clean, matched);
+    return matched;
   }
 
   public getDbLocation(): { path: string; isEphemeral: boolean } {
@@ -483,15 +532,63 @@ export class SqliteNewsStore implements INewsStore {
     return this.db;
   }
 
-  private rowToNewsItem(row: Record<string, unknown>): NewsItem {
-    let images: string[] = [];
+  private rowToNewsItem(row: Record<string, unknown>, deferMissingLinkFallback = false): NewsItem {
+    let rawImages: string[] = [];
     if (typeof row.images_json === 'string' && row.images_json) {
       try {
-        images = JSON.parse(row.images_json);
+        const parsed = JSON.parse(row.images_json);
+        if (Array.isArray(parsed)) rawImages = parsed.map(String);
       } catch {
-        images = [];
+        rawImages = [];
       }
     }
+
+    const cleanUrl = (u?: unknown): string => {
+      if (!u || typeof u !== 'string') return '';
+      const trimmed = u.trim().replace(/s2-Norma\s*Jur[ií]dica/gi, 's2-globo');
+      if (!trimmed || trimmed === 'undefined' || trimmed === 'null') return '';
+      return trimmed;
+    };
+
+    const images: string[] = [];
+    const seenImgKeys = new Set<string>();
+    const addUniqueImg = (u?: unknown) => {
+      const cleaned = cleanUrl(u);
+      if (!cleaned || cleaned === '/cover.png') return;
+      const key = normalizeImageKey(cleaned);
+      if (key && !seenImgKeys.has(key)) {
+        seenImgKeys.add(key);
+        images.push(cleaned);
+      }
+    };
+
+    let imageUrl = cleanUrl(row.image_url);
+    if (imageUrl === '/cover.png') imageUrl = '';
+    if (imageUrl) addUniqueImg(imageUrl);
+    for (const img of rawImages) addUniqueImg(img);
+
+    const rawContentHtml = row.content_html ? String(row.content_html) : undefined;
+    if (!imageUrl && rawContentHtml) {
+      const extracted = extractAllImagesFromHtml(rawContentHtml);
+      extracted.forEach(addUniqueImg);
+    }
+
+    const finalImageUrl = imageUrl || images[0] || undefined;
+    const cleanSummary = stripHtmlTags(String(row.summary || ''));
+    const rawAppUrl = (process.env.APP_URL || '').trim();
+    const appUrl =
+      rawAppUrl && !rawAppUrl.includes('MY_APP_URL')
+        ? rawAppUrl.replace(/\/+$/, '')
+        : '';
+    const sanitizedContentHtml = rawContentHtml
+      ? repairAndSanitizeArticleHtml(rawContentHtml, finalImageUrl ? [finalImageUrl] : [], {
+          appUrl,
+          appDomain: SITE_CONFIG.domain,
+          currentArticleSlug: String(row.slug || ''),
+          resolveSlugInDb: (candidate) => this.resolveSourceArticleSlug(candidate),
+          deferMissingLinkFallback,
+        })
+      : undefined;
 
     const pubDate = String(row.pub_date || new Date().toISOString());
     const categoryName = cleanCategoryName(String(row.category || ''));
@@ -507,9 +604,9 @@ export class SqliteNewsStore implements INewsStore {
       category: categoryName,
       categoryId: String(row.category_id),
       source: String(row.source || 'Norma Jurídica'),
-      summary: String(row.summary || ''),
-      contentHtml: row.content_html ? String(row.content_html) : undefined,
-      imageUrl: row.image_url ? String(row.image_url) : undefined,
+      summary: cleanSummary,
+      contentHtml: sanitizedContentHtml,
+      imageUrl: finalImageUrl,
       images,
       imageCaption: row.image_caption ? String(row.image_caption) : undefined,
       author: row.author ? String(row.author) : 'Norma Jurídica',
@@ -658,9 +755,13 @@ export class SqliteNewsStore implements INewsStore {
     }
   }
 
-  public async getNewsBySlugOrId(slugOrId: string): Promise<NewsItem | null> {
+  public async getNewsBySlugOrId(
+    slugOrId: string,
+    options?: { deferMissingLinkFallback?: boolean }
+  ): Promise<NewsItem | null> {
     if (!slugOrId) return null;
     const db = this.ensureDb();
+    const deferFallback = Boolean(options?.deferMissingLinkFallback);
 
     const stmt = db.prepare(`
       SELECT * FROM news
@@ -671,18 +772,20 @@ export class SqliteNewsStore implements INewsStore {
     try {
       const row = stmt.get(slugOrId, slugOrId, `%/noticia/${slugOrId}`) as Record<string, unknown> | undefined;
       if (row) {
-        return this.rowToNewsItem(row);
+        return this.rowToNewsItem(row, deferFallback);
       }
 
       // Secondary approximate match if slug has trailing or leading dashes
       const clean = slugOrId.replace(/^-+|-+$/g, '');
-      const approxStmt = db.prepare(`
-        SELECT * FROM news
-        WHERE slug LIKE ?
-        LIMIT 1
-      `);
-      const approxRow = approxStmt.get(`%${clean}%`) as Record<string, unknown> | undefined;
-      if (approxRow) return this.rowToNewsItem(approxRow);
+      if (clean.length >= 10) {
+        const approxStmt = db.prepare(`
+          SELECT * FROM news
+          WHERE slug LIKE ?
+          LIMIT 1
+        `);
+        const approxRow = approxStmt.get(`%${clean}%`) as Record<string, unknown> | undefined;
+        if (approxRow) return this.rowToNewsItem(approxRow, deferFallback);
+      }
     } catch (err) {
       console.error('[SqliteNewsStore] Erro ao buscar notícia por slug/id:', err);
     }
@@ -698,8 +801,8 @@ export class SqliteNewsStore implements INewsStore {
           const found = parsed.find(item =>
             item.id === slugOrId ||
             item.slug === slugOrId ||
-            (item.slug && item.slug.toLowerCase().includes(clean)) ||
-            (item.link && item.link.toLowerCase().includes(clean))
+            (clean.length >= 10 && item.slug && item.slug.toLowerCase().includes(clean)) ||
+            (clean.length >= 10 && item.link && item.link.toLowerCase().includes(clean))
           );
           if (found) return found;
         }
@@ -1004,7 +1107,52 @@ export class SqliteNewsStore implements INewsStore {
     const db = this.ensureDb();
     const stmt = db.prepare('SELECT DISTINCT category FROM news ORDER BY category ASC');
     const rows = stmt.all() as { category: string }[];
-    return rows.map(r => r.category).filter(Boolean);
+    return rows.map(r => cleanCategoryName(r.category)).filter(Boolean);
+  }
+
+  public async getDynamicCategories(): Promise<CategoryInfo[]> {
+    const db = this.ensureDb();
+    let stored: CategoryInfo[] = ALL_CATEGORIES;
+    try {
+      const row = db.prepare('SELECT value FROM sync_meta WHERE key = ?').get('dynamic_categories') as { value: string } | undefined;
+      if (row?.value) {
+        const parsed = JSON.parse(row.value);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          stored = parsed;
+        }
+      }
+    } catch {}
+
+    const distinctCats = await this.getDistinctCategories();
+    return mergeDynamicCategories(distinctCats, stored);
+  }
+
+  public async setDynamicCategories(categories: CategoryInfo[]): Promise<void> {
+    const db = this.ensureDb();
+    const stmt = db.prepare(`
+      INSERT INTO sync_meta (key, value, updated_at)
+      VALUES (?, ?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+    `);
+    stmt.run('dynamic_categories', JSON.stringify(categories), Date.now());
+  }
+
+  public async getCategoryCounts(): Promise<Record<string, number>> {
+    const db = this.ensureDb();
+    const rows = db.prepare(`
+      SELECT category_id, COUNT(*) as count
+      FROM news
+      GROUP BY category_id
+    `).all() as { category_id: string; count: number }[];
+    const counts: Record<string, number> = {};
+    for (const r of rows) {
+      if (r.category_id) {
+        counts[r.category_id.toLowerCase()] = r.count;
+      }
+    }
+    counts['all'] = await this.count();
+    counts['todas'] = counts['all'];
+    return counts;
   }
 
   public async getSyncMetadata(): Promise<SyncMetadata | null> {

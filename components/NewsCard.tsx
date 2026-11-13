@@ -6,6 +6,7 @@ import { Clock, User, Bookmark, Volume2 } from 'lucide-react';
 import { NewsItem } from '@/lib/types';
 import { OptimizedImage } from './OptimizedImage';
 import { toggleStoredBookmark, getStoredBookmarks } from '@/lib/accessibility';
+import { stripHtmlTags } from '@/lib/sanitizer';
 
 interface NewsCardProps {
   news: NewsItem;
@@ -212,7 +213,7 @@ export function NewsCard({
 
           {/* Justified Summary without right-edge hyphenation */}
           <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 line-clamp-3 leading-relaxed mb-4 font-normal text-justify hyphens-none">
-            {(news.summary || '').replace(/<[^>]+>/g, '').replace(/&lt;[^&]+&gt;/g, '').trim()}
+            {stripHtmlTags(news.summary || '')}
           </p>
         </div>
 

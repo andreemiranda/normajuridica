@@ -3,6 +3,7 @@ import { Inter, Source_Serif_4 } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
 import { SITE_CONFIG, getBaseUrl } from '@/lib/site-config';
+import { getNewsApiConfig } from '@/lib/api-config';
 import { generatePortalOrganizationSchema, generateWebSiteSchema } from '@/lib/seo';
 import { CookieConsentBanner } from '@/components/CookieConsentBanner';
 
@@ -115,6 +116,13 @@ export default function RootLayout({
   const orgSchema = generatePortalOrganizationSchema(baseUrl);
   const webSiteSchema = generateWebSiteSchema(baseUrl);
   const adsenseClientId = SITE_CONFIG.adsense.clientId;
+  const newsApiOrigin = (() => {
+    try {
+      return new URL(getNewsApiConfig().baseUrl).origin;
+    } catch {
+      return 'https://news-sources-api.legislativemunicipal.workers.dev';
+    }
+  })();
 
   return (
     <html lang="pt-BR" className={`${inter.variable} ${sourceSerif.variable} antialiased`} suppressHydrationWarning>
@@ -124,7 +132,7 @@ export default function RootLayout({
         <meta name="pinterest" content="nohover" />
 
         {/* DNS-prefetch & preconnect para Fontes de Notícias e CDNs de Imagens */}
-        <link rel="dns-prefetch" href="https://news-sources-api.vercel.app" />
+        <link rel="dns-prefetch" href={newsApiOrigin} />
         <link rel="dns-prefetch" href="https://s2-g1.glbimg.com" />
         <link rel="dns-prefetch" href="https://i.s3.glbimg.com" />
         <link rel="dns-prefetch" href="https://gazetaesportiva.com" />
@@ -132,7 +140,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://g1.globo.com" />
         <link rel="dns-prefetch" href={baseUrl} />
 
-        <link rel="preconnect" href="https://news-sources-api.vercel.app" crossOrigin="anonymous" />
+        <link rel="preconnect" href={newsApiOrigin} crossOrigin="anonymous" />
         <link rel="preconnect" href="https://s2-g1.glbimg.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://i.s3.glbimg.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://gazetaesportiva.com" crossOrigin="anonymous" />

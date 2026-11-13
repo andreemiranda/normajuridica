@@ -22,9 +22,9 @@ O portal utiliza uma camada de persistência local baseada em **SQLite (`better-
 3. **Abstração Desacoplada (`INewsStore`):** Permite trocar o backend de dados para PostgreSQL (ou Cloud SQL / Supabase) sem alterar nenhuma linha dos componentes ou rotas do Next.js.
 4. **Sincronizador em Segundo Plano (`lib/news-sync.ts`):** Executa em background a cada intervalo configurável (`NEWS_SYNC_INTERVAL_SECONDS`), realizando *upsert* inteligente (apenas grava novos ou atualizados, descartando inalterados), com URLs primária e fallback, retry com backoff exponencial e trava de concorrência (*mutex lock*).
 5. **Rodízio FIFO e Retenção Automática:**
-   - **`NEWS_STORE_MAX_ITEMS` (padrão 5000):** Limite global de matérias. Ao ultrapassar, remove as mais antigas por data de publicação, garantindo representatividade das 77 fontes.
-   - **`NEWS_STORE_MAX_PER_SOURCE` (padrão 100):** Limite de notícias por fonte individual.
-   - **`NEWS_RETENTION_DAYS` (padrão 30):** Expiração temporal de publicações antigas.
+   - **`NEWS_STORE_MAX_ITEMS` (padrão 15000):** Limite global de matérias. Ao ultrapassar, remove as mais antigas por data de publicação, garantindo representatividade das 77 fontes.
+   - **`NEWS_STORE_MAX_PER_SOURCE` (padrão 350):** Limite de notícias por fonte individual.
+   - **`NEWS_RETENTION_DAYS` (padrão 90):** Expiração temporal de publicações antigas.
 
 ---
 
@@ -33,12 +33,12 @@ O portal utiliza uma camada de persistência local baseada em **SQLite (`better-
 | Variável | Padrão | Descrição |
 | :--- | :--- | :--- |
 | `NEWS_SQLITE_PATH` | `./data/news.db` | Caminho do arquivo SQLite (auto-detecta `/tmp/` em Serverless) |
-| `NEWS_STORE_MAX_ITEMS` | `5000` | Capacidade máxima global de notícias no banco |
-| `NEWS_STORE_MAX_PER_SOURCE` | `100` | Limite de matérias mantidas por fonte upstream |
-| `NEWS_RETENTION_DAYS` | `30` | Dias para retenção e expiração de publicações |
+| `NEWS_STORE_MAX_ITEMS` | `15000` | Capacidade máxima global de notícias no banco |
+| `NEWS_STORE_MAX_PER_SOURCE` | `350` | Limite de matérias mantidas por fonte upstream |
+| `NEWS_RETENTION_DAYS` | `90` | Dias para retenção e expiração de publicações |
 | `NEWS_SYNC_INTERVAL_SECONDS`| `60` | Intervalo em segundos entre sincronizações de fundo |
-| `NEWS_API_BASE_URL` | `https://news-sources-api.vercel.app` | URL primária da API de notícias |
-| `NEWS_API_FALLBACK_URL` | `https://news-sources-api.vercel.app` | URL secundária em caso de instabilidade |
+| `NEWS_API_BASE_URL` | `https://news-sources-api.legislativemunicipal.workers.dev` | URL base da API de notícias |
+| `API_KEY` | `""` | Chave de autenticação da API no ambiente do servidor (`NEWS_API_KEY` também aceita) |
 
 ---
 

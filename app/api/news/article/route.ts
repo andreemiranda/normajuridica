@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getNewsItemBySlugOrId } from '@/lib/news-fetcher';
+import { getNewsStore } from '@/lib/news-store';
+import { resolveSourceNewsSlugsWithApi } from '@/lib/news-sync';
 import { fetchFullArticleBody, ensureCompleteArticleText } from '@/lib/article-extractor';
 import { sanitizePublicData } from '@/lib/security';
-import { repairAndSanitizeArticleHtml } from '@/lib/sanitizer';
+import { repairAndSanitizeArticleHtml, extractUnresolvedSourceNewsCandidates } from '@/lib/sanitizer';
+import { SITE_CONFIG } from '@/lib/site-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,12 +19,16 @@ export async function GET(req: NextRequest) {
     const text = searchParams.get('text') || '';
 
     let contentHtml = '';
+    let featuredImage = '';
 
-    // 1. Try finding in news cache
+    // 1. Try finding in news cache / DB / upstream API (with embedded link resolution)
     if (slug) {
-      const item = await getNewsItemBySlugOrId(slug);
-      if (item && item.contentHtml && item.contentHtml.length > 250) {
-        contentHtml = item.contentHtml;
+      const item = await getNewsItemBySlugOrId(slug, { resolveApiLinks: true });
+      if (item) {
+        if (item.imageUrl) featuredImage = item.imageUrl;
+        if (item.contentHtml && item.contentHtml.length > 250) {
+          contentHtml = item.contentHtml;
+        }
       }
     }
 
@@ -38,8 +45,36 @@ export async function GET(req: NextRequest) {
       contentHtml = ensureCompleteArticleText(text || contentHtml, title, category);
     }
 
-    // 4. Sanitize and repair any corrupted gallery markup or unclosed image attributes
-    const cleanHtml = repairAndSanitizeArticleHtml(contentHtml);
+    // 4. Sanitize and resolve links (APP_URL + DB + API check + target="_blank" for external/file links)
+    const store = getNewsStore();
+    await store.init();
+    const unresolved = extractUnresolvedSourceNewsCandidates(contentHtml, {
+      currentArticleSlug: slug,
+      resolveSlugInDb: (c) => store.resolveSourceArticleSlug(c),
+    });
+    const apiResolved =
+      unresolved.length > 0
+        ? await resolveSourceNewsSlugsWithApi(unresolved, category)
+        : new Map<string, string>();
+
+    const rawAppUrl = (process.env.APP_URL || '').trim();
+    const appUrl =
+      rawAppUrl && !rawAppUrl.includes('MY_APP_URL')
+        ? rawAppUrl.replace(/\/+$/, '')
+        : '';
+
+    const cleanHtml = repairAndSanitizeArticleHtml(
+      contentHtml,
+      featuredImage ? [featuredImage] : [],
+      {
+        appUrl,
+        appDomain: SITE_CONFIG.domain,
+        currentArticleSlug: slug,
+        resolveSlugInDb: (candidate) =>
+          store.resolveSourceArticleSlug(candidate) ?? apiResolved.get(candidate) ?? null,
+        deferMissingLinkFallback: false,
+      }
+    );
 
     return NextResponse.json(
       sanitizePublicData({

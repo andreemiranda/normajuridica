@@ -37,6 +37,12 @@ export const ALL_CATEGORIES: CategoryInfo[] = [
   { id: 'Rondônia', name: 'Rondônia', slug: 'rondonia', group: 'regiao' },
   { id: 'Roraima', name: 'Roraima', slug: 'roraima', group: 'regiao' },
   { id: 'Sergipe', name: 'Sergipe', slug: 'sergipe', group: 'regiao' },
+  { id: 'Bahia', name: 'Bahia', slug: 'bahia', group: 'regiao' },
+  { id: 'São Paulo', name: 'São Paulo', slug: 'sao-paulo', group: 'regiao' },
+  { id: 'Rio de Janeiro', name: 'Rio de Janeiro', slug: 'rio-de-janeiro', group: 'regiao' },
+  { id: 'Distrito Federal', name: 'Distrito Federal', slug: 'distrito-federal', group: 'regiao' },
+  { id: 'Ceará', name: 'Ceará', slug: 'ceara', group: 'regiao' },
+  { id: 'Pernambuco', name: 'Pernambuco', slug: 'pernambuco', group: 'regiao' },
   { id: 'Campinas e região', name: 'Campinas e Região', slug: 'campinas-e-regiao', group: 'regiao' },
   { id: 'Bauru e Marília', name: 'Bauru e Marília', slug: 'bauru-e-marilia', group: 'regiao' },
   { id: 'Santos e Região', name: 'Santos e Região', slug: 'santos-e-regiao', group: 'regiao' },
@@ -325,4 +331,64 @@ export function getCategorySourceIds(categoryOrSlug: string): string[] {
 
 export function getSourceById(id: string): NewsApiSourceItem | undefined {
   return ALL_NEWS_SOURCES.find(s => s.id === id);
+}
+
+const REGIONAL_KEYWORDS = [
+  'acre', 'alagoas', 'amapa', 'amazonas', 'bahia', 'ceara', 'distrito-federal',
+  'espirito-santo', 'goias', 'maranhao', 'mato-grosso', 'minas', 'para',
+  'paraiba', 'parana', 'pernambuco', 'piaui', 'rio-de-janeiro', 'fluminense',
+  'rio-grande-do-norte', 'rio-grande-do-sul', 'rondonia', 'roraima',
+  'santa-catarina', 'sao-paulo', 'sergipe', 'tocantins', 'campinas', 'bauru',
+  'santos', 'sao-carlos', 'ribeirao-preto', 'mogi', 'vale-do-paraiba',
+  'caruaru', 'petrolina', 'regiao', 'campos-gerais', 'costa-verde',
+  'zona-da-mata', 'sul-de-minas', 'grande-minas', 'vales-de-minas',
+  'centro-oeste-de-minas', 'norte-do-parana', 'oeste-do-parana',
+  '-pr', '-rj', '-mg', '-sp', '-sc', '-rs', '-df', '-ba', '-pe', '-ce',
+];
+
+export function inferCategoryGroup(nameOrSlug: string): 'tema' | 'regiao' {
+  const norm = normalizeCategoryText(nameOrSlug);
+  if (REGIONAL_KEYWORDS.some(k => norm.includes(k))) return 'regiao';
+  return 'tema';
+}
+
+export function mergeDynamicCategories(
+  extraNames: string[],
+  baseCategories: CategoryInfo[] = ALL_CATEGORIES
+): CategoryInfo[] {
+  const bySlug = new Map<string, CategoryInfo>();
+  const knownNormalized = new Set<string>();
+
+  for (const cat of baseCategories) {
+    const cleanName = cleanCategoryName(cat.name);
+    const entry: CategoryInfo = {
+      ...cat,
+      name: cleanName,
+      group: cat.group || inferCategoryGroup(cat.slug),
+    };
+    bySlug.set(cat.slug, entry);
+    knownNormalized.add(cat.slug);
+    knownNormalized.add(normalizeCategoryText(cleanName));
+    knownNormalized.add(normalizeCategoryText(cat.id));
+  }
+
+  for (const raw of extraNames) {
+    const cleaned = cleanCategoryName(raw || '');
+    if (!cleaned) continue;
+    const slug = categorySlugify(cleaned);
+    const normName = normalizeCategoryText(cleaned);
+    if (!slug || slug === 'todas' || slug === 'all' || slug === 'noticias-gerais') continue;
+    if (!bySlug.has(slug) && !knownNormalized.has(slug) && !knownNormalized.has(normName)) {
+      bySlug.set(slug, {
+        id: cleaned,
+        name: cleaned,
+        slug,
+        group: inferCategoryGroup(slug),
+      });
+      knownNormalized.add(slug);
+      knownNormalized.add(normName);
+    }
+  }
+
+  return Array.from(bySlug.values());
 }

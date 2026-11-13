@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { SITE_CONFIG } from '@/lib/site-config';
 import { ALL_CATEGORIES } from '@/lib/sources';
+import { CategoryInfo } from '@/lib/types';
 import {
   useIsClient,
   useTheme,
@@ -59,7 +60,24 @@ export function Header({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isListDrawerOpen, setIsListDrawerOpen] = useState(false);
+  const [drawerCategories, setDrawerCategories] = useState<CategoryInfo[]>(ALL_CATEGORIES);
   const drawerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isListDrawerOpen) return;
+    let active = true;
+    fetch('/api/categories')
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        if (active && data?.categories && Array.isArray(data.categories) && data.categories.length > 0) {
+          setDrawerCategories(data.categories);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [isListDrawerOpen]);
 
   const [clock, setClock] = useState({ date: 'Brasília, DF', time: '12:00:00' });
 
@@ -151,8 +169,8 @@ export function Header({
     }
   };
 
-  const thematicCategories = ALL_CATEGORIES.filter(c => c.group === 'tema');
-  const regionalCategories = ALL_CATEGORIES.filter(c => c.group === 'regiao');
+  const thematicCategories = drawerCategories.filter(c => c.group === 'tema');
+  const regionalCategories = drawerCategories.filter(c => c.group === 'regiao');
 
   return (
     <header className="w-full bg-white dark:bg-zinc-950 border-b border-slate-200 dark:border-zinc-800 relative z-50">

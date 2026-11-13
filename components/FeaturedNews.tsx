@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { NewsItem } from '@/lib/types';
 import { OptimizedImage } from './OptimizedImage';
+import { stripHtmlTags } from '@/lib/sanitizer';
 
 interface FeaturedNewsProps {
   news: NewsItem[];
@@ -107,7 +108,7 @@ export function FeaturedNews({ news }: FeaturedNewsProps) {
 
             {/* Justified Summary without right-edge hyphenation */}
             <p className="text-xs sm:text-sm md:text-base text-slate-200 line-clamp-2 md:line-clamp-3 mb-4 max-w-3xl font-normal text-justify hyphens-none leading-relaxed hidden sm:block">
-              {currentArticle.summary}
+              {stripHtmlTags(currentArticle.summary || '')}
             </p>
 
             {/* CTA Button */}
