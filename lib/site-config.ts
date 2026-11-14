@@ -56,24 +56,6 @@ export const SITE_CONFIG = {
         '',
     },
   },
-  smtp: {
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '465', 10),
-    secure:
-      process.env.SMTP_SECURE === 'true' ||
-      (process.env.SMTP_PORT ? process.env.SMTP_PORT === '465' : true),
-    user: process.env.SMTP_USER || '',
-    pass: process.env.SMTP_PASS || '',
-    receiver:
-      process.env.CONTACT_RECEIVER_EMAIL ||
-      process.env.SMTP_USER ||
-      `contato@${domain}`,
-  },
-  aiSummary: {
-    endpoint: process.env.AI_SUMMARY_API_ENDPOINT || '',
-    apiKey: process.env.AI_SUMMARY_API_KEY || '',
-    model: process.env.AI_SUMMARY_MODEL || 'gpt-4o-mini',
-  },
 };
 
 export function getBaseUrl(req?: Request | { headers?: Headers | Record<string, string> }): string {
@@ -92,7 +74,7 @@ export function getBaseUrl(req?: Request | { headers?: Headers | Record<string, 
     return cleanUrl(process.env.NEXT_PUBLIC_SITE_URL);
   }
 
-  // 4. Request headers (x-forwarded-host / host)
+  // 4. Request headers (Cloudflare / Proxy x-forwarded-host / host)
   if (req) {
     let host: string | null = null;
     if ('headers' in req && req.headers) {
@@ -105,11 +87,15 @@ export function getBaseUrl(req?: Request | { headers?: Headers | Record<string, 
       }
     }
     if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
-      return cleanUrl(host);
+      const normalizedHost = host.replace(/^www\./i, '');
+      return cleanUrl(normalizedHost);
     }
   }
 
-  // 5. Vercel deployment variables
+  // 5. Cloudflare / Vercel deployment variables
+  if (process.env.CF_PAGES_URL) {
+    return cleanUrl(process.env.CF_PAGES_URL);
+  }
   if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
     return cleanUrl(process.env.VERCEL_PROJECT_PRODUCTION_URL);
   }

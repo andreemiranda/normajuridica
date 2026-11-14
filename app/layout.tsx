@@ -71,6 +71,12 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
+        url: `${baseUrl}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: `${SITE_CONFIG.name} - ${SITE_CONFIG.tagline}`,
+      },
+      {
         url: `${baseUrl}/cover.png`,
         width: 1200,
         height: 630,
@@ -82,7 +88,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: `${SITE_CONFIG.name} | ${SITE_CONFIG.tagline}`,
     description: SITE_CONFIG.description,
-    images: [`${baseUrl}/cover.png`],
+    images: [`${baseUrl}/og-image.png`, `${baseUrl}/cover.png`],
     creator: '@normajuridica',
   },
   other: {

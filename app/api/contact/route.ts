@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { SITE_CONFIG } from '@/lib/site-config';
+import { getSmtpConfig } from '@/lib/server-config';
 import { generateProtocolNumber } from '@/lib/protocol';
 import { sanitizePublicData, checkRateLimit, sanitizeInput } from '@/lib/security';
 
@@ -61,15 +62,16 @@ export async function POST(req: NextRequest) {
 
     // Send email via nodemailer if SMTP configured
     let emailSent = false;
-    if (SITE_CONFIG.smtp.user && SITE_CONFIG.smtp.pass) {
+    const smtpConfig = getSmtpConfig();
+    if (smtpConfig.user && smtpConfig.pass) {
       try {
         const transporter = nodemailer.createTransport({
-          host: SITE_CONFIG.smtp.host,
-          port: SITE_CONFIG.smtp.port,
-          secure: SITE_CONFIG.smtp.secure,
+          host: smtpConfig.host,
+          port: smtpConfig.port,
+          secure: smtpConfig.secure,
           auth: {
-            user: SITE_CONFIG.smtp.user,
-            pass: SITE_CONFIG.smtp.pass,
+            user: smtpConfig.user,
+            pass: smtpConfig.pass,
           },
         });
 
@@ -125,8 +127,8 @@ export async function POST(req: NextRequest) {
         `;
 
         await transporter.sendMail({
-          from: `"Norma Jurídica" <${SITE_CONFIG.smtp.user}>`,
-          to: SITE_CONFIG.smtp.receiver,
+          from: `"Norma Jurídica" <${smtpConfig.user}>`,
+          to: smtpConfig.receiver,
           replyTo: email.trim(),
           subject: `[Protocolo ${protocolNumber}] ${cleanSubject} - Norma Jurídica`,
           html: htmlTemplate,

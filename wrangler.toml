@@ -1,0 +1,40 @@
+# Configuração Cloudflare Workers (Wrangler TOML) - Norma Jurídica
+# Espelho compatível com wrangler.jsonc para deploy multiplataforma via CLI ou CI/CD.
+
+name = "norma-juridica"
+main = "worker.js"
+compatibility_date = "2025-10-01"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+preview_urls = true
+
+[observability]
+enabled = true
+
+# Custom Domains automáticos no Cloudflare DNS para evitar Error 1000 / Error 1014 / loop de proxy:
+# Ao usar custom_domain = true, o Cloudflare provisiona os registros DNS e SSL Edge automaticamente.
+routes = [
+  { pattern = "normajuridica.com.br", custom_domain = true },
+  { pattern = "www.normajuridica.com.br", custom_domain = true }
+]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+html_handling = "none"
+not_found_handling = "none"
+run_worker_first = true
+
+[triggers]
+crons = ["* * * * *"]
+
+# Apenas variáveis públicas não-sensíveis.
+# Cadastre segredos via: npx wrangler secret put API_KEY (e NEWS_API_KEY, WEATHER_API_KEY, REVALIDATE_SECRET, ORIGIN_URL, etc.)
+[vars]
+NODE_ENV = "production"
+CLOUDFLARE_WORKER = "true"
+APP_URL = "https://normajuridica.com.br"
+SITE_DOMAIN = "normajuridica.com.br"
+NEXT_PUBLIC_SITE_URL = "https://normajuridica.com.br"
+NEWS_API_BASE_URL = "https://news-sources-api.legislativemunicipal.workers.dev"
+NEXT_PUBLIC_ADSENSE_ID = "ca-pub-7059730627018047"

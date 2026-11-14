@@ -7,6 +7,16 @@ import { categorySlugify } from '@/lib/slug';
 
 export const dynamic = 'force-dynamic';
 
+function escapeXml(unsafe: string): string {
+  if (!unsafe) return '';
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 export async function GET(req: NextRequest) {
   const baseUrl = getBaseUrl(req);
   const acceptHeader = req.headers.get('accept') || '';
@@ -51,10 +61,10 @@ export async function GET(req: NextRequest) {
 ${entries
   .map(
     e => `  <url>
-    <loc>${e.url}</loc>
-    <lastmod>${e.lastmod}</lastmod>
-    <changefreq>${e.changefreq}</changefreq>
-    <priority>${e.priority}</priority>
+    <loc>${escapeXml(e.url)}</loc>
+    <lastmod>${escapeXml(e.lastmod || now)}</lastmod>
+    <changefreq>${escapeXml(e.changefreq || 'hourly')}</changefreq>
+    <priority>${escapeXml(String(e.priority || '0.8'))}</priority>
   </url>`
   )
   .join('\n')}

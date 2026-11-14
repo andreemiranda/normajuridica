@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
-import { SITE_CONFIG } from '@/lib/site-config';
+import { getAiSummaryConfig } from '@/lib/server-config';
 import { sanitizePublicData, checkRateLimit } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +16,8 @@ const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 const MAX_SUMMARY_CACHE_SIZE = 500;
 
 export async function GET() {
-  const provider = SITE_CONFIG.aiSummary.endpoint
+  const aiConfig = getAiSummaryConfig();
+  const provider = aiConfig.endpoint
     ? 'custom'
     : process.env.GEMINI_API_KEY
     ? 'gemini'
@@ -90,16 +91,17 @@ RESUMO: <parágrafo>
 ${Array.from({ length: minPoints }, (_, i) => `PONTO ${i + 1}: <ponto ${i + 1}>`).join('\n')}`;
 
     // 1. Try Custom OpenAI-compatible endpoint
-    if (SITE_CONFIG.aiSummary.endpoint && SITE_CONFIG.aiSummary.apiKey) {
+    const aiConfig = getAiSummaryConfig();
+    if (aiConfig.endpoint && aiConfig.apiKey) {
       try {
-        const customRes = await fetch(`${SITE_CONFIG.aiSummary.endpoint.replace(/\/+$/, '')}/chat/completions`, {
+        const customRes = await fetch(`${aiConfig.endpoint.replace(/\/+$/, '')}/chat/completions`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${SITE_CONFIG.aiSummary.apiKey}`,
+            'Authorization': `Bearer ${aiConfig.apiKey}`,
           },
           body: JSON.stringify({
-            model: SITE_CONFIG.aiSummary.model || 'gpt-4o-mini',
+            model: aiConfig.model || 'gpt-4o-mini',
             temperature: 0.2,
             messages: [
               { role: 'system', content: 'Você é o editor sênior de jornalismo do portal Norma Jurídica.' },

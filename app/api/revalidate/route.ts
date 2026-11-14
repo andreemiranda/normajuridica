@@ -5,8 +5,6 @@ import { sanitizePublicData, checkRateLimit, verifySecret } from '@/lib/security
 
 export const dynamic = 'force-dynamic';
 
-const DEFAULT_SECRET = 'camara-paraiso-revalidate-secret-token';
-
 export async function GET(req: NextRequest) {
   return handleRevalidation(req);
 }
@@ -25,10 +23,18 @@ async function handleRevalidation(req: NextRequest) {
     );
   }
 
-  const configuredSecret = process.env.REVALIDATE_SECRET || DEFAULT_SECRET;
+  const configuredSecret = (process.env.REVALIDATE_SECRET || process.env.CRON_SECRET || '').trim();
+  if (!configuredSecret) {
+    return NextResponse.json(
+      sanitizePublicData({ error: 'REVALIDATE_SECRET não configurado no ambiente do servidor.' }),
+      { status: 503 }
+    );
+  }
 
   const url = req.nextUrl;
-  let secret = url.searchParams.get('secret');
+  const authHeader = req.headers.get('authorization') || '';
+  const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+  let secret = url.searchParams.get('secret') || bearer || null;
   let isAll = url.searchParams.get('all') === 'true' || url.searchParams.get('all') === '1';
   let slug = url.searchParams.get('slug') || '';
   let path = url.searchParams.get('path') || '';
@@ -58,10 +64,7 @@ async function handleRevalidation(req: NextRequest) {
   }
 
   // Constant-time secret validation to prevent timing attacks
-  const isAuthorized =
-    verifySecret(secret, configuredSecret) ||
-    verifySecret(secret, DEFAULT_SECRET) ||
-    (process.env.REVALIDATE_SECRET ? verifySecret(secret, process.env.REVALIDATE_SECRET) : false);
+  const isAuthorized = verifySecret(secret, configuredSecret);
 
   if (!isAuthorized) {
     return NextResponse.json(
