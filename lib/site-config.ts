@@ -1,11 +1,11 @@
 function cleanDomain(input?: string): string {
-  if (!input) return 'normajuridica.com.br';
+  if (!input) return 'news.mirandinhacontabilidade.workers.dev';
   let d = input.trim();
   d = d.replace(/^https?:\/\//i, '');
   d = d.replace(/\/.*$/, '');
   d = d.replace(/[^a-zA-Z0-9.-]/g, '');
   if (!d || d.length < 4 || !d.includes('.') || d.includes('localhost')) {
-    return 'normajuridica.com.br';
+    return 'news.mirandinhacontabilidade.workers.dev';
   }
   return d;
 }
@@ -26,7 +26,7 @@ export const SITE_CONFIG = {
     responsible: 'Norma Jurídica',
     address: 'Brasília-DF',
     phone: '(61) 9 9242-8022',
-    email: `contato@${domain}`,
+    email: 'contato@normajuridica.com.br',
   },
   adsense: {
     clientId:
@@ -109,7 +109,7 @@ export function getBaseUrl(req?: Request | { headers?: Headers | Record<string, 
   }
 
   // 7. Canonical fallback
-  return 'https://normajuridica.com.br';
+  return 'https://news.mirandinhacontabilidade.workers.dev';
 }
 
 function cleanUrl(url: string): string {

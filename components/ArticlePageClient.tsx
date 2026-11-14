@@ -293,7 +293,10 @@ export function ArticlePageClient({
   };
 
   // Social share URLs (stable canonical URL on both server and client)
-  const pageUrl = `https://normajuridica.com.br/noticia/${article.slug}`;
+  const shareBaseUrl = (
+    process.env.NEXT_PUBLIC_SITE_URL || 'https://news.mirandinhacontabilidade.workers.dev'
+  ).replace(/\/+$/, '');
+  const pageUrl = `${shareBaseUrl}/noticia/${article.slug}`;
   const shareTitle = encodeURIComponent(article.title);
   const shareWhatsApp = `https://api.whatsapp.com/send?text=${shareTitle}%20${encodeURIComponent(pageUrl)}`;
   const shareTwitter = `https://twitter.com/intent/tweet?text=${shareTitle}&url=${encodeURIComponent(pageUrl)}`;

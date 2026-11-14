@@ -27,7 +27,7 @@ export function resolveNewsApiConfig(env: NodeJS.ProcessEnv = process.env) {
 export function buildNewsApiHeaders(apiKey: string): Record<string, string> {
   const headers: Record<string, string> = {
     'Accept': 'application/json',
-    'User-Agent': 'NormaJuridica/1.0 (+https://normajuridica.com.br)',
+    'User-Agent': 'NormaJuridica/1.0 (+https://news.mirandinhacontabilidade.workers.dev)',
   };
 
   if (apiKey) {

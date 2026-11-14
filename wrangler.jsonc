@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "norma-juridica",
+  "name": "news",
   "main": "worker.js",
   "compatibility_date": "2025-10-01",
   "compatibility_flags": ["nodejs_compat"],
@@ -9,18 +9,8 @@
   "observability": {
     "enabled": true
   },
-  // Custom Domains gerenciados pelo Cloudflare Workers:
-  // Evita Error 1000, Error 1014 e conflitos de A/CNAME ao apontar para normajuridica.com.br
-  "routes": [
-    {
-      "pattern": "normajuridica.com.br",
-      "custom_domain": true
-    },
-    {
-      "pattern": "www.normajuridica.com.br",
-      "custom_domain": true
-    }
-  ],
+  // Custom domain (normajuridica.com.br) removido para evitar erro de deploy [code: 10082]
+  // e publicar automaticamente em https://news.mirandinhacontabilidade.workers.dev
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
@@ -37,9 +27,9 @@
   "vars": {
     "NODE_ENV": "production",
     "CLOUDFLARE_WORKER": "true",
-    "APP_URL": "https://normajuridica.com.br",
-    "SITE_DOMAIN": "normajuridica.com.br",
-    "NEXT_PUBLIC_SITE_URL": "https://normajuridica.com.br",
+    "APP_URL": "https://news.mirandinhacontabilidade.workers.dev",
+    "SITE_DOMAIN": "news.mirandinhacontabilidade.workers.dev",
+    "NEXT_PUBLIC_SITE_URL": "https://news.mirandinhacontabilidade.workers.dev",
     "NEWS_API_BASE_URL": "https://news-sources-api.legislativemunicipal.workers.dev",
     "NEXT_PUBLIC_ADSENSE_ID": "ca-pub-7059730627018047"
   }

@@ -58,7 +58,7 @@ docker run -p 3000:3000 -v $(pwd)/data:/app/data norma-juridica
 
 ### 3. Cloudflare Workers (`worker.js`, `wrangler.jsonc` e `wrangler.toml`)
 - O portal suporta execução nativa na borda (Edge) com paridade de interface e rotas (`/`, `/categoria/[slug]`, `/noticia/[slug]`, `/contato`, `/pagina/[slug]`, `/api/*`, `sitemap*.xml`, `robots.txt` e Cron Trigger `scheduled`).
-- **Configuração DNS sem Error 1000 / 1014 / Loop 508:** tanto `wrangler.jsonc` quanto `wrangler.toml` utilizam `custom_domain = true` para `normajuridica.com.br` e `www.normajuridica.com.br`. Ao fazer deploy via Wrangler, o Cloudflare cria os registros DNS e SSL Edge gerenciados automaticamente. Remova registros manuais `A`/`CNAME` proxied apontando para IPs da Cloudflare para evitar Error 1000.
+- **Deploy padrão no Workers (`name = "news"`):** o projeto publica automaticamente em `https://news.mirandinhacontabilidade.workers.dev`, sem `routes` ou `custom_domain` fixos (evitando erro `[code: 10082]`).
 - **Modo Standalone Edge vs. Híbrido:** sem `ORIGIN_URL`, o Worker responde diretamente da borda consumindo `NEWS_API_BASE_URL` com Edge Cache e fallback automático. Se `ORIGIN_URL` apontar para um servidor Node.js externo (ex.: `https://origin-node.seudominio.com`), o Worker atua como proxy com proteção anti-loop (`x-nj-worker-hop`) e fallback para Edge Standalone em caso de erro `5xx`.
 - **Segredos exclusivos no ambiente do Worker (nunca no repositório):**
 ```bash

@@ -1,10 +1,10 @@
 // worker.js — Cloudflare Workers Multiplatform Entry Point for Norma Jurídica
 // Mantém paridade completa de interface, rotas e contratos JSON com o servidor Node.js (server.js),
 // com suporte híbrido (Proxy resiliente para ORIGIN_URL quando configurado OU execução 100% Edge Standalone),
-// prevenção de loops DNS (Error 1000 / 1014 / 508) para normajuridica.com.br e leitura exclusiva de secrets no env.
+// prevenção de loops DNS (Error 1000 / 1014 / 508) para news.mirandinhacontabilidade.workers.dev e leitura exclusiva de secrets no env.
 
 const DEFAULT_NEWS_API_BASE_URL = 'https://news-sources-api.legislativemunicipal.workers.dev';
-const CANONICAL_DOMAIN = 'normajuridica.com.br';
+const CANONICAL_DOMAIN = 'news.mirandinhacontabilidade.workers.dev';
 const CANONICAL_ORIGIN = `https://${CANONICAL_DOMAIN}`;
 
 const SITE_INFO = {
@@ -16,7 +16,7 @@ const SITE_INFO = {
   domain: CANONICAL_DOMAIN,
   address: 'Brasília-DF',
   phone: '(61) 9 9242-8022',
-  email: `contato@${CANONICAL_DOMAIN}`,
+  email: 'contato@normajuridica.com.br',
 };
 
 const ALL_CATEGORIES = [
@@ -153,7 +153,7 @@ export function resolveWorkerNewsApiConfig(env = {}) {
 export function buildWorkerNewsApiHeaders(apiKey) {
   const headers = {
     Accept: 'application/json',
-    'User-Agent': 'NormaJuridica/1.0 (+https://normajuridica.com.br)',
+    'User-Agent': 'NormaJuridica/1.0 (+https://news.mirandinhacontabilidade.workers.dev)',
   };
   if (apiKey) {
     headers.Authorization = `Bearer ${apiKey}`;
@@ -163,8 +163,8 @@ export function buildWorkerNewsApiHeaders(apiKey) {
 }
 
 /**
- * Resolve redirecionamentos canônicos e correções de protocolo/DNS para normajuridica.com.br.
- * Não redireciona localhost, 127.0.0.1, *.workers.dev ou ambientes de preview temporários.
+ * Resolve redirecionamentos canônicos e correções de protocolo/DNS para news.mirandinhacontabilidade.workers.dev.
+ * Não redireciona localhost, 127.0.0.1 ou ambientes de preview temporários.
  */
 export function resolveDnsAndCanonical(request) {
   const url = new URL(request.url);
@@ -526,7 +526,7 @@ async function fetchUpstreamJson(env, endpoint, timeoutMs = 5500) {
 
 async function fetchAggregatedNews(env, { category = 'all', q = '', page = 1, limit = 24, sourceId = '', refresh = false } = {}) {
   const normCat = normalizeCategoryText(category);
-  const cacheKeyUrl = `https://edge-cache.normajuridica.com.br/news?cat=${encodeURIComponent(normCat || 'all')}&sid=${encodeURIComponent(sourceId)}`;
+  const cacheKeyUrl = `https://edge-cache.news.mirandinhacontabilidade.workers.dev/news?cat=${encodeURIComponent(normCat || 'all')}&sid=${encodeURIComponent(sourceId)}`;
 
   let pool = null;
   const cache = typeof caches !== 'undefined' ? caches.default : null;
@@ -1618,7 +1618,7 @@ const workerHandler = {
     const url = new URL(request.url);
     const pathname = url.pathname;
 
-    // 1. Canonicalização HTTPS / apex e correção de DNS www -> normajuridica.com.br
+    // 1. Canonicalização HTTPS e redirecionamento www -> news.mirandinhacontabilidade.workers.dev
     const canonicalRedirect = resolveDnsAndCanonical(request);
     if (canonicalRedirect) {
       return applySecurityHeaders(canonicalRedirect, pathname);

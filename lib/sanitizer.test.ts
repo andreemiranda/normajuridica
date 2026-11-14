@@ -150,7 +150,7 @@ test('processArticleLinksHtml enforces APP_URL/DB/home rules for source news and
 
   const withAppUrl = processArticleLinksHtml(sampleHtml, {
     appUrl: 'https://portal.example.com/',
-    appDomain: 'normajuridica.com.br',
+    appDomain: 'news.mirandinhacontabilidade.workers.dev',
     currentArticleSlug: 'como-passar-a-guarda',
     resolveSlugInDb: (slug) =>
       slug === 'botafogo-bate-o-atletico-mg' ? 'botafogo-bate-o-atletico-mg' : null,
@@ -175,7 +175,7 @@ test('processArticleLinksHtml enforces APP_URL/DB/home rules for source news and
   // Without APP_URL set -> relative internal paths /noticia/... and /
   const relativeMode = processArticleLinksHtml(sampleHtml, {
     appUrl: '',
-    appDomain: 'normajuridica.com.br',
+    appDomain: 'news.mirandinhacontabilidade.workers.dev',
     currentArticleSlug: 'como-passar-a-guarda',
     resolveSlugInDb: (slug) =>
       slug === 'botafogo-bate-o-atletico-mg' ? 'botafogo-bate-o-atletico-mg' : null,
@@ -187,7 +187,7 @@ test('processArticleLinksHtml enforces APP_URL/DB/home rules for source news and
   const storedHtml = `<p><a href="/noticia/ifsp-seleciona-longo-slug" data-app-link="true">Aqui</a> e <a href="/noticia/slug-que-nao-existe" data-app-link="true">Ausente</a></p>`;
   const rechecked = processArticleLinksHtml(storedHtml, {
     appUrl: 'https://portal.example.com',
-    appDomain: 'normajuridica.com.br',
+    appDomain: 'news.mirandinhacontabilidade.workers.dev',
     resolveSlugInDb: (s) => (s === 'ifsp-seleciona-longo-slug' ? 'ifsp-seleciona-curto' : null),
   });
   assert.match(rechecked, /href="https:\/\/portal\.example\.com\/noticia\/ifsp-seleciona-curto"/);
