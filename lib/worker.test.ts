@@ -59,6 +59,14 @@ test('wrangler.jsonc e wrangler.toml são válidos, sincronizados e sem segredos
   assert.match(tomlRaw, /pattern\s*=\s*"www\.normajuridica\.com\.br",\s*custom_domain\s*=\s*true/);
   assert.match(tomlRaw, /NEWS_API_BASE_URL\s*=\s*"https:\/\/news-sources-api\.legislativemunicipal\.workers\.dev"/);
   assert.doesNotMatch(tomlRaw, /^\s*(API_KEY|NEWS_API_KEY|REVALIDATE_SECRET|SMTP_PASS)\s*=/m);
+
+  // Evita bun.lock (lockfileVersion 2 incompatível com bun@1.2.15 no Cloudflare Builds) e valida package-lock.json
+  assert.equal(fs.existsSync(path.join(rootDir, 'bun.lock')), false, 'bun.lock não deve existir na raiz para evitar UnknownLockfileVersion no Cloudflare');
+  const pkgJson = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8'));
+  const pkgLockPath = path.join(rootDir, 'package-lock.json');
+  assert.equal(fs.existsSync(pkgLockPath), true, 'package-lock.json deve existir e estar sincronizado com package.json');
+  const pkgLock = JSON.parse(fs.readFileSync(pkgLockPath, 'utf8'));
+  assert.equal(pkgLock.name, pkgJson.name);
 });
 
 test('resolveDnsAndCanonical redireciona www e http de produção sem redirecionar workers.dev ou localhost', () => {

@@ -19,4 +19,5 @@ data/*.db-shm
 *.db-wal
 *.db-shm
 .playwright-cli/
-
+bun.lock
+bun.lockb
