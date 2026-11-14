@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Source_Serif_4 } from 'next/font/google';
+import localFont from 'next/font/local';
 import Script from 'next/script';
 import './globals.css';
 import { SITE_CONFIG, getBaseUrl } from '@/lib/site-config';
@@ -7,18 +7,22 @@ import { getNewsApiConfig } from '@/lib/api-config';
 import { generatePortalOrganizationSchema, generateWebSiteSchema } from '@/lib/seo';
 import { CookieConsentBanner } from '@/components/CookieConsentBanner';
 
-const inter = Inter({
-  subsets: ['latin'],
+const inter = localFont({
+  src: './fonts/inter-latin.woff2',
   display: 'swap',
   variable: '--font-inter',
-  weight: ['400', '500', '600', '700', '800', '900'],
+  weight: '400 900',
+  style: 'normal',
+  adjustFontFallback: 'Arial',
 });
 
-const sourceSerif = Source_Serif_4({
-  subsets: ['latin'],
+const sourceSerif = localFont({
+  src: './fonts/source-serif-4-latin.woff2',
   display: 'swap',
   variable: '--font-serif',
-  weight: ['400', '600', '700'],
+  weight: '400 700',
+  style: 'normal',
+  adjustFontFallback: 'Times New Roman',
 });
 
 const baseUrl = getBaseUrl();

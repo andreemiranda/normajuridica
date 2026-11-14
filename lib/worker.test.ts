@@ -77,6 +77,13 @@ test('wrangler.jsonc e wrangler.toml são válidos, sincronizados e sem segredos
   const npmrcPath = path.join(rootDir, '.npmrc');
   assert.equal(fs.existsSync(npmrcPath), true, '.npmrc deve existir para garantir npm ci consistente');
   assert.match(fs.readFileSync(npmrcPath, 'utf8'), /legacy-peer-deps=true/);
+
+  // Garante fontes locais em app/fonts/ e uso de next/font/local (evita erro TypeError no google/loader.js no build)
+  const layoutSrc = fs.readFileSync(path.join(rootDir, 'app/layout.tsx'), 'utf8');
+  assert.doesNotMatch(layoutSrc, /next\/font\/google/);
+  assert.match(layoutSrc, /next\/font\/local/);
+  assert.equal(fs.existsSync(path.join(rootDir, 'app/fonts/inter-latin.woff2')), true);
+  assert.equal(fs.existsSync(path.join(rootDir, 'app/fonts/source-serif-4-latin.woff2')), true);
 });
 
 test('resolveDnsAndCanonical redireciona www e http de produção sem redirecionar workers.dev ou localhost', () => {
