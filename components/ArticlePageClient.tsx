@@ -145,8 +145,13 @@ export function ArticlePageClient({
   // Audio Reader
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
+  const [audioStatusMsg, setAudioStatusMsg] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const speechUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const speechChunksRef = useRef<string[]>([]);
+  const speechChunkIdxRef = useRef<number>(0);
+  const speechSeqRef = useRef<number>(0);
+  const speechKeepAliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     // Fetch full article content from internal API
@@ -194,7 +199,11 @@ export function ArticlePageClient({
     fetchAiSummary();
 
     return () => {
-      // Cancel speech synthesis or audio on unmount
+      speechSeqRef.current += 1;
+      if (speechKeepAliveRef.current) {
+        clearInterval(speechKeepAliveRef.current);
+        speechKeepAliveRef.current = null;
+      }
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
       }
@@ -221,6 +230,54 @@ export function ArticlePageClient({
     setStoredFontSize(next);
   };
 
+  const splitSpeechChunks = (raw: string, maxLen = 180): string[] => {
+    const clean = raw.replace(/\s+/g, ' ').trim();
+    if (!clean) return [];
+    const parts = clean.split(/(?<=[.?!;:])\s+/);
+    const chunks: string[] = [];
+    for (const part of parts) {
+      if (part.length <= maxLen) {
+        if (chunks.length > 0 && chunks[chunks.length - 1].length + 1 + part.length <= maxLen) {
+          chunks[chunks.length - 1] += ' ' + part;
+        } else {
+          chunks.push(part);
+        }
+        continue;
+      }
+      const words = part.split(' ');
+      let cur = '';
+      for (const word of words) {
+        if (!cur) cur = word;
+        else if (cur.length + 1 + word.length <= maxLen) cur += ' ' + word;
+        else {
+          chunks.push(cur);
+          cur = word;
+        }
+      }
+      if (cur) chunks.push(cur);
+    }
+    return chunks.filter(Boolean);
+  };
+
+  const stopAllAudio = () => {
+    speechSeqRef.current += 1;
+    if (speechKeepAliveRef.current) {
+      clearInterval(speechKeepAliveRef.current);
+      speechKeepAliveRef.current = null;
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+    }
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    speechUtteranceRef.current = null;
+    setIsPlayingAudio(false);
+  };
+
   const cyclePlaybackSpeed = () => {
     const speeds = [1, 1.25, 1.5];
     const nextIndex = (speeds.indexOf(playbackSpeed) + 1) % speeds.length;
@@ -231,34 +288,104 @@ export function ArticlePageClient({
       audioRef.current.playbackRate = next;
     }
     if (speechUtteranceRef.current && isPlayingAudio) {
-      // Re-trigger speech at new rate
-      window.speechSynthesis.cancel();
-      startSpeechSynthesis(next);
+      startSpeechSynthesis(next, speechChunkIdxRef.current);
     }
   };
 
-  const startSpeechSynthesis = (rate: number) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    const plainText = `${article.title}. ${aiSummary || article.summary}. ${contentHtml.replace(/<[^>]+>/g, ' ')}`;
-    const utterance = new SpeechSynthesisUtterance(plainText.slice(0, 3500));
-    utterance.lang = 'pt-BR';
-    utterance.rate = rate;
-    utterance.onend = () => setIsPlayingAudio(false);
-    utterance.onerror = () => setIsPlayingAudio(false);
-    speechUtteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
+  const startSpeechSynthesis = (rate: number, fromIndex = 0) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      setAudioStatusMsg('Síntese de voz indisponível neste navegador.');
+      setIsPlayingAudio(false);
+      return;
+    }
+
+    const bodyText = stripHtmlTags(contentHtml || '');
+    const fullText = `${article.title}. ${aiSummary || article.summary}. ${bodyText}`;
+    if (!speechChunksRef.current.length || fromIndex === 0) {
+      speechChunksRef.current = splitSpeechChunks(fullText, 180);
+    }
+    const chunks = speechChunksRef.current;
+    if (!chunks.length) {
+      setIsPlayingAudio(false);
+      return;
+    }
+
+    speechSeqRef.current += 1;
+    const activeSeq = speechSeqRef.current;
+    try {
+      window.speechSynthesis.cancel();
+    } catch {}
+
+    setAudioStatusMsg(null);
     setIsPlayingAudio(true);
+
+    if (speechKeepAliveRef.current) clearInterval(speechKeepAliveRef.current);
+    speechKeepAliveRef.current = setInterval(() => {
+      try {
+        if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+          window.speechSynthesis.pause();
+          window.speechSynthesis.resume();
+        }
+      } catch {}
+    }, 10000);
+
+    const pickVoice = () => {
+      try {
+        const voices = window.speechSynthesis.getVoices() || [];
+        return (
+          voices.find((v) => v.lang?.toLowerCase().startsWith('pt-br')) ||
+          voices.find((v) => v.lang?.toLowerCase().startsWith('pt')) ||
+          null
+        );
+      } catch {
+        return null;
+      }
+    };
+
+    const speakChunk = (idx: number) => {
+      if (activeSeq !== speechSeqRef.current || idx >= chunks.length) {
+        if (activeSeq === speechSeqRef.current) stopAllAudio();
+        return;
+      }
+      speechChunkIdxRef.current = idx;
+      const utterance = new SpeechSynthesisUtterance(chunks[idx]);
+      utterance.lang = 'pt-BR';
+      utterance.rate = rate;
+      const voice = pickVoice();
+      if (voice) utterance.voice = voice;
+      utterance.onend = () => {
+        if (activeSeq === speechSeqRef.current) speakChunk(idx + 1);
+      };
+      utterance.onerror = (ev) => {
+        if (activeSeq !== speechSeqRef.current) return;
+        if (ev && (ev.error === 'interrupted' || ev.error === 'canceled')) return;
+        stopAllAudio();
+      };
+      speechUtteranceRef.current = utterance;
+      window.speechSynthesis.speak(utterance);
+    };
+
+    const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+    if (voices.length > 0) {
+      speakChunk(fromIndex);
+    } else {
+      let started = false;
+      const launch = () => {
+        if (!started) {
+          started = true;
+          speakChunk(fromIndex);
+        }
+      };
+      if ('onvoiceschanged' in window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = launch;
+      }
+      setTimeout(launch, 150);
+    }
   };
 
   const toggleAudio = async () => {
     if (isPlayingAudio) {
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-      setIsPlayingAudio(false);
+      stopAllAudio();
       return;
     }
 
@@ -278,18 +405,18 @@ export function ArticlePageClient({
         audio.playbackRate = playbackSpeed;
         audio.onended = () => setIsPlayingAudio(false);
         audio.onerror = () => {
-          // Fall back to browser speech
-          startSpeechSynthesis(playbackSpeed);
+          audioRef.current = null;
+          startSpeechSynthesis(playbackSpeed, 0);
         };
         audioRef.current = audio;
-        audio.play();
+        await audio.play();
         setIsPlayingAudio(true);
         return;
       }
     } catch {}
 
-    // Web Speech API fallback
-    startSpeechSynthesis(playbackSpeed);
+    // Web Speech API chunked fallback
+    startSpeechSynthesis(playbackSpeed, 0);
   };
 
   // Social share URLs (stable canonical URL on both server and client)
@@ -403,6 +530,11 @@ export function ArticlePageClient({
               >
                 {playbackSpeed}x
               </button>
+              {audioStatusMsg && (
+                <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                  {audioStatusMsg}
+                </span>
+              )}
             </div>
 
             {/* Utility action buttons */}

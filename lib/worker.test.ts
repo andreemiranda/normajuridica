@@ -8,6 +8,10 @@ import worker, {
   resolveWorkerNewsApiConfig,
   buildWorkerNewsApiHeaders,
   sanitizePublicData,
+  stripForcedAlignmentStyles,
+  sanitizeArticleHtmlForWorker,
+  renderWorkerSitemapHtml,
+  splitTextForTts,
 } from '../worker.js';
 
 function stripJsonComments(content: string): string {
@@ -265,6 +269,125 @@ test('worker.fetch atende endpoints /api/*, SEO XML, páginas SSR e cron schedul
 
     // Cron scheduled
     await worker.scheduled({}, env, undefined);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('stripForcedAlignmentStyles, sanitizeArticleHtmlForWorker e splitTextForTts garantem justificação, zoom e TTS segmentado', () => {
+  const dirtyHtml = `
+    <p style="text-align: left; color: #111; font-size: 16px;" align="left">Primeiro parágrafo forçado à esquerda.</p>
+    <div style="text-align:right">Segundo bloco desalinhado.</div>
+    <img src="https://cdn.example.com/foto-exclusiva.jpg" alt="Sessão Plenária" />
+  `;
+  const stripped = stripForcedAlignmentStyles(dirtyHtml);
+  assert.doesNotMatch(stripped, /text-align\s*:/i);
+  assert.doesNotMatch(stripped, /\balign\s*=/i);
+
+  const sanitized = sanitizeArticleHtmlForWorker(dirtyHtml, 'https://cdn.example.com/capa.jpg');
+  assert.doesNotMatch(sanitized, /text-align\s*:/i);
+  assert.doesNotMatch(sanitized, /\balign\s*=/i);
+  assert.match(sanitized, /<figure class="my-6 not-prose">[\s\S]*class="zoom-frame[^>]*">[\s\S]*<figcaption/);
+
+  const longText =
+    'O Supremo Tribunal Federal iniciou nesta quarta-feira o julgamento sobre transparência digital nas plataformas online. ' +
+    'Diversas entidades jurídicas apresentaram manifestações técnicas ao plenário visando a segurança normativa. ' +
+    'Além disso, especialistas destacam que a regulamentação fortalece a previsibilidade institucional em todo o território nacional.';
+  const chunks = splitTextForTts(longText, 120);
+  assert.ok(chunks.length >= 2);
+  for (const chunk of chunks) {
+    assert.ok(chunk.length <= 120, `Chunk excedeu 120 chars: ${chunk.length}`);
+  }
+});
+
+test('worker.fetch entrega sitemaps estilizados para navegadores, XML para robôs e paridade completa de UI (Home, Carrossel, Favoritos, Artigo)', async () => {
+  const originalFetch = globalThis.fetch;
+  const sampleFeed = Array.from({ length: 12 }, (_, idx) => ({
+    id: String(200 + idx),
+    title: `Decisão institucional nº ${idx + 1} impacta setor regulatório nacional`,
+    slug: `decisao-institucional-${idx + 1}-regulacao`,
+    category: idx % 2 === 0 ? 'Justiça' : 'Política',
+    description: `Resumo detalhado da decisão institucional nº ${idx + 1} sobre regulação pública.`,
+    contentHtml: `<p style="text-align:left">Parágrafo de teste da reportagem nº ${idx + 1}.</p><img src="https://cdn.example.com/img-${idx + 1}.jpg" alt="Imagem ${idx + 1}" />`,
+    pubDate: new Date(Date.now() - idx * 60000).toISOString(),
+    imageUrl: `https://cdn.example.com/capa-${idx + 1}.jpg`,
+    author: 'Redação',
+  }));
+
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const urlStr = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    if (urlStr.includes('/api/news')) {
+      return new Response(JSON.stringify({ items: sampleFeed }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+    return new Response(JSON.stringify({ ok: true }), { status: 200 });
+  }) as typeof fetch;
+
+  try {
+    const env = {
+      NEWS_API_BASE_URL: 'https://news-sources-api.legislativemunicipal.workers.dev',
+      API_KEY: 'test-key',
+    };
+    const browserHeaders = { Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' };
+
+    // 1. Sitemaps HTML estilizados para navegadores vs XML bruto
+    for (const smPath of ['/sitemap.xml', '/sitemap-posts.xml', '/sitemap-categories.xml', '/sitemap-pages.xml', '/sitemap-images.xml']) {
+      const htmlRes = await worker.fetch(new Request(`https://news.mirandinhacontabilidade.workers.dev${smPath}`, { headers: browserHeaders }), env);
+      assert.equal(htmlRes.status, 200);
+      assert.match(htmlRes.headers.get('content-type') || '', /text\/html/);
+      const htmlBody = await htmlRes.text();
+      assert.match(htmlBody, /#1d4ed8/);
+      assert.match(htmlBody, /Total de URLs listadas:/);
+
+      const xmlRes = await worker.fetch(new Request(`https://news.mirandinhacontabilidade.workers.dev${smPath}?format=xml`, { headers: browserHeaders }), env);
+      assert.equal(xmlRes.status, 200);
+      assert.match(xmlRes.headers.get('content-type') || '', /application\/xml/);
+      assert.match(await xmlRes.text(), /^<\?xml version="1\.0"/);
+    }
+
+    const customSitemap = renderWorkerSitemapHtml({
+      title: 'Teste Sitemap',
+      description: 'Descrição teste',
+      entries: [{ url: 'https://news.mirandinhacontabilidade.workers.dev/', title: 'Home', changefreq: 'hourly', priority: '1.0' }],
+    });
+    assert.match(customSitemap, /Norma Jurídica/);
+
+    // 2. Home SSR: Carrossel 10 slides, WeatherCard, Grade/Compacto, Minha Lista Drawer, CSS Animado e Justificação
+    const homeRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/'), env);
+    assert.equal(homeRes.status, 200);
+    const homeHtml = await homeRes.text();
+    assert.match(homeHtml, /id="nj-featured-carousel"/);
+    assert.match(homeHtml, /animate-slide-progress/);
+    assert.match(homeHtml, /id="nj-weather-card"/);
+    assert.match(homeHtml, /id="nj-view-grid-btn"/);
+    assert.match(homeHtml, /id="nj-view-compact-btn"/);
+    assert.match(homeHtml, /id="nj-list-drawer"/);
+    assert.match(homeHtml, /text-align:\s*justify\s*!important/);
+    assert.match(homeHtml, /\.zoom-frame:hover img/);
+    assert.match(homeHtml, /hyphens:\s*none\s*!important/);
+
+    // 3. Favoritos (?cat=favoritos) & ?article= redirect
+    const favRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/?cat=favoritos'), env);
+    assert.equal(favRes.status, 200);
+    const favHtml = await favRes.text();
+    assert.match(favHtml, /Minha Lista/);
+    assert.match(favHtml, /data-active-cat', 'favoritos'/);
+
+    const artRedirectRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/?article=decisao-institucional-1-regulacao'), env);
+    assert.equal(artRedirectRes.status, 307);
+    assert.equal(artRedirectRes.headers.get('location'), 'https://news.mirandinhacontabilidade.workers.dev/noticia/decisao-institucional-1-regulacao');
+
+    // 4. Artigo SSR: Resumo da Notícia, Share SVGs, Chunked Web Speech API, zoom-frame
+    const artRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/noticia/decisao-institucional-1-regulacao'), env);
+    assert.equal(artRes.status, 200);
+    const artHtml = await artRes.text();
+    assert.match(artHtml, /Resumo da Notícia/);
+    assert.match(artHtml, /Pontos Principais:/);
+    assert.match(artHtml, /splitSpeechChunks/);
+    assert.match(artHtml, /SpeechSynthesisUtterance/);
+    assert.match(artHtml, /Compartilhar no WhatsApp/);
+    assert.match(artHtml, /Compartilhar no Instagram/);
+    assert.match(artHtml, /id="nj-share-copied"/);
+    assert.doesNotMatch(artHtml, /style="text-align:left"/);
   } finally {
     globalThis.fetch = originalFetch;
   }
