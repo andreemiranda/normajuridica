@@ -65,3 +65,22 @@ test('resolveNewsApiConfig normaliza aspas, sufixo /api, prefixo Bearer, aliases
   assert.equal(withBareWorkersDev.baseUrl, DEFAULT_NEWS_API_BASE_URL);
   assert.equal(withBareWorkersDev.apiKey, 'single-quoted-key');
 });
+
+test('resolveNewsApiConfig detecta novos aliases de token/chave e extrai ?ref= ou ?token= da URL base', () => {
+  const fromToken = resolveNewsApiConfig({
+    NEWS_API_TOKEN: 'Bearer token-from-news-api-token',
+  } as unknown as NodeJS.ProcessEnv);
+  assert.equal(fromToken.apiKey, 'token-from-news-api-token');
+
+  const fromChave = resolveNewsApiConfig({
+    chave_api: 'minha-chave-secret',
+  } as unknown as NodeJS.ProcessEnv);
+  assert.equal(fromChave.apiKey, 'minha-chave-secret');
+
+  const fromEmbeddedUrl = resolveNewsApiConfig({
+    NEWS_API_BASE_URL: 'https://news-sources-api.legislativemunicipal.workers.dev/api?ref=embedded-ref-999',
+  } as unknown as NodeJS.ProcessEnv);
+  assert.equal(fromEmbeddedUrl.baseUrl, 'https://news-sources-api.legislativemunicipal.workers.dev');
+  assert.equal(fromEmbeddedUrl.apiKey, 'embedded-ref-999');
+});
+

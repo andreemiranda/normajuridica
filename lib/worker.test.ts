@@ -560,3 +560,95 @@ test('worker.fetch descobre fontes via catálogo /api/news, aplica retry ?ref= e
     globalThis.fetch = originalFetch;
   }
 });
+
+test('worker suporta novos aliases de token, ?ref= embutido, /api/sync estilo desenvolvimento e todas páginas SSR', async () => {
+  const embeddedCfg = resolveWorkerNewsApiConfig({
+    API_URL_BASE: 'https://news-sources-api.legislativemunicipal.workers.dev/api?ref=embedded-key-777',
+  });
+  assert.equal(embeddedCfg.baseUrl, 'https://news-sources-api.legislativemunicipal.workers.dev');
+  assert.equal(embeddedCfg.apiKey, 'embedded-key-777');
+
+  const aliasCfg = resolveWorkerNewsApiConfig({
+    NEWS_API_TOKEN: 'Bearer token-alias-abc',
+  });
+  assert.equal(aliasCfg.apiKey, 'token-alias-abc');
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const urlStr = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    if (urlStr.includes('/api/types')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+    }
+    return new Response(JSON.stringify({ items: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }) as typeof fetch;
+
+  try {
+    // 1. /api/sync?format=html sem chave exibe painel completo e orientação Cloudflare Runtime
+    const syncAlertRes = await worker.fetch(
+      new Request('https://news.mirandinhacontabilidade.workers.dev/api/sync?format=html'),
+      {}
+    );
+    assert.equal(syncAlertRes.status, 200);
+    const syncAlertHtml = await syncAlertRes.text();
+    assert.match(syncAlertHtml, /Armazenamento Edge &amp; Sincronização/);
+    assert.match(syncAlertHtml, /Capacidade Máxima \(FIFO\)/);
+    assert.match(syncAlertHtml, /Variables and Secrets/);
+    assert.match(syncAlertHtml, /Forçar Sincronização Agora/);
+    assert.match(syncAlertHtml, /Voltar ao Portal/);
+
+    // 2. Home vazia exibe estado de apuração (sem quebrar)
+    const emptyHomeRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/'), {});
+    assert.equal(emptyHomeRes.status, 200);
+    const emptyHomeHtml = await emptyHomeRes.text();
+    assert.match(emptyHomeHtml, /Edição em apuração • Destaques/);
+    assert.match(emptyHomeHtml, /Ver todas as notícias/);
+
+    // 3. Categoria (/categoria/justica) exibe subtítulo e empty state completo
+    const catRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/categoria/justica'), {});
+    assert.equal(catRes.status, 200);
+    const catHtml = await catRes.text();
+    assert.match(catHtml, /Cobertura analítica e factual sobre justiça/);
+    assert.match(catHtml, /Edição em apuração • Justiça/);
+
+    // 4. Contato (/contato) com 2 colunas, horários e <select>
+    const contactPageRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/contato'), {});
+    assert.equal(contactPageRes.status, 200);
+    const contactPageHtml = await contactPageRes.text();
+    assert.match(contactPageHtml, /Informações Institucionais/);
+    assert.match(contactPageHtml, /Plantão Editorial: 24 horas/);
+    assert.match(contactPageHtml, /<select id="nj-c-subject"/);
+    assert.match(contactPageHtml, /Copiar Protocolo/);
+
+    // 5. Páginas legais (/privacidade, /termos, /cookies) e institucionais (/pagina/sobre)
+    const privRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/privacidade'), {});
+    assert.equal(privRes.status, 200);
+    assert.match(await privRes.text(), /Encarregado pelo Tratamento de Dados \(DPO\)/);
+
+    const termosRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/termos'), {});
+    assert.equal(termosRes.status, 200);
+    assert.match(await termosRes.text(), /Lei nº 9\.610\/1998/);
+
+    const cookiesRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/cookies'), {});
+    assert.equal(cookiesRes.status, 200);
+    assert.match(await cookiesRes.text(), /Cookies Essenciais:/);
+
+    const sobreRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/pagina/sobre'), {});
+    assert.equal(sobreRes.status, 200);
+    const sobreHtml = await sobreRes.text();
+    assert.match(sobreHtml, /Nossa Missão/);
+    assert.match(sobreHtml, /Voltar ao índice institucional/);
+
+    // 6. Página 404 com barra de busca e atalhos das editorias
+    const notFoundRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/pagina-inexistente'), {});
+    assert.equal(notFoundRes.status, 404);
+    const notFoundHtml = await notFoundRes.text();
+    assert.match(notFoundHtml, /Navegue pelas Principais Editorias/);
+    assert.match(notFoundHtml, /Tecnologia &amp; Games/);
+
+    // 7. Footer com ícones institucionais
+    assert.match(emptyHomeHtml, /Dados Institucionais Oficiais/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+

@@ -100,55 +100,243 @@ const INSTITUTIONAL_PAGES = {
     title: 'Sobre o Norma Jurídica',
     category: 'Institucional',
     lead: 'Conheça a história, o compromisso ético e a missão do portal Norma Jurídica no jornalismo brasileiro.',
-    contentHtml: `<p>O <strong>${SITE_INFO.name}</strong> nasceu com a missão de levar à sociedade brasileira informações precisas, independentes e tempestivas sobre os poderes da República, o sistema de Justiça, a economia nacional e os acontecimentos nos estados brasileiros.</p><p>Com sede em <strong>${SITE_INFO.address}</strong>, nossa redação acompanha em tempo real as decisões dos tribunais, atos legislativos e indicadores econômicos.</p>`,
-  },
-  editorial: {
-    title: 'Editorial e Compromisso Jornalístico',
-    category: 'Institucional',
-    lead: 'Apresentação editorial, princípios de apuração factual e o posicionamento institucional do portal Norma Jurídica.',
-    contentHtml: `<p>O <strong>${SITE_INFO.name}</strong> dedica-se diariamente à produção e difusão de notícias fidedignas, análises jurídicas aprofundadas e reportagens de alto impacto sobre o Brasil e o mundo.</p><p>Nosso editorial orienta-se pela escuta plural, pela confirmação documental de fontes primárias e pela separação estrita entre informação factual e opinião.</p>`,
-  },
-  expediente: {
-    title: 'Expediente e Corpo Editorial',
-    category: 'Institucional',
-    lead: 'Conheça a estrutura editorial, direção, apuração e canais oficiais de atendimento do portal.',
-    contentHtml: `<p><strong>Direção Geral e Editorial:</strong> Redação Norma Jurídica<br><strong>Sede:</strong> ${SITE_INFO.address}<br><strong>Telefone Institucional:</strong> ${SITE_INFO.phone}<br><strong>E-mail Geral:</strong> ${SITE_INFO.email}</p>`,
-  },
-  'fale-conosco': {
-    title: 'Fale Conosco e Atendimento ao Leitor',
-    category: 'Atendimento',
-    lead: 'Entre em contato direto com a redação do Norma Jurídica para sugestões de pauta, correções e informações.',
-    contentHtml: `<p>Para enviar comunicados de imprensa, sugerir coberturas ou solicitar esclarecimentos, acesse nosso formulário em <a href="/contato" class="text-blue-700 font-semibold underline">/contato</a>.</p><p><strong>E-mail Oficial:</strong> ${SITE_INFO.email}<br><strong>Central Telefônica:</strong> ${SITE_INFO.phone}</p>`,
+    contentHtml: `
+      <h2>Nossa Missão</h2>
+      <p>O <strong>${SITE_INFO.name}</strong> nasceu com a missão primordial de levar à sociedade brasileira informações precisas, independentes e tempestivas sobre os poderes da República, o sistema de Justiça, a economia nacional, as transformações tecnológicas e os acontecimentos que impactam diretamente a vida dos cidadãos.</p>
+      <h2>Independência e Rigor Editorial</h2>
+      <p>Nossa equipe de jornalistas e pesquisadores atua com estrita observância aos preceitos da apuração factual, do contraditório e da checagem documental de fontes oficiais. Acreditamos que uma imprensa livre, transparente e técnica constitui o pilar fundamental do Estado Democrático de Direito.</p>
+      <h2>Cobertura Nacional e Regional</h2>
+      <p>Com sede em <strong>${SITE_INFO.address}</strong>, nossa redação acompanha de perto os desdobramentos dos Tribunais Superiores, do Congresso Nacional, dos Ministérios e das principais capitais e regiões do país, unindo amplitude nacional e proximidade regional.</p>
+    `,
   },
   'linha-editorial': {
     title: 'Linha Editorial e Princípios Éticos',
     category: 'Institucional',
     lead: 'Diretrizes éticas, critérios de apuração e política de correção que orientam a redação do Norma Jurídica.',
-    contentHtml: `<p>A cobertura jornalística do <strong>${SITE_INFO.name}</strong> rege-se pelos princípios da veracidade, interesse público, contraditório e independência editorial.</p><p>Eventuais equívocos factuais são retificados com celeridade e transparência mediante nota editorial explícita.</p>`,
+    contentHtml: `
+      <h2>Princípios Éticos Fundamentais</h2>
+      <p>A cobertura jornalística do <strong>${SITE_INFO.name}</strong> rege-se pelos princípios da veracidade, do interesse público, do respeito à dignidade humana e da independência política e econômica. Nossos profissionais não aceitam vantagens indevidas nem condicionam pautas a interesses comerciais.</p>
+      <h2>Política de Correções e Errata</h2>
+      <p>O compromisso com a exatidão impõe a retificação célere e transparente de qualquer equívoco factual eventualmente publicado. Quando corrigida, a matéria trará nota explícita indicando o ponto retificado, data e hora da alteração.</p>
+      <h2>Fontes Oficiais e Contraditório</h2>
+      <p>Toda acusação ou imputação exige a busca imediata da manifestação da parte citada. A preservação do sigilo da fonte é direito constitucional assegurado, utilizado com responsabilidade quando estritamente necessário à segurança do informante.</p>
+    `,
   },
   transparencia: {
     title: 'Transparência e Governança',
     category: 'Institucional',
     lead: 'Informações sobre estrutura organizacional, governança e canais oficiais de relacionamento do portal.',
-    contentHtml: `<p><strong>Responsável:</strong> ${SITE_INFO.name}<br><strong>Sede e Foro:</strong> ${SITE_INFO.address}<br><strong>Central Telefônica:</strong> ${SITE_INFO.phone}<br><strong>E-mail Institucional:</strong> ${SITE_INFO.email}</p>`,
+    contentHtml: `
+      <h2>Compromisso com a Transparência Pública</h2>
+      <p>O <strong>${SITE_INFO.name}</strong> apoia e pratica a transparência ativa em seus procedimentos e relações. Disponibilizamos canais diretos de contato para os leitores e mantemos abertos nossos mecanismos de ouvidoria e prestação de contas editorial.</p>
+      <h2>Identificação Institucional</h2>
+      <p><strong>Razão Social / Responsável:</strong> ${SITE_INFO.name}<br>
+      <strong>Sede e Foro:</strong> ${SITE_INFO.address}<br>
+      <strong>Central Telefônica:</strong> ${SITE_INFO.phone}<br>
+      <strong>E-mail Institucional:</strong> ${SITE_INFO.email}</p>
+    `,
   },
   ouvidoria: {
     title: 'Ouvidoria Geral e Atendimento ao Leitor',
     category: 'Atendimento',
     lead: 'Canal permanente de escuta para críticas, elogios, sugestões de pauta e solicitações da sociedade.',
-    contentHtml: `<p>A Ouvidoria Geral responde formalmente às manifestações enviadas pelo formulário em <a href="/contato" class="text-blue-700 font-semibold underline">/contato</a> em até 48 horas úteis.</p>`,
+    contentHtml: `
+      <h2>Canal Direto com o Cidadão</h2>
+      <p>A Ouvidoria Geral do <strong>${SITE_INFO.name}</strong> é o órgão responsável por receber manifestações relativas à conduta editorial, à precisão de reportagens e ao atendimento ao público leitor.</p>
+      <h2>Prazos e Atendimento</h2>
+      <p>Nosso compromisso editorial é responder formalmente a todas as manifestações em até 48 horas úteis.</p>
+      <p>Para abrir uma manifestação, utilize nossa página de <a href="/contato" class="text-brand-600 dark:text-brand-400 font-semibold underline">Contato Oficial</a>.</p>
+    `,
+  },
+  'ouvidoria-geral': {
+    title: 'Ouvidoria Geral e Atendimento ao Cidadão',
+    category: 'Atendimento',
+    lead: 'Canal permanente de escuta para críticas, elogios, sugestões de pauta e solicitações da sociedade.',
+    contentHtml: `
+      <h2>Canal Direto com o Cidadão</h2>
+      <p>A Ouvidoria Geral do <strong>${SITE_INFO.name}</strong> é o órgão responsável por receber manifestações relativas à conduta editorial, à precisão de reportagens e ao atendimento ao público leitor.</p>
+      <h2>Prazos e Atendimento</h2>
+      <p>Nosso compromisso editorial é responder formalmente a todas as manifestações em até 48 horas úteis.</p>
+      <p>Para abrir uma manifestação, utilize nossa página de <a href="/contato" class="text-brand-600 dark:text-brand-400 font-semibold underline">Contato Oficial</a>.</p>
+    `,
+  },
+  'gestao-publica-municipal': {
+    title: 'Gestão Pública Municipal e Atos Oficiais',
+    category: 'Gestão Pública',
+    lead: 'Acompanhamento analítico e institucional da administração pública municipal, licitações, decretos e governança local.',
+    contentHtml: `
+      <h2>Acompanhamento Institucional Municipal</h2>
+      <p>Nesta seção, o <strong>${SITE_INFO.name}</strong> reúne reportagens analíticas e dados de utilidade pública sobre a gestão municipal, atos do Executivo, licitações públicas, prestação de contas e serviços prestados à população.</p>
+      <h2>Fiscalização e Interesse Local</h2>
+      <p>O jornalismo cívico é indispensável para que os munícipes conheçam a destinação de tributos, o andamento de obras e as políticas públicas municipais de saúde, educação e infraestrutura.</p>
+    `,
   },
   'cadastro-certo': {
     title: 'Cadastro Certo e Alertas de Notícias',
     category: 'Institucional',
-    lead: 'Orientações para recebimento de informativos jurídicos e boletins setoriais em conformidade com a LGPD.',
-    contentHtml: `<p>O serviço Cadastro Certo do <strong>${SITE_INFO.name}</strong> trata os dados de leitores em estrita conformidade com a Lei Geral de Proteção de Dados (LGPD).</p>`,
+    lead: 'Orientações para recebimento de informativos jurídicos e boletins setoriais.',
+    contentHtml: `
+      <h2>Informação Segura e Verificada</h2>
+      <p>O serviço Cadastro Certo do <strong>${SITE_INFO.name}</strong> permite aos leitores receber informativos temáticos sobre decisões dos tribunais, atualizações legislativas e temas econômicos de grande relevância.</p>
+      <h2>Privacidade dos Dados</h2>
+      <p>Todos os cadastros são tratados em estrita conformidade com a Lei Geral de Proteção de Dados Pessoais (LGPD). Não compartilhamos dados com terceiros nem enviamos mensagens não solicitadas.</p>
+    `,
   },
   'sobre-a-prefeitura': {
     title: 'Sobre a Administração Pública Municipal',
     category: 'Institucional',
-    lead: 'Acompanhamento institucional da administração pública municipal, licitações e políticas locais.',
-    contentHtml: `<p>Nesta seção, o <strong>${SITE_INFO.name}</strong> reúne reportagens analíticas sobre atos do Executivo, licitações públicas, prestação de contas e serviços municipais.</p>`,
+    lead: 'Estrutura, secretarias e acompanhamento das ações e decretos municipais.',
+    contentHtml: `
+      <h2>Acompanhamento Institucional Municipal</h2>
+      <p>Nesta seção, o <strong>${SITE_INFO.name}</strong> reúne reportagens analíticas e dados de utilidade pública sobre a gestão municipal, atos do Executivo, licitações públicas e serviços prestados à população.</p>
+      <h2>Fiscalização e Interesse Local</h2>
+      <p>O jornalismo cívico é indispensável para que os munícipes conheçam a destinação de tributos, o andamento de obras viárias e as políticas públicas municipais de saúde e educação.</p>
+    `,
+  },
+  contato: {
+    title: 'Contato da Redação e Atendimento',
+    category: 'Atendimento',
+    lead: 'Fale com nossos jornalistas, envie sugestões de pauta ou acione o setor comercial.',
+    contentHtml: `
+      <h2>Canais de Atendimento</h2>
+      <p>Nossa redação está disponível para receber releases, sugestões de pauta e dúvidas. Acesse o formulário interativo em <a href="/contato" class="text-brand-600 dark:text-brand-400 font-semibold underline">/contato</a> para atendimento oficial.</p>
+      <p><strong>Telefone:</strong> ${SITE_INFO.phone}<br>
+      <strong>E-mail:</strong> ${SITE_INFO.email}<br>
+      <strong>Endereço:</strong> ${SITE_INFO.address}</p>
+    `,
+  },
+  editorial: {
+    title: 'Editorial e Compromisso Jornalístico',
+    category: 'Institucional',
+    lead: 'Apresentação editorial, princípios de apuração factual e o posicionamento institucional do portal Norma Jurídica.',
+    contentHtml: `
+      <h2>A Força do Jornalismo Factual e Independente</h2>
+      <p>O <strong>${SITE_INFO.name}</strong> dedica-se diariamente à produção e difusão de notícias fidedignas, análises jurídicas aprofundadas e reportagens de alto impacto sobre o Brasil e o mundo.</p>
+      <h2>Critérios de Apuração</h2>
+      <p>Nosso editorial orienta-se pela escuta plural, pela confirmação documental de fontes primárias e pela separação estrita entre informação factual e manifestação opinativa.</p>
+      <h2>Compromisso com o Leitor</h2>
+      <p>A confiança da sociedade é nosso maior patrimônio. Mantemos rotinas rigorosas de checagem e atualização contínua em tempo real.</p>
+    `,
+  },
+  expediente: {
+    title: 'Expediente e Corpo Editorial',
+    category: 'Institucional',
+    lead: 'Conheça a equipe responsável pela direção editorial, reportagem, edição e conformidade legal do portal.',
+    contentHtml: `
+      <h2>Corpo Editorial e Direção</h2>
+      <p><strong>Direção Geral e Editorial:</strong> Redação Norma Jurídica<br>
+      <strong>Editoria de Política e Justiça:</strong> Equipe de Apuração em Brasília-DF<br>
+      <strong>Editoria de Economia e Negócios:</strong> Seção Econômica e Mercado<br>
+      <strong>Editoria de Tecnologia e Cultura:</strong> Núcleo de Inovação e Sociedade</p>
+      <h2>Atendimento e Contato</h2>
+      <p><strong>Sede:</strong> ${SITE_INFO.address}<br>
+      <strong>Telefone Institucional:</strong> ${SITE_INFO.phone}<br>
+      <strong>E-mail Geral:</strong> ${SITE_INFO.email}</p>
+    `,
+  },
+  'fale-conosco': {
+    title: 'Fale Conosco e Atendimento ao Leitor',
+    category: 'Atendimento',
+    lead: 'Entre em contato direto com a redação do Norma Jurídica para sugestões de pauta, correções e informações.',
+    contentHtml: `
+      <h2>Canais Diretos de Relacionamento</h2>
+      <p>Para enviar comunicados de imprensa, sugerir coberturas ou solicitar esclarecimentos à nossa equipe, utilize nossa página oficial de <a href="/contato" class="text-brand-600 dark:text-brand-400 font-semibold underline">Contato da Redação</a>.</p>
+      <p><strong>E-mail Oficial:</strong> ${SITE_INFO.email}<br>
+      <strong>Central Telefônica:</strong> ${SITE_INFO.phone}<br>
+      <strong>Horário de Atendimento:</strong> Segunda a sexta, das 8h às 18h (Horário de Brasília).</p>
+    `,
+  },
+};
+
+function getGenericInstitutionalPage(slug = '') {
+  const formattedTitle = String(slug || 'institucional')
+    .split('-')
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+  return {
+    title: `${formattedTitle} | Apresentação Institucional`,
+    category: 'Institucional',
+    lead: `Informações institucionais e diretrizes públicas do portal ${SITE_INFO.name}.`,
+    contentHtml: `
+      <h2>Apresentação Institucional</h2>
+      <p>Esta página reúne dados institucionais, relatórios públicos e diretrizes editoriais do <strong>${SITE_INFO.name}</strong> voltadas à cobertura temática de <strong>${escapeHtml(formattedTitle)}</strong>.</p>
+      <p>Para dúvidas, retificações ou mais informações, consulte nossa central de atendimento em Brasília-DF pelo telefone ${SITE_INFO.phone} ou pelo e-mail oficial ${SITE_INFO.email}.</p>
+    `,
+  };
+}
+
+const LEGAL_PAGES = {
+  privacidade: {
+    breadcrumb: 'Política de Privacidade',
+    badge: 'Conformidade Legal (Lei nº 13.709/2018)',
+    iconKey: 'shieldCheck',
+    title: 'Política de Privacidade e Proteção de Dados',
+    metaTitle: `Política de Privacidade e Proteção de Dados (LGPD) | ${SITE_INFO.name}`,
+    metaDesc: `Diretrizes de privacidade, segurança da informação e tratamento de dados pessoais do portal ${SITE_INFO.name}.`,
+    lead: `O <strong>${SITE_INFO.name}</strong> preza pela máxima confidencialidade e segurança dos dados de seus leitores, colaboradores e fontes.`,
+    contentHtml: `
+      <h2>1. Introdução e Abrangência</h2>
+      <p>Esta Política de Privacidade descreve as práticas adotadas pelo <strong>${SITE_INFO.name}</strong>, com sede em <strong>${SITE_INFO.address}</strong>, para coleta, armazenamento, processamento e proteção de informações dos usuários que acessam nossos serviços digitais.</p>
+      <h2>2. Coleta de Informações</h2>
+      <p>Coletamos apenas dados estritamente necessários para a prestação de serviços informativos, que incluem:</p>
+      <ul>
+        <li><strong>Dados de navegação e técnicos:</strong> endereço IP, tipo de navegador, sistema operacional e páginas visualizadas para fins de diagnóstico e segurança da infraestrutura.</li>
+        <li><strong>Dados fornecidos voluntariamente:</strong> nome e e-mail quando o leitor entra em contato através de nossa Central de Atendimento ou assina informativos.</li>
+      </ul>
+      <h2>3. Finalidade do Tratamento</h2>
+      <p>Os dados coletados são empregados para:</p>
+      <ul>
+        <li>Garantir a estabilidade e segurança das aplicações;</li>
+        <li>Responder tempestivamente a demandas protocoladas via Ouvidoria e Redação;</li>
+        <li>Apresentar métricas estatísticas anônimas de audiência;</li>
+        <li>Exibir anúncios relevantes sem comercialização de dados pessoais a terceiros.</li>
+      </ul>
+      <h2>4. Direitos dos Titulares de Dados</h2>
+      <p>Em cumprimento à LGPD, o titular de dados possui o direito de confirmar a existência de tratamento, acessar seus dados, solicitar a correção de dados incompletos ou requerer a eliminação de dados tratados com seu consentimento, mediante solicitação formal via <a href="/contato" class="text-brand-700 font-semibold underline">Canal de Atendimento</a>.</p>
+      <h2>5. Encarregado pelo Tratamento de Dados (DPO)</h2>
+      <p>Para exercer seus direitos ou esclarecer dúvidas sobre esta política, o usuário poderá contatar diretamente nosso responsável institucional pelo e-mail <strong>${SITE_INFO.email}</strong> ou pelo telefone <strong>${SITE_INFO.phone}</strong>.</p>
+    `,
+  },
+  termos: {
+    breadcrumb: 'Termos de Uso',
+    badge: 'Condições Gerais',
+    iconKey: 'fileText',
+    title: 'Termos e Condições Gerais de Uso',
+    metaTitle: `Termos e Condições de Uso | ${SITE_INFO.name}`,
+    metaDesc: `Termos gerais de uso, direitos autorais e condições de navegação no portal ${SITE_INFO.name}.`,
+    lead: `Regras de utilização, propriedade intelectual e responsabilidades aplicáveis ao portal <strong>${SITE_INFO.name}</strong>.`,
+    contentHtml: `
+      <h2>1. Aceitação dos Termos</h2>
+      <p>Ao acessar e utilizar os serviços do <strong>${SITE_INFO.name}</strong>, o usuário declara ter lido, compreendido e aceito integralmente as cláusulas presentes nestes Termos de Uso.</p>
+      <h2>2. Propriedade Intelectual e Direitos Autorais</h2>
+      <p>Todo o conteúdo textual, fotográfico, gráfico, logotipos e marcas do portal são de titularidade do <strong>${SITE_INFO.name}</strong> ou devidamente licenciados de terceiros, protegidos pela Lei de Direitos Autorais (Lei nº 9.610/1998). É vedada a reprodução comercial sem expressa autorização prévia por escrito.</p>
+      <h2>3. Conduta do Usuário</h2>
+      <p>O leitor compromete-se a utilizar o portal de forma ética e legítima, abstendo-se de transmitir vírus, realizar raspagens abusivas que comprometam os servidores, ou praticar ofensas e injúrias através de formulários de contato.</p>
+      <h2>4. Foro e Legislação Aplicável</h2>
+      <p>Estes termos são regidos pelas leis da República Federativa do Brasil, elegendo-se o foro da comarca de <strong>Brasília-DF</strong> para dirimir eventuais controvérsias decorrentes da interpretação deste documento.</p>
+    `,
+  },
+  cookies: {
+    breadcrumb: 'Política de Cookies',
+    badge: 'Gestão de Privacidade',
+    iconKey: 'cookie',
+    title: 'Política e Gestão de Cookies',
+    metaTitle: `Política e Gestão de Cookies | ${SITE_INFO.name}`,
+    metaDesc: `Saiba como utilizamos cookies e como gerenciar suas preferências no portal ${SITE_INFO.name}.`,
+    lead: `Entenda quais categorias de cookies operam no <strong>${SITE_INFO.name}</strong> e como controlar suas preferências a qualquer momento.`,
+    contentHtml: `
+      <h2>1. O que são Cookies?</h2>
+      <p>Cookies são pequenos arquivos de texto armazenados no navegador do leitor para memorizar preferências de idioma, tema visual (modo claro/escuro), tamanho de fonte e matérias salvas.</p>
+      <h2>2. Categorias de Cookies Utilizadas</h2>
+      <ul>
+        <li><strong>Cookies Essenciais:</strong> indispensáveis para o funcionamento técnico da plataforma, persistência de sessão e autenticação de segurança.</li>
+        <li><strong>Cookies de Desempenho e Estatística:</strong> coletam dados anônimos de acesso para identificarmos reportagens de maior audiência e aprimorarmos a infraestrutura.</li>
+        <li><strong>Cookies de Publicidade:</strong> viabilizam a exibição de anúncios pertinentes por meio do Google AdSense, auxiliando na sustentabilidade financeira do jornalismo independente.</li>
+      </ul>
+      <h2>3. Como Gerenciar Preferências</h2>
+      <p>Você pode alterar suas configurações de cookies diretamente no seu navegador (Chrome, Firefox, Safari, Edge) ou aceitar apenas os cookies essenciais no banner disponibilizado em nosso portal.</p>
+    `,
   },
 };
 
@@ -260,43 +448,78 @@ export function resolveWorkerNewsApiConfig(env = {}) {
     'NEWS_API_URL',
     'NEXT_PUBLIC_NEWS_API_BASE_URL',
     'NEXT_PUBLIC_API_BASE_URL',
-    'api_url_base',
-    'news_api_base_url',
   ]);
 
-  let normalizedBase = rawBaseUrl.replace(/\/+$/, '').replace(/\/api$/i, '').replace(/\/+$/, '');
+  let normalizedBase = rawBaseUrl.replace(/\/+$/, '');
   if (normalizedBase && !/^https?:\/\//i.test(normalizedBase)) {
     normalizedBase = `https://${normalizedBase}`;
   }
   let baseUrl = DEFAULT_NEWS_API_BASE_URL;
+  let embeddedKey = '';
   if (normalizedBase) {
     try {
       const parsed = new URL(normalizedBase);
+      embeddedKey = stripWorkerWrappingQuotes(
+        parsed.searchParams.get('ref') ||
+          parsed.searchParams.get('key') ||
+          parsed.searchParams.get('token') ||
+          parsed.searchParams.get('api_key') ||
+          parsed.searchParams.get('apikey') ||
+          ''
+      );
       if (parsed.hostname.toLowerCase() !== 'workers.dev') {
-        baseUrl = (parsed.origin + parsed.pathname).replace(/\/+$/, '');
+        const cleanPath = parsed.pathname.replace(/\/+$/, '').replace(/\/api$/i, '').replace(/\/+$/, '');
+        baseUrl = (parsed.origin + cleanPath).replace(/\/+$/, '');
       }
     } catch {}
   }
 
-  let apiKey = readEnvVar(env, [
-    'API_KEY',
-    'NEWS_API_KEY',
-    'APIKEY',
-    'NEWS_SOURCES_API_KEY',
-    'X_API_KEY',
-    'API_SECRET_KEY',
-    'NEXT_PUBLIC_API_KEY',
-    'NEXT_PUBLIC_NEWS_API_KEY',
-    'api_key',
-    'news_api_key',
-    'apikey',
-    'x_api_key',
-  ]);
+  let apiKey =
+    readEnvVar(env, [
+      'API_KEY',
+      'NEWS_API_KEY',
+      'APIKEY',
+      'NEWS_SOURCES_API_KEY',
+      'X_API_KEY',
+      'API_SECRET_KEY',
+      'API_TOKEN',
+      'NEWS_API_TOKEN',
+      'NEWS_SOURCES_API_TOKEN',
+      'API_SECRET',
+      'NEWS_API_SECRET',
+      'ACCESS_TOKEN',
+      'BEARER_TOKEN',
+      'NEWS_KEY',
+      'KEY_API',
+      'CHAVE_API',
+      'NEWS_SOURCES_KEY',
+      'AUTHORIZATION_TOKEN',
+      'AUTH_TOKEN',
+      'NEXT_PUBLIC_API_KEY',
+      'NEXT_PUBLIC_NEWS_API_KEY',
+      'NEXT_PUBLIC_API_TOKEN',
+      'NEXT_PUBLIC_NEWS_API_TOKEN',
+    ]) || embeddedKey;
   if (/^bearer\s+/i.test(apiKey)) {
     apiKey = apiKey.replace(/^bearer\s+/i, '').trim();
   }
 
   return { baseUrl, apiKey };
+}
+
+export function resolveWorkerAdsenseConfig(env = {}) {
+  const clientId =
+    readEnvVar(env, ['NEXT_PUBLIC_ADSENSE_ID', 'GOOGLE_ADSENSE_CLIENT_ID']) || 'ca-pub-7059730627018047';
+  return {
+    clientId,
+    slots: {
+      header: readEnvVar(env, ['NEXT_PUBLIC_ADSENSE_SLOT_HEADER', 'GOOGLE_ADSENSE_SLOT_HEADER']),
+      sidebar: readEnvVar(env, ['NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR', 'GOOGLE_ADSENSE_SLOT_SIDEBAR']),
+      sidebarBottom: readEnvVar(env, ['NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR_BOTTOM', 'GOOGLE_ADSENSE_SLOT_SIDEBAR_BOTTOM']),
+      inArticle: readEnvVar(env, ['NEXT_PUBLIC_ADSENSE_SLOT_IN_ARTICLE', 'GOOGLE_ADSENSE_SLOT_IN_ARTICLE']),
+      footer: readEnvVar(env, ['NEXT_PUBLIC_ADSENSE_SLOT_FOOTER', 'GOOGLE_ADSENSE_SLOT_FOOTER']),
+    },
+  };
 }
 
 export function buildWorkerNewsApiHeaders(apiKey, env = {}) {
@@ -1109,7 +1332,24 @@ const SVG_ICONS = {
   chevronDown: '<svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
   x: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
   arrowUp: '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>',
+  arrowLeft: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>',
   volume2: '<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>',
+  shieldCheck: '<svg class="w-4 h-4 text-brand-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>',
+  phone: '<svg class="w-3.5 h-3.5 text-brand-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+  thermometer: '<svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>',
+  droplets: '<svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/></svg>',
+  shieldAlert: '<svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>',
+  cloud: '<svg class="w-8 h-8 text-white drop-shadow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>',
+  cloudRain: '<svg class="w-8 h-8 text-white drop-shadow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg>',
+  cloudLightning: '<svg class="w-8 h-8 text-white drop-shadow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.326A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 .5 8.973"/><path d="m13 12-3 5h4l-3 5"/></svg>',
+  compass: '<svg class="w-4 h-4 text-brand-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>',
+  home: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+  send: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>',
+  checkCircle: '<svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>',
+  copy: '<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
+  alertCircle: '<svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>',
+  fileText: '<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>',
+  cookie: '<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/><path d="M8.5 8.5v.01"/><path d="M16 15.5v.01"/><path d="M12 12v.01"/><path d="M11 17v.01"/><path d="M7 14v.01"/></svg>',
 };
 
 function getCategoryIconSvg(slug = '', cls = 'w-3.5 h-3.5 flex-shrink-0') {
@@ -1354,9 +1594,22 @@ function renderPaginationHtml(baseUrl, currentPage, totalPages) {
   return `<div class="flex items-center justify-between gap-4 pt-6 border-t border-slate-200 dark:border-zinc-800">${prev}<span class="text-xs font-bold text-slate-500 mx-auto">Página ${currentPage} de ${totalPages}</span>${next}</div>`;
 }
 
-function renderFooterAndScripts() {
+function renderAdSenseBannerHtml(clientId, slot, format = 'auto') {
+  if (!clientId || !slot) {
+    return '<div class="h-[1px] w-full" aria-hidden="true"></div>';
+  }
+  return `
+  <aside class="my-4 overflow-hidden text-center min-h-[90px]" aria-label="Publicidade">
+    <div class="text-[10px] text-slate-400 dark:text-zinc-500 uppercase tracking-widest mb-1">Publicidade</div>
+    <ins class="adsbygoogle block" data-ad-client="${escapeHtml(clientId)}" data-ad-slot="${escapeHtml(slot)}" data-ad-format="${escapeHtml(format)}" data-full-width-responsive="true"></ins>
+    <script>(window.adsbygoogle=window.adsbygoogle||[]).push({});</script>
+  </aside>`;
+}
+
+function renderFooterAndScripts(adsenseConfig = { clientId: '', slots: {} }) {
   return `
   <footer class="bg-slate-900 text-slate-300 border-t border-slate-800 mt-16">
+    <div class="max-w-7xl mx-auto px-4 pt-6">${renderAdSenseBannerHtml(adsenseConfig?.clientId, adsenseConfig?.slots?.footer)}</div>
     <div class="max-w-7xl mx-auto px-4 py-12 md:py-16">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12">
         <div class="lg:col-span-4 space-y-4">
@@ -1366,11 +1619,11 @@ function renderFooterAndScripts() {
           </a>
           <p class="text-xs md:text-sm text-slate-400 leading-relaxed">Cobertura jornalística independente, transparente e contínua sobre política, economia, justiça, educação, esportes, tecnologia e os estados brasileiros.</p>
           <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 text-xs space-y-2 text-slate-300">
-            <div class="font-semibold text-white">Dados Institucionais Oficiais</div>
-            <div><span class="text-slate-200 font-medium">Responsável:</span> ${SITE_INFO.name}</div>
-            <div>${SITE_INFO.address}</div>
-            <div>${SITE_INFO.phone}</div>
-            <div>${SITE_INFO.email}</div>
+            <div class="flex items-center gap-2 font-semibold text-white">${SVG_ICONS.shieldCheck}<span>Dados Institucionais Oficiais</span></div>
+            <div class="flex items-start gap-2 text-slate-400"><span class="text-slate-200 font-medium">Responsável:</span><span>${SITE_INFO.name}</span></div>
+            <div class="flex items-center gap-2 text-slate-400">${SVG_ICONS.mapPin.replace('w-3.5 h-3.5 flex-shrink-0', 'w-3.5 h-3.5 text-brand-400 flex-shrink-0')}<span>${SITE_INFO.address}</span></div>
+            <div class="flex items-center gap-2 text-slate-400">${SVG_ICONS.phone}<span>${SITE_INFO.phone}</span></div>
+            <div class="flex items-center gap-2 text-slate-400">${SVG_ICONS.mail}<span>${SITE_INFO.email}</span></div>
           </div>
         </div>
         <div class="lg:col-span-3">
@@ -1775,14 +2028,31 @@ async function handleApiRequest(request, env, url) {
       probeRes = await fetchUpstreamJsonDetailed(env, '/api/news?limit=1', 3000);
     }
     const latencyMs = Date.now() - probeStart;
+
+    let cachedSummary = { items: [], total: 0 };
     if (action === 'sync') {
-      await fetchAggregatedNews(env, { category: 'all', limit: 100, refresh: true });
+      cachedSummary = await fetchAggregatedNews(env, { category: 'all', limit: 100, page: 1, refresh: true });
+    } else if (probeRes.data) {
+      cachedSummary = await fetchAggregatedNews(env, { category: 'all', limit: 1, page: 1 });
     }
+    const latestItem = cachedSummary.items[0] || null;
+    const totalStored = cachedSummary.total || 0;
+    const syncIntervalSec = parseInt(readEnvVar(env, ['NEWS_SYNC_INTERVAL_SECONDS']) || '60', 10) || 60;
+    const maxItems = Math.max(15000, parseInt(readEnvVar(env, ['NEWS_STORE_MAX_ITEMS']) || '15000', 10) || 15000);
+    const maxPerSource = Math.max(350, parseInt(readEnvVar(env, ['NEWS_STORE_MAX_PER_SOURCE']) || '350', 10) || 350);
+    const retentionDays = Math.max(90, parseInt(readEnvVar(env, ['NEWS_RETENTION_DAYS']) || '90', 10) || 90);
+
     const payload = {
       status: 'conectado',
       connection: 'ativa',
       actionExecuted: action,
-      storage: { engine: 'Cloudflare Worker Edge Cache', databasePath: 'edge-cache', isEphemeral: false, totalStored: 15000 },
+      storage: {
+        engine: 'Cloudflare Worker Edge Cache',
+        databasePath: 'edge-cache',
+        isEphemeral: false,
+        totalStored,
+        capacity: { maxItems, maxPerSource, retentionDays, syncIntervalSeconds: syncIntervalSec },
+      },
       site: {
         domain: siteConfig.domain,
         appUrl: siteConfig.appUrl,
@@ -1796,15 +2066,120 @@ async function handleApiRequest(request, env, url) {
         latencyMs,
         endpoint: baseUrl,
       },
+      latestPostInStore: latestItem
+        ? {
+            id: latestItem.id,
+            title: latestItem.title,
+            slug: latestItem.slug,
+            category: latestItem.category,
+            pubDate: latestItem.pubDate,
+            timeAgo: latestItem.timeAgo,
+            link: latestItem.link,
+          }
+        : null,
       timestamp: new Date().toISOString(),
     };
     const format = url.searchParams.get('format') || '';
     const accept = request.headers.get('accept') || '';
     if (format === 'html' || (!format && accept.includes('text/html'))) {
-      const statusBadge = probeRes.data
-        ? '<span class="tag">● Cloudflare Worker Edge Ativo</span>'
-        : '<span class="tag" style="background:#7c2d12;color:#fdba74;">● Cloudflare Worker Edge (Upstream em Alerta)</span>';
-      const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Status da Sincronização • Norma Jurídica</title><style>body{font-family:system-ui,sans-serif;background:#090d16;color:#f1f5f9;padding:24px}.box{max-width:680px;margin:24px auto;background:#131c2e;border:1px solid #1e293b;border-radius:16px;padding:28px}h1{margin:0 0 12px;font-size:20px}.tag{display:inline-block;padding:4px 12px;border-radius:999px;background:#065f46;color:#6ee7b7;font-size:12px;font-weight:700}p{font-size:14px;color:#cbd5e1}</style></head><body><div class="box">${statusBadge}<h1>Sincronização &amp; Saúde do Portal</h1><p><strong>Domínio / App URL:</strong> ${escapeHtml(siteConfig.domain)} • ${escapeHtml(siteConfig.appUrl)}</p><p><strong>Upstream:</strong> ${escapeHtml(baseUrl)} (${escapeHtml(payload.upstream.status)}, HTTP ${payload.upstream.httpStatus}, ${latencyMs}ms)</p><p><strong>Autenticação API:</strong> ${apiKey ? 'Configurada' : 'Ausente'}</p><p><strong>Engine:</strong> ${escapeHtml(payload.storage.engine)}</p><p><strong>Atualizado em:</strong> ${escapeHtml(payload.timestamp)}</p></div></body></html>`;
+      const isUpstreamOk = Boolean(probeRes.data);
+      const statusBadge = isUpstreamOk
+        ? '<span class="badge">● Cloudflare Worker Edge Ativo</span>'
+        : '<span class="badge badge-warn">● Cloudflare Worker Edge (Upstream em Alerta)</span>';
+      const brtTime = new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+      const alertHelpBox = !apiKey
+        ? `<div class="card card-alert">
+            <div class="stat-label" style="color:#fbbf24;">Ação Necessária: Autenticação API Ausente no Runtime</div>
+            <p style="margin:6px 0;color:#fde68a;">Nenhuma chave de API foi encontrada no ambiente de execução (<code>env</code>) do Worker.</p>
+            <p style="margin:6px 0;color:#cbd5e1;">No painel do Cloudflare: acesse <strong>Workers &amp; Pages → news → Settings → Variables and Secrets</strong> e adicione <code>API_KEY</code> ou <code>NEWS_API_KEY</code> como variável de <strong>Runtime</strong> (não apenas Build variables), depois execute um novo deploy.</p>
+          </div>`
+        : '';
+      const latestCard = latestItem
+        ? `<div class="card">
+            <div class="stat-label">Publicação Mais Recente no Portal</div>
+            <div class="latest-title"><a href="/noticia/${escapeHtml(latestItem.slug)}" style="color:#fff;text-decoration:none;">${escapeHtml(latestItem.title)}</a></div>
+            <div style="color:#60a5fa;margin-top:6px;">${escapeHtml(latestItem.category)} • ${escapeHtml(latestItem.timeAgo)} • ID: ${escapeHtml(latestItem.id)}</div>
+          </div>`
+        : '';
+
+      const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Status da Sincronização &amp; Edge • ${SITE_INFO.name}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #090d16; color: #f1f5f9; padding: 24px; margin: 0; }
+    .container { max-width: 720px; margin: 30px auto; background: #131c2e; border: 1px solid #1e293b; border-radius: 20px; padding: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+    .header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; border-bottom: 1px solid #1e293b; padding-bottom: 20px; }
+    h1 { font-size: 20px; margin: 0; color: #fff; font-weight: 800; letter-spacing: -0.5px; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 9999px; background: #065f46; color: #6ee7b7; font-size: 12px; font-weight: 700; }
+    .badge-warn { background: #7c2d12; color: #fdba74; }
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+    @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+    .stat-box { background: #0b1120; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; }
+    .stat-label { font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 700; margin-bottom: 6px; letter-spacing: 0.4px; }
+    .stat-value { font-size: 20px; font-weight: 900; color: #38bdf8; font-family: monospace; }
+    .card { background: #0b1120; border: 1px solid #1e293b; border-radius: 12px; padding: 18px; margin-bottom: 20px; font-size: 13px; line-height: 1.55; }
+    .card-alert { border-color: #92400e; background: rgba(120, 53, 15, 0.25); }
+    .card p { margin: 6px 0; color: #cbd5e1; }
+    code { color: #38bdf8; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px; }
+    .latest-title { font-size: 15px; font-weight: 700; color: #fff; margin-top: 6px; line-height: 1.4; }
+    .btn { display: inline-block; background: #2563eb; color: #fff; text-decoration: none; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; transition: background 0.2s; margin: 4px; }
+    .btn:hover { background: #1d4ed8; }
+    .btn-secondary { background: #334155; }
+    .btn-secondary:hover { background: #475569; }
+    .footer { font-size: 11px; color: #64748b; margin-top: 24px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <div style="font-size: 11px; color: #60a5fa; font-weight: 800; text-transform: uppercase;">${SITE_INFO.name}</div>
+        <h1>Armazenamento Edge &amp; Sincronização</h1>
+      </div>
+      ${statusBadge}
+    </div>
+    <div class="grid">
+      <div class="stat-box">
+        <div class="stat-label">Notícias no Feed / Edge</div>
+        <div class="stat-value" style="color: ${totalStored > 0 ? '#34d399' : '#fbbf24'};">${totalStored.toLocaleString('pt-BR')}</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Capacidade Máxima (FIFO)</div>
+        <div class="stat-value">${maxItems.toLocaleString('pt-BR')} itens</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Limite por Fonte / Retenção</div>
+        <div class="stat-value">${maxPerSource} / ${retentionDays} dias</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Intervalo de Sincronização</div>
+        <div class="stat-value">${syncIntervalSec}s (Edge Cache)</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="stat-label">Status do Edge Cache &amp; Conectividade</div>
+      <p><strong>Engine:</strong> ${escapeHtml(payload.storage.engine)}</p>
+      <p><strong>Domínio / App URL:</strong> <code>${escapeHtml(siteConfig.domain)}</code> • <code>${escapeHtml(siteConfig.appUrl)}</code></p>
+      <p><strong>Upstream:</strong> <code>${escapeHtml(baseUrl)}</code> (${escapeHtml(payload.upstream.status)}, HTTP ${payload.upstream.httpStatus || 'N/A'}, ${latencyMs}ms)</p>
+      <p><strong>Autenticação API:</strong> <strong style="color:${apiKey ? '#34d399' : '#f87171'};">${apiKey ? 'Configurada' : 'Ausente'}</strong></p>
+      <p><strong>Variáveis de URL:</strong> APP_URL=${siteConfig.hasAppUrlVar ? 'Configurada' : 'Fallback'} • SITE_DOMAIN=${siteConfig.hasSiteDomainVar ? 'Configurada' : 'Fallback'}</p>
+    </div>
+    ${alertHelpBox}
+    ${latestCard}
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="/api/sync?action=sync&amp;format=html" class="btn">↻ Forçar Sincronização Agora</a>
+      <a href="/" class="btn btn-secondary">← Voltar ao Portal</a>
+    </div>
+    <div class="footer">
+      Verificação executada em ${escapeHtml(brtTime)} (Horário de Brasília) • ${escapeHtml(payload.timestamp)}
+    </div>
+  </div>
+</body>
+</html>`;
       return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
     }
     return jsonResponse(payload);
@@ -2041,7 +2416,8 @@ async function renderStandaloneHtmlPage(request, env, url) {
   try {
     newsApiOrigin = new URL(newsApiBase).origin;
   } catch {}
-  const adsenseId = String(env.NEXT_PUBLIC_ADSENSE_ID || '');
+  const adsenseConfig = resolveWorkerAdsenseConfig(env);
+  const adsenseId = adsenseConfig.clientId;
   const ogDefault = `${baseUrl}/og-image.png`;
 
   // 1. Página de Matéria (/noticia/[slug])
@@ -2117,6 +2493,7 @@ async function renderStandaloneHtmlPage(request, env, url) {
             </ul>
           </section>
           <div class="article-body prose prose-slate dark:prose-invert max-w-none text-slate-800 dark:text-zinc-200 font-serif leading-8 text-base md:text-lg mb-8 text-justify hyphens-none">${article.contentHtml}</div>
+          <div class="my-8">${renderAdSenseBannerHtml(adsenseConfig.clientId, adsenseConfig.slots.inArticle, 'fluid')}</div>
           <script>
             (function(){
               var copyBtn = document.getElementById('nj-copy-link');
@@ -2293,6 +2670,7 @@ async function renderStandaloneHtmlPage(request, env, url) {
         </article>
         <aside class="lg:col-span-4 space-y-8">
           <div class="sticky top-20 space-y-8">
+            ${renderAdSenseBannerHtml(adsenseConfig.clientId, adsenseConfig.slots.sidebar)}
             <div class="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm">
               <div class="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100 dark:border-zinc-800">
                 <div class="w-1.5 h-5 bg-brand-700 rounded-full"></div>
@@ -2306,11 +2684,12 @@ async function renderStandaloneHtmlPage(request, env, url) {
                   .join('')}
               </div>
             </div>
+            ${renderAdSenseBannerHtml(adsenseConfig.clientId, adsenseConfig.slots.sidebarBottom)}
           </div>
         </aside>
       </div>
     </main>
-    ${renderFooterAndScripts()}`;
+    ${renderFooterAndScripts(adsenseConfig)}`;
 
     return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   }
@@ -2326,29 +2705,134 @@ async function renderStandaloneHtmlPage(request, env, url) {
       adsenseId,
     })}
     ${renderHeaderAndNav('todas', [])}
-    <main id="main-content" class="flex-1 max-w-4xl w-full mx-auto px-4 py-10">
-      <h1 class="text-3xl font-black mb-4">Fale com a Redação do Norma Jurídica</h1>
-      <p class="text-sm text-slate-600 dark:text-zinc-400 mb-6">Telefone: ${SITE_INFO.phone} • E-mail: ${SITE_INFO.email} • ${SITE_INFO.address}</p>
-      <form id="nj-contact-form" class="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl p-6 space-y-4">
-        <input required name="name" placeholder="Nome completo" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950 text-sm" />
-        <input required type="email" name="email" placeholder="E-mail para retorno" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950 text-sm" />
-        <input required name="subject" value="Sugestão de Pauta" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950 text-sm" />
-        <textarea required name="message" rows="5" placeholder="Sua mensagem..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950 text-sm"></textarea>
-        <button type="submit" class="px-6 py-3 bg-brand-700 hover:bg-brand-800 text-white rounded-xl text-sm font-bold cursor-pointer">Enviar Mensagem e Gerar Protocolo</button>
-        <div id="nj-contact-result" class="text-sm font-bold"></div>
-      </form>
+    <main id="main-content" class="flex-1 max-w-5xl w-full mx-auto px-4 py-8 md:py-12">
+      <div class="mb-10 text-center max-w-2xl mx-auto">
+        <span class="text-xs font-black uppercase tracking-wider text-brand-700 dark:text-brand-400 block mb-1">Central de Atendimento</span>
+        <h1 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-zinc-100 tracking-tight">Fale com a Redação do Norma Jurídica</h1>
+        <p class="text-sm text-slate-600 dark:text-zinc-400 mt-2">Envie sugestões de pauta, pedidos de correção editorial, manifestações da ouvidoria ou contate nossa equipe comercial.</p>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        <div class="lg:col-span-5 space-y-6">
+          <div class="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-6">
+            <h2 class="text-base font-black text-slate-900 dark:text-zinc-100 uppercase tracking-tight pb-3 border-b border-slate-100 dark:border-zinc-800">Informações Institucionais</h2>
+            <div class="space-y-4 text-xs sm:text-sm">
+              <div class="flex items-start gap-3">
+                <div class="p-2.5 bg-brand-50 dark:bg-brand-950 text-brand-700 dark:text-brand-400 rounded-xl flex-shrink-0">${SVG_ICONS.mapPin.replace('w-3.5 h-3.5 flex-shrink-0', 'w-5 h-5')}</div>
+                <div>
+                  <strong class="block text-slate-900 dark:text-zinc-100 font-bold">Sede Oficial</strong>
+                  <span class="text-slate-500 dark:text-zinc-400">${SITE_INFO.name}<br>${SITE_INFO.address}</span>
+                </div>
+              </div>
+              <div class="flex items-start gap-3">
+                <div class="p-2.5 bg-brand-50 dark:bg-brand-950 text-brand-700 dark:text-brand-400 rounded-xl flex-shrink-0">${SVG_ICONS.phone.replace('w-3.5 h-3.5 text-brand-400 flex-shrink-0', 'w-5 h-5')}</div>
+                <div>
+                  <strong class="block text-slate-900 dark:text-zinc-100 font-bold">Telefone &amp; WhatsApp</strong>
+                  <span class="text-slate-500 dark:text-zinc-400">${SITE_INFO.phone}</span>
+                </div>
+              </div>
+              <div class="flex items-start gap-3">
+                <div class="p-2.5 bg-brand-50 dark:bg-brand-950 text-brand-700 dark:text-brand-400 rounded-xl flex-shrink-0">${SVG_ICONS.mail.replace('w-3.5 h-3.5 text-brand-400 flex-shrink-0', 'w-5 h-5')}</div>
+                <div>
+                  <strong class="block text-slate-900 dark:text-zinc-100 font-bold">E-mail Institucional</strong>
+                  <span class="text-slate-500 dark:text-zinc-400">${SITE_INFO.email}</span>
+                </div>
+              </div>
+              <div class="flex items-start gap-3">
+                <div class="p-2.5 bg-brand-50 dark:bg-brand-950 text-brand-700 dark:text-brand-400 rounded-xl flex-shrink-0">${SVG_ICONS.clock.replace('w-3.5 h-3.5 flex-shrink-0', 'w-5 h-5')}</div>
+                <div>
+                  <strong class="block text-slate-900 dark:text-zinc-100 font-bold">Horário de Funcionamento</strong>
+                  <span class="text-slate-500 dark:text-zinc-400">Plantão Editorial: 24 horas<br>Atendimento Comercial: Segunda a sexta, das 8h às 18h</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="lg:col-span-7 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-sm">
+          <form id="nj-contact-form" class="space-y-4">
+            <div id="nj-contact-error" class="hidden p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 rounded-xl text-xs flex items-center gap-2">${SVG_ICONS.alertCircle}<span id="nj-contact-error-text"></span></div>
+            <div>
+              <label for="nj-c-name" class="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">Nome Completo *</label>
+              <input id="nj-c-name" required name="name" placeholder="Seu nome ou razão social" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950 text-xs sm:text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            </div>
+            <div>
+              <label for="nj-c-email" class="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">E-mail para Retorno *</label>
+              <input id="nj-c-email" required type="email" name="email" placeholder="seuemail@exemplo.com.br" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950 text-xs sm:text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            </div>
+            <div>
+              <label for="nj-c-subject" class="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">Assunto da Manifestação *</label>
+              <select id="nj-c-subject" name="subject" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950 text-xs sm:text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                <option value="Sugestão de Pauta">Sugestão de Pauta</option>
+                <option value="Correção Editorial">Correção Editorial</option>
+                <option value="Comercial e Anúncios">Comercial e Anúncios</option>
+                <option value="Privacidade e Dados">Privacidade e Dados Pessoais (LGPD)</option>
+                <option value="Elogio ou Crítica">Elogio ou Crítica</option>
+                <option value="Outro">Outro</option>
+              </select>
+            </div>
+            <div>
+              <label for="nj-c-message" class="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">Mensagem Detalhada *</label>
+              <textarea id="nj-c-message" required name="message" rows="5" placeholder="Descreva com clareza o teor da sua mensagem, mencionando fatos, links ou anexos pertinentes..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950 text-xs sm:text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
+              <span class="text-[11px] text-slate-400 mt-1 block">Mínimo de 10 caracteres.</span>
+            </div>
+            <button type="submit" id="nj-c-submit" class="w-full py-3 bg-brand-700 hover:bg-brand-800 text-white rounded-xl text-xs sm:text-sm font-bold transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer">${SVG_ICONS.send}<span>Enviar Mensagem e Gerar Protocolo</span></button>
+          </form>
+          <div id="nj-contact-success" class="hidden text-center py-6 space-y-4">
+            <div class="w-14 h-14 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto">${SVG_ICONS.checkCircle}</div>
+            <h3 class="text-xl font-black text-slate-900 dark:text-zinc-100">Manifestação Registrada com Sucesso!</h3>
+            <p class="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 max-w-md mx-auto">Sua demanda foi recebida pela equipe do Norma Jurídica e encaminhada aos editores competentes.</p>
+            <div class="p-4 bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-800 rounded-2xl max-w-sm mx-auto">
+              <span class="text-xs font-bold text-brand-800 dark:text-brand-300 block mb-1">Número Oficial de Protocolo:</span>
+              <div id="nj-protocol-code" class="text-2xl font-black text-brand-700 dark:text-brand-400 tracking-wider font-mono"></div>
+              <button type="button" id="nj-copy-protocol" class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-700 hover:bg-brand-800 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer">${SVG_ICONS.copy}<span>Copiar Protocolo</span></button>
+              <p class="text-[11px] text-slate-500 mt-2">Por favor, anote ou salve este número para acompanhamento.</p>
+            </div>
+            <button type="button" id="nj-contact-again" class="mt-4 text-xs font-bold text-brand-700 hover:underline cursor-pointer">Enviar outra mensagem</button>
+          </div>
+        </div>
+      </div>
       <script>
-        document.getElementById('nj-contact-form').addEventListener('submit', async function(e) {
-          e.preventDefault();
-          var fd = new FormData(e.target);
-          var res = await fetch('/api/contact', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(Object.fromEntries(fd)) });
-          var data = await res.json();
-          var out = document.getElementById('nj-contact-result');
-          out.textContent = data.protocol ? 'Protocolo gerado: ' + data.protocol : (data.error || 'Erro ao enviar.');
-        });
+        (function(){
+          var form = document.getElementById('nj-contact-form');
+          var errBox = document.getElementById('nj-contact-error');
+          var errTxt = document.getElementById('nj-contact-error-text');
+          var sucBox = document.getElementById('nj-contact-success');
+          var protoEl = document.getElementById('nj-protocol-code');
+          var copyBtn = document.getElementById('nj-copy-protocol');
+          var againBtn = document.getElementById('nj-contact-again');
+          var submitBtn = document.getElementById('nj-c-submit');
+          function showErr(msg){ if (errTxt) errTxt.textContent = msg; if (errBox) errBox.classList.remove('hidden'); }
+          if (form) form.addEventListener('submit', async function(e){
+            e.preventDefault();
+            if (errBox) errBox.classList.add('hidden');
+            var fd = new FormData(form);
+            var payload = Object.fromEntries(fd);
+            if (String(payload.name || '').trim().length < 2) return showErr('O nome informado deve ter pelo menos 2 caracteres.');
+            if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(String(payload.email || '').trim())) return showErr('Por favor, informe um endereço de e-mail válido.');
+            if (String(payload.message || '').trim().length < 10) return showErr('A mensagem deve conter pelo menos 10 caracteres detalhando a solicitação.');
+            if (submitBtn) submitBtn.disabled = true;
+            try {
+              var res = await fetch('/api/contact', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+              var data = await res.json();
+              if (!res.ok || !data.protocol) return showErr(data.error || 'Falha ao registrar manifestação.');
+              if (protoEl) protoEl.textContent = data.protocol;
+              form.classList.add('hidden');
+              if (sucBox) sucBox.classList.remove('hidden');
+              form.reset();
+            } catch(ex){ showErr('Erro na comunicação com o servidor.'); }
+            finally { if (submitBtn) submitBtn.disabled = false; }
+          });
+          if (copyBtn) copyBtn.addEventListener('click', function(){
+            var code = protoEl ? protoEl.textContent : '';
+            if (code) try { navigator.clipboard.writeText(code); copyBtn.lastChild.textContent = 'Copiado para a área de transferência'; setTimeout(function(){ copyBtn.lastChild.textContent = 'Copiar Protocolo'; }, 2000); } catch(e){}
+          });
+          if (againBtn) againBtn.addEventListener('click', function(){
+            if (sucBox) sucBox.classList.add('hidden');
+            if (form) form.classList.remove('hidden');
+          });
+        })();
       </script>
     </main>
-    ${renderFooterAndScripts()}`;
+    ${renderFooterAndScripts(adsenseConfig)}`;
     return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   }
 
@@ -2363,23 +2847,53 @@ async function renderStandaloneHtmlPage(request, env, url) {
     })}
     ${renderHeaderAndNav('todas', [])}
     <main id="main-content" class="flex-1 max-w-4xl w-full mx-auto px-4 py-10">
+      <nav aria-label="Navegação estrutural" class="flex items-center gap-2 text-xs text-slate-500 dark:text-zinc-400 mb-6">
+        <a href="/" class="hover:text-brand-700 dark:hover:text-brand-400 transition-colors">Início</a>${SVG_ICONS.chevronRight}
+        <span class="text-slate-800 dark:text-zinc-200 font-medium">Institucional</span>
+      </nav>
       <h1 class="text-3xl font-black mb-6">Páginas Institucionais</h1>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        ${Object.entries(INSTITUTIONAL_PAGES).map(([s, p]) => `<a href="/pagina/${escapeHtml(s)}" class="p-5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl hover:border-brand-600"><h2 class="font-bold text-base mb-1">${escapeHtml(p.title)}</h2><p class="text-xs text-slate-500">${escapeHtml(p.lead)}</p></a>`).join('')}
+        ${Object.entries(INSTITUTIONAL_PAGES).map(([s, p]) => `<a href="/pagina/${escapeHtml(s)}" class="p-5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl hover:border-brand-600 transition-colors"><span class="text-[10px] font-black uppercase tracking-wider text-brand-700 dark:text-brand-400 block mb-1">${escapeHtml(p.category)}</span><h2 class="font-bold text-base mb-1">${escapeHtml(p.title)}</h2><p class="text-xs text-slate-500 dark:text-zinc-400">${escapeHtml(p.lead)}</p></a>`).join('')}
       </div>
     </main>
-    ${renderFooterAndScripts()}`;
+    ${renderFooterAndScripts(adsenseConfig)}`;
     return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   }
 
-  if (pathname.startsWith('/pagina/') || pathname === '/privacidade' || pathname === '/termos' || pathname === '/cookies') {
-    const slug = pathname.startsWith('/pagina/') ? pathname.slice('/pagina/'.length).replace(/\/+$/, '') : pathname.slice(1);
-    const pageData = INSTITUTIONAL_PAGES[slug] || {
-      title: resolveCategoryDisplayName(slug),
-      category: 'Institucional',
-      lead: `Diretrizes e informações oficiais sobre ${resolveCategoryDisplayName(slug)} no portal ${SITE_INFO.name}.`,
-      contentHtml: `<p>O portal <strong>${SITE_INFO.name}</strong> opera em conformidade com a legislação brasileira vigente, incluindo a LGPD (Lei nº 13.709/2018) e o Marco Civil da Internet.</p>`,
-    };
+  if (pathname === '/privacidade' || pathname === '/termos' || pathname === '/cookies') {
+    const legalKey = pathname.slice(1);
+    const legal = LEGAL_PAGES[legalKey];
+    const html = `${renderSharedHead({
+      title: legal.metaTitle,
+      description: legal.metaDesc,
+      canonicalUrl: `${baseUrl}${pathname}`,
+      ogImageUrl: ogDefault,
+      newsApiOrigin,
+      adsenseId,
+    })}
+    ${renderHeaderAndNav('todas', [])}
+    <main id="main-content" class="flex-1 max-w-4xl w-full mx-auto px-4 py-8 md:py-12">
+      <nav aria-label="Navegação estrutural" class="flex items-center gap-2 text-xs text-slate-500 dark:text-zinc-400 mb-6">
+        <a href="/" class="hover:text-brand-700 dark:hover:text-brand-400">Início</a>${SVG_ICONS.chevronRight}
+        <span class="text-slate-800 dark:text-zinc-200 font-medium">${escapeHtml(legal.breadcrumb)}</span>
+      </nav>
+      <div class="mb-8 pb-6 border-b border-slate-200 dark:border-zinc-800">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-400 rounded-full text-xs font-black uppercase tracking-wider mb-3">
+          ${SVG_ICONS[legal.iconKey] || SVG_ICONS.shieldCheck}
+          <span>${escapeHtml(legal.badge)}</span>
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-zinc-50 tracking-tight leading-tight mb-4">${escapeHtml(legal.title)}</h1>
+        <p class="text-base text-slate-600 dark:text-zinc-300 leading-relaxed border-l-4 border-brand-700 pl-4">${legal.lead}</p>
+      </div>
+      <article class="article-body prose prose-slate dark:prose-invert max-w-none text-slate-800 dark:text-zinc-200 font-serif leading-8 text-base md:text-lg space-y-6">${legal.contentHtml}</article>
+    </main>
+    ${renderFooterAndScripts(adsenseConfig)}`;
+    return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+  }
+
+  if (pathname.startsWith('/pagina/')) {
+    const slug = pathname.slice('/pagina/'.length).replace(/\/+$/, '');
+    const pageData = INSTITUTIONAL_PAGES[slug] || getGenericInstitutionalPage(slug);
     const html = `${renderSharedHead({
       title: `${pageData.title} | ${SITE_INFO.name}`,
       description: pageData.lead,
@@ -2389,13 +2903,27 @@ async function renderStandaloneHtmlPage(request, env, url) {
       adsenseId,
     })}
     ${renderHeaderAndNav('todas', [])}
-    <main id="main-content" class="flex-1 max-w-4xl w-full mx-auto px-4 py-10">
-      <span class="text-xs font-black uppercase text-brand-700">${escapeHtml(pageData.category)}</span>
-      <h1 class="text-3xl sm:text-4xl font-black mt-2 mb-4">${escapeHtml(pageData.title)}</h1>
-      <p class="text-base text-slate-600 dark:text-zinc-300 border-l-4 border-brand-700 pl-4 mb-8">${escapeHtml(pageData.lead)}</p>
-      <article class="article-body font-serif text-base md:text-lg">${pageData.contentHtml}</article>
+    <main id="main-content" class="flex-1 max-w-4xl w-full mx-auto px-4 py-8 md:py-12">
+      <nav aria-label="Navegação estrutural" class="flex items-center gap-2 text-xs text-slate-500 dark:text-zinc-400 mb-6">
+        <a href="/" class="hover:text-brand-700 dark:hover:text-brand-400 transition-colors">Início</a>${SVG_ICONS.chevronRight}
+        <a href="/pagina" class="hover:text-brand-700 dark:hover:text-brand-400 transition-colors">Institucional</a>${SVG_ICONS.chevronRight}
+        <span class="text-slate-800 dark:text-zinc-200 font-medium">${escapeHtml(pageData.title)}</span>
+      </nav>
+      <div class="mb-8 pb-6 border-b border-slate-200 dark:border-zinc-800">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-400 rounded-full text-xs font-black uppercase tracking-wider mb-3">
+          ${SVG_ICONS.shieldCheck.replace('text-brand-400', 'w-3.5 h-3.5')}
+          <span>${escapeHtml(pageData.category)}</span>
+        </div>
+        <h1 class="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-zinc-50 tracking-tight leading-tight mb-4">${escapeHtml(pageData.title)}</h1>
+        <p class="text-base sm:text-lg text-slate-600 dark:text-zinc-300 leading-relaxed border-l-4 border-brand-700 pl-4 text-justify hyphens-none">${escapeHtml(pageData.lead)}</p>
+      </div>
+      <article class="article-body prose prose-slate dark:prose-invert max-w-none text-slate-800 dark:text-zinc-200 font-serif leading-8 text-base md:text-lg mb-12 text-justify hyphens-none">${pageData.contentHtml}</article>
+      <div class="pt-6 border-t border-slate-200 dark:border-zinc-800 flex justify-between items-center">
+        <a href="/pagina" class="inline-flex items-center gap-2 text-xs font-bold text-brand-700 dark:text-brand-400 hover:underline">${SVG_ICONS.arrowLeft}<span>Voltar ao índice institucional</span></a>
+        <a href="/contato" class="px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-xl text-xs font-bold transition-colors shadow-sm">Fale com a Redação</a>
+      </div>
     </main>
-    ${renderFooterAndScripts()}`;
+    ${renderFooterAndScripts(adsenseConfig)}`;
     return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   }
 
@@ -2403,6 +2931,21 @@ async function renderStandaloneHtmlPage(request, env, url) {
   const isHome = pathname === '/' || pathname === '/noticia' || pathname === '/categoria';
   const isCategory = pathname.startsWith('/categoria/');
   if (!isHome && !isCategory) {
+    const popularShortcuts = [
+      { name: 'Todas as Notícias', href: '/' },
+      { name: 'Justiça', href: '/categoria/justica' },
+      { name: 'Política', href: '/categoria/politica' },
+      { name: 'Economia', href: '/categoria/economia' },
+      { name: 'Educação', href: '/categoria/educacao' },
+      { name: 'Esporte', href: '/categoria/esporte' },
+      { name: 'Saúde', href: '/categoria/saude' },
+      { name: 'Tecnologia & Games', href: '/categoria/tecnologia-e-games' },
+      { name: 'Pará', href: '/categoria/para' },
+      { name: 'Tocantins', href: '/categoria/tocantins' },
+      { name: 'Goiás', href: '/categoria/goias' },
+      { name: 'Santa Catarina', href: '/categoria/santa-catarina' },
+      { name: 'Mundo', href: '/categoria/mundo' },
+    ];
     const html404 = `${renderSharedHead({
       title: `Página Não Encontrada | ${SITE_INFO.name}`,
       description: 'Conteúdo não localizado ou movido.',
@@ -2412,13 +2955,28 @@ async function renderStandaloneHtmlPage(request, env, url) {
       adsenseId,
     })}
     ${renderHeaderAndNav('todas', [])}
-    <main id="main-content" class="flex-1 max-w-3xl w-full mx-auto px-4 py-16 text-center">
-      <div class="w-16 h-16 bg-brand-700 text-white rounded-3xl flex items-center justify-center font-black text-3xl mx-auto mb-6">NJ</div>
-      <span class="text-xs font-black uppercase tracking-wider text-brand-700 block mb-2">Erro 404 • Página Não Encontrada</span>
-      <h1 class="text-3xl sm:text-4xl font-black mb-4">Conteúdo não localizado ou movido</h1>
-      <a href="/" class="inline-block px-5 py-2.5 bg-brand-700 text-white rounded-xl text-xs font-bold mt-4">Ir para a Página Inicial</a>
+    <main id="main-content" class="flex-1 max-w-4xl w-full mx-auto px-4 py-16 flex flex-col items-center text-center justify-center">
+      <div class="w-16 h-16 bg-brand-700 text-white rounded-3xl flex items-center justify-center font-black text-3xl shadow-xl mb-6 ring-4 ring-brand-100 dark:ring-brand-950">NJ</div>
+      <span class="text-sm font-black uppercase tracking-wider text-brand-700 dark:text-brand-400 block mb-2">Erro 404 • Página Não Encontrada</span>
+      <h1 class="text-3xl sm:text-5xl font-black text-slate-900 dark:text-zinc-50 tracking-tight mb-4">Conteúdo não localizado ou movido</h1>
+      <p class="text-sm sm:text-base text-slate-600 dark:text-zinc-400 max-w-lg mb-8 leading-relaxed">O endereço que você tentou acessar não existe ou foi atualizado pela redação do Norma Jurídica.</p>
+      <div class="w-full max-w-md mb-10">
+        <form action="/" method="GET" class="relative">
+          <input type="search" name="q" placeholder="Pesquisar notícias no portal..." class="w-full px-4 py-3 pl-11 rounded-2xl border border-slate-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm text-slate-900 dark:text-zinc-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          ${SVG_ICONS.search.replace('w-4 h-4 text-slate-400 absolute left-3', 'w-5 h-5 text-slate-400 absolute left-3.5')}
+        </form>
+      </div>
+      <div class="w-full max-w-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-sm">
+        <div class="flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-4">${SVG_ICONS.compass}<span>Navegue pelas Principais Editorias</span></div>
+        <div class="flex flex-wrap items-center justify-center gap-2">
+          ${popularShortcuts.map((sc) => `<a href="${sc.href}" class="px-3 py-1.5 bg-slate-100 dark:bg-zinc-800 hover:bg-brand-50 hover:text-brand-700 dark:hover:bg-brand-950/60 dark:hover:text-brand-400 text-xs font-bold rounded-xl transition-colors">${escapeHtml(sc.name)}</a>`).join('')}
+        </div>
+        <div class="mt-8 pt-6 border-t border-slate-100 dark:border-zinc-800 flex justify-center">
+          <a href="/" class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-xl text-xs font-bold transition-colors shadow-md">${SVG_ICONS.home}<span>Ir para a Página Inicial</span></a>
+        </div>
+      </div>
     </main>
-    ${renderFooterAndScripts()}`;
+    ${renderFooterAndScripts(adsenseConfig)}`;
     return new Response(html404, { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   }
   const articleQueryParam = url.searchParams.get('article');
@@ -2429,13 +2987,51 @@ async function renderStandaloneHtmlPage(request, env, url) {
   const catQueryParam = url.searchParams.get('cat') || '';
   const isFavorites = catQueryParam === 'favoritos';
   const catSlug = isCategory ? pathname.slice('/categoria/'.length).replace(/\/+$/, '') : (isFavorites ? 'favoritos' : 'all');
+  if (isCategory && normalizeCategoryText(catSlug) === 'noticias-gerais') {
+    return Response.redirect(`${baseUrl}/categoria/brasil`, 308);
+  }
   const q = url.searchParams.get('q') || '';
   const refresh = url.searchParams.get('refresh') === '1' || url.searchParams.get('refresh') === 'true';
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10) || 1);
   const limit = isFavorites ? 100 : isCategory ? 12 : 24;
   const { items, totalPages } = await fetchAggregatedNews(env, { category: isFavorites ? 'all' : catSlug, q, page, limit, refresh });
   const catTitle = isFavorites ? 'Minha Lista' : isCategory ? resolveCategoryDisplayName(catSlug) : 'Destaques';
-  const isInitialHighlights = !isCategory && !isFavorites && !q && page === 1 && items.length > 0;
+
+  // Render dedicated 3-column Category layout when on /categoria/[slug] (matching app/categoria/[slug]/page.tsx)
+  if (isCategory) {
+    const pageSuffix = page > 1 ? ` - Página ${page}` : '';
+    const htmlCategory = `${renderSharedHead({
+      title: `Notícias sobre ${catTitle}${pageSuffix} | ${SITE_INFO.name}`,
+      description: `Acompanhe as últimas notícias, análises e reportagens sobre ${catTitle} no portal ${SITE_INFO.name}.${pageSuffix}`,
+      canonicalUrl: page > 1 ? `${baseUrl}/categoria/${catSlug}?page=${page}` : `${baseUrl}/categoria/${catSlug}`,
+      ogImageUrl: ogDefault,
+      newsApiOrigin,
+      adsenseId,
+    })}
+    ${renderHeaderAndNav(catSlug, items, q)}
+    <main id="main-content" class="flex-1 max-w-7xl w-full mx-auto px-4 py-8">
+      <div class="mb-8 pb-4 border-b border-slate-200 dark:border-zinc-800">
+        <h1 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-zinc-100 tracking-tight">${escapeHtml(catTitle)}</h1>
+        <p class="text-sm text-slate-500 dark:text-zinc-400 mt-2">Cobertura analítica e factual sobre ${escapeHtml(catTitle.toLowerCase())}, decisões oficiais e acontecimentos em tempo real.</p>
+      </div>
+      <div class="mb-8">${renderAdSenseBannerHtml(adsenseConfig.clientId, adsenseConfig.slots.header)}</div>
+      ${
+        items.length === 0
+          ? `<div class="text-center py-16 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl p-8">
+              <div class="w-16 h-16 bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-400 rounded-2xl flex items-center justify-center mx-auto mb-4">${SVG_ICONS.search.replace('w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none', 'w-8 h-8')}</div>
+              <h2 class="text-lg font-black text-slate-900 dark:text-zinc-100 mb-2">Edição em apuração • ${escapeHtml(catTitle)}</h2>
+              <p class="text-sm text-slate-500 max-w-md mx-auto mb-6">A redação do Norma Jurídica está processando e checando novas matérias oficiais para esta editoria em tempo real.</p>
+              <a href="/?refresh=true" class="px-5 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-2">${SVG_ICONS.refresh.replace('w-4 h-4', 'w-3.5 h-3.5')}<span>Ver todas as notícias</span></a>
+            </div>`
+          : `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">${items.map((n) => renderNewsCardHtml(n, 'grid')).join('')}</div>
+             <div class="mt-8">${renderPaginationHtml(`/categoria/${catSlug}`, page, totalPages)}</div>`
+      }
+    </main>
+    ${renderFooterAndScripts(adsenseConfig)}`;
+    return new Response(htmlCategory, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+  }
+
+  const isInitialHighlights = !isFavorites && !q && page === 1 && items.length > 0;
   const heroSlides = isInitialHighlights ? items.slice(0, 10) : [];
   const feed = isInitialHighlights && items.length > 10 ? items.slice(10) : isInitialHighlights ? items.slice(1) : items;
   const mostRead = items.slice(0, 5);
@@ -2453,9 +3049,9 @@ async function renderStandaloneHtmlPage(request, env, url) {
   ).replace(/</g, '\\u003c');
 
   const html = `${renderSharedHead({
-    title: isCategory ? `Notícias sobre ${catTitle} | ${SITE_INFO.name}` : `${SITE_INFO.name} | ${SITE_INFO.tagline}`,
+    title: `${SITE_INFO.name} | ${SITE_INFO.tagline}`,
     description: SITE_INFO.description,
-    canonicalUrl: isCategory ? `${baseUrl}/categoria/${catSlug}` : baseUrl,
+    canonicalUrl: baseUrl,
     ogImageUrl: ogDefault,
     newsApiOrigin,
     adsenseId,
@@ -2463,13 +3059,13 @@ async function renderStandaloneHtmlPage(request, env, url) {
   ${renderHeaderAndNav(catSlug, items, q)}
   <main id="main-content" class="flex-1 max-w-7xl w-full mx-auto px-4 py-8">
     ${
-      !isCategory && !isFavorites
+      !isFavorites
         ? `<section class="mb-8 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6 p-6 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-sm">
             <div class="max-w-2xl"><h1 class="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 dark:text-zinc-50 tracking-tight leading-tight">Acompanhe as principais informações de economia, justiça, política e acontecimentos do Brasil.</h1></div>
             <div class="flex-shrink-0">
               <div id="nj-weather-card" class="rounded-2xl p-4 text-white bg-gradient-to-br from-amber-500 to-orange-600 shadow-md flex items-center justify-between gap-4 w-full md:w-84 border border-white/10">
                 <div class="flex items-center gap-3">
-                  <div class="p-2.5 bg-white/20 backdrop-blur-sm rounded-xl">${SVG_ICONS.sun.replace('w-3.5 h-3.5 text-amber-400', 'w-8 h-8 text-white drop-shadow')}</div>
+                  <div id="nj-weather-icon" class="p-2.5 bg-white/20 backdrop-blur-sm rounded-xl">${SVG_ICONS.sun.replace('w-3.5 h-3.5 text-amber-400 flex-shrink-0', 'w-8 h-8 text-white drop-shadow')}</div>
                   <div>
                     <div class="flex items-baseline gap-1.5">
                       <span id="nj-weather-temp" class="text-3xl font-black tracking-tight">26°C</span>
@@ -2479,21 +3075,28 @@ async function renderStandaloneHtmlPage(request, env, url) {
                   </div>
                 </div>
                 <div class="text-right text-[11px] text-white/85 space-y-1 font-medium border-l border-white/20 pl-3">
-                  <div id="nj-weather-feels">Sensação 27°</div>
-                  <div id="nj-weather-hum">58% Umid.</div>
-                  <div id="nj-weather-uv">UV 7 (Alto)</div>
+                  <div class="flex items-center justify-end gap-1">${SVG_ICONS.thermometer}<span id="nj-weather-feels">Sensação 27°</span></div>
+                  <div class="flex items-center justify-end gap-1">${SVG_ICONS.droplets}<span id="nj-weather-hum">58% Umid.</span></div>
+                  <div class="flex items-center justify-end gap-1">${SVG_ICONS.shieldAlert}<span id="nj-weather-uv">UV 7 (Alto)</span></div>
                 </div>
               </div>
             </div>
             <script>
               (function(){
+                var ICONS = {
+                  sun: '${SVG_ICONS.sun.replace('w-3.5 h-3.5 text-amber-400 flex-shrink-0', 'w-8 h-8 text-white drop-shadow')}',
+                  moon: '${SVG_ICONS.moon.replace('w-3.5 h-3.5 text-brand-400 flex-shrink-0', 'w-8 h-8 text-white drop-shadow')}',
+                  cloud: '${SVG_ICONS.cloud}',
+                  rain: '${SVG_ICONS.cloudRain}',
+                  storm: '${SVG_ICONS.cloudLightning}'
+                };
                 function loadW(qStr){
                   fetch('/api/weather?q=' + encodeURIComponent(qStr || 'Brasilia')).then(function(r){ return r.ok ? r.json() : null; }).then(function(w){
                     if (!w) return;
                     var t = document.getElementById('nj-weather-temp'), c = document.getElementById('nj-weather-city'),
                         cd = document.getElementById('nj-weather-cond'), f = document.getElementById('nj-weather-feels'),
                         h = document.getElementById('nj-weather-hum'), u = document.getElementById('nj-weather-uv'),
-                        card = document.getElementById('nj-weather-card');
+                        card = document.getElementById('nj-weather-card'), ico = document.getElementById('nj-weather-icon');
                     if (t) t.textContent = w.temperature + '°C';
                     if (c) c.textContent = w.city;
                     if (cd) cd.textContent = w.condition;
@@ -2501,22 +3104,40 @@ async function renderStandaloneHtmlPage(request, env, url) {
                     if (h) h.textContent = w.humidity + '% Umid.';
                     if (u) u.textContent = 'UV ' + w.uvIndex + ' (' + w.uvDescription + ')';
                     if (card && w.condition) {
-                      var cl = w.condition.toLowerCase();
-                      var grad = 'from-blue-600 to-indigo-700';
-                      if (cl.indexOf('chuva') >= 0 || cl.indexOf('garoa') >= 0) grad = 'from-sky-700 to-blue-900';
-                      else if (cl.indexOf('tempestade') >= 0 || cl.indexOf('trovoada') >= 0) grad = 'from-purple-800 to-indigo-950';
-                      else if (cl.indexOf('nublado') >= 0 || cl.indexOf('encoberto') >= 0) grad = 'from-slate-600 to-slate-800';
-                      else if (cl.indexOf('sol') >= 0 || cl.indexOf('ensolarado') >= 0) grad = 'from-amber-500 to-orange-600';
+                      var cl = w.condition.toLowerCase(), grad = 'from-blue-600 to-indigo-700', iconSvg = ICONS.sun;
+                      if (cl.indexOf('chuva') >= 0 || cl.indexOf('garoa') >= 0) { grad = 'from-sky-700 to-blue-900'; iconSvg = ICONS.rain; }
+                      else if (cl.indexOf('tempestade') >= 0 || cl.indexOf('trovoada') >= 0) { grad = 'from-purple-800 to-indigo-950'; iconSvg = ICONS.storm; }
+                      else if (cl.indexOf('nublado') >= 0 || cl.indexOf('encoberto') >= 0) { grad = 'from-slate-600 to-slate-800'; iconSvg = ICONS.cloud; }
+                      else if (cl.indexOf('noite') >= 0 || cl.indexOf('limpo') >= 0) {
+                        var hr = new Date().getHours();
+                        if (hr < 6 || hr >= 18) { grad = 'from-indigo-900 to-zinc-950'; iconSvg = ICONS.moon; }
+                        else { grad = 'from-amber-500 to-orange-600'; iconSvg = ICONS.sun; }
+                      } else if (cl.indexOf('sol') >= 0 || cl.indexOf('ensolarado') >= 0) { grad = 'from-amber-500 to-orange-600'; iconSvg = ICONS.sun; }
                       card.className = 'rounded-2xl p-4 text-white bg-gradient-to-br ' + grad + ' shadow-md flex items-center justify-between gap-4 w-full md:w-84 border border-white/10';
+                      if (ico) ico.innerHTML = iconSvg;
                     }
                   }).catch(function(){});
                 }
-                loadW('Brasilia');
+                var geoAllowed = true;
+                try {
+                  var pol = document.permissionsPolicy || document.featurePolicy;
+                  if (pol && typeof pol.allowsFeature === 'function') geoAllowed = pol.allowsFeature('geolocation');
+                } catch(e){}
+                if (geoAllowed && 'geolocation' in navigator) {
+                  navigator.geolocation.getCurrentPosition(
+                    function(pos){ loadW(pos.coords.latitude + ',' + pos.coords.longitude); },
+                    function(){ loadW('Brasilia'); },
+                    { timeout: 3000 }
+                  );
+                } else {
+                  loadW('Brasilia');
+                }
               })();
             </script>
           </section>`
         : `<div class="mb-8 pb-4 border-b border-slate-200 dark:border-zinc-800"><h1 class="text-3xl sm:text-4xl font-black tracking-tight">${escapeHtml(catTitle)}</h1></div>`
     }
+    <div class="mb-8">${renderAdSenseBannerHtml(adsenseConfig.clientId, adsenseConfig.slots.header)}</div>
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-200 dark:border-zinc-800">
       <h2 class="text-xl md:text-2xl font-black text-slate-900 dark:text-zinc-100 tracking-tight flex items-center gap-2">${escapeHtml(catTitle)}${
         q ? ` <span class="text-sm font-normal text-slate-500">(busca por: "${escapeHtml(q)}")</span>` : ''
@@ -2526,13 +3147,27 @@ async function renderStandaloneHtmlPage(request, env, url) {
         <button type="button" id="nj-view-compact-btn" class="p-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-slate-500 hover:text-slate-900 dark:hover:text-zinc-100" title="Exibição em Lista Compacta" aria-label="Exibição compacta"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg></button>
       </div>
     </div>
-    <div id="nj-fav-empty" class="${isFavorites ? 'hidden ' : 'hidden '}text-center py-16 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl p-8 mb-8">
-      <div class="w-16 h-16 bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-400 rounded-2xl flex items-center justify-center mx-auto mb-4">${SVG_ICONS.bookmark}</div>
+    <div id="nj-fav-empty" class="hidden text-center py-16 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl p-8 mb-8">
+      <div class="w-16 h-16 bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-400 rounded-2xl flex items-center justify-center mx-auto mb-4">${SVG_ICONS.bookmark.replace('w-4 h-4', 'w-8 h-8')}</div>
       <h3 class="text-lg font-black text-slate-900 dark:text-zinc-100 mb-2">Nenhuma matéria salva ainda</h3>
       <p class="text-sm text-slate-500 max-w-md mx-auto mb-6">Clique no ícone de marcador nas matérias que deseja salvar para leitura posterior.</p>
       <a href="/" class="px-5 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-2">Ver todas as notícias</a>
     </div>
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+    ${
+      items.length === 0
+        ? `<div class="text-center py-16 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl p-8">
+            <div class="w-16 h-16 bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-400 rounded-2xl flex items-center justify-center mx-auto mb-4">${SVG_ICONS.search.replace('w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none', 'w-8 h-8')}</div>
+            <h3 class="text-lg font-black text-slate-900 dark:text-zinc-100 mb-2">${
+              q ? 'Nenhum resultado para a busca' : `Edição em apuração • ${escapeHtml(catTitle)}`
+            }</h3>
+            <p class="text-sm text-slate-500 max-w-md mx-auto mb-6">${
+              q
+                ? `Não encontramos registros para "${escapeHtml(q)}". Verifique a digitação ou consulte outras editorias.`
+                : 'A redação do Norma Jurídica está processando e checando novas matérias oficiais para esta editoria em tempo real.'
+            }</p>
+            <a href="/?refresh=true" class="px-5 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-2">${SVG_ICONS.refresh.replace('w-4 h-4', 'w-3.5 h-3.5')}<span>Ver todas as notícias</span></a>
+          </div>`
+        : `<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
       <div class="lg:col-span-8 space-y-10">
         ${
           firstHero
@@ -2621,10 +3256,12 @@ async function renderStandaloneHtmlPage(request, env, url) {
             })();
           </script>
         </section>
-        ${renderPaginationHtml(isCategory ? `/categoria/${catSlug}` : '/', page, totalPages)}
+        ${renderAdSenseBannerHtml(adsenseConfig.clientId, adsenseConfig.slots.inArticle)}
+        ${renderPaginationHtml('/', page, totalPages)}
       </div>
       <aside class="lg:col-span-4 space-y-8">
         <div class="sticky top-20 space-y-8">
+          ${renderAdSenseBannerHtml(adsenseConfig.clientId, adsenseConfig.slots.sidebar)}
           <div class="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm">
             <div class="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100 dark:border-zinc-800">
               <div class="w-1.5 h-5 bg-brand-700 rounded-full"></div>
@@ -2638,11 +3275,29 @@ async function renderStandaloneHtmlPage(request, env, url) {
                 .join('')}
             </div>
           </div>
+          ${renderAdSenseBannerHtml(adsenseConfig.clientId, adsenseConfig.slots.sidebarBottom)}
         </div>
       </aside>
-    </div>
+    </div>`
+    }
+    ${
+      !isFavorites && !q && page === 1
+        ? `<script>
+            (function(){
+              var knownSlug = ${JSON.stringify(items[0]?.slug || '')};
+              setInterval(function(){
+                if (document.visibilityState !== 'visible') return;
+                fetch('/api/news?limit=1', { cache: 'no-store' }).then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
+                  var topSlug = d && d.items && d.items[0] ? d.items[0].slug : '';
+                  if (topSlug && topSlug !== knownSlug) location.reload();
+                }).catch(function(){});
+              }, 60000);
+            })();
+          </script>`
+        : ''
+    }
   </main>
-  ${renderFooterAndScripts()}`;
+  ${renderFooterAndScripts(adsenseConfig)}`;
 
   return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 }

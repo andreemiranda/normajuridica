@@ -9,54 +9,90 @@ function cleanEnvString(val?: string): string {
   return s;
 }
 
-function normalizeNewsApiBaseUrl(raw?: string): string {
+const NEWS_API_KEY_ALIASES = [
+  'API_KEY',
+  'NEWS_API_KEY',
+  'APIKEY',
+  'NEWS_SOURCES_API_KEY',
+  'X_API_KEY',
+  'API_SECRET_KEY',
+  'API_TOKEN',
+  'NEWS_API_TOKEN',
+  'NEWS_SOURCES_API_TOKEN',
+  'API_SECRET',
+  'NEWS_API_SECRET',
+  'ACCESS_TOKEN',
+  'BEARER_TOKEN',
+  'NEWS_KEY',
+  'KEY_API',
+  'CHAVE_API',
+  'NEWS_SOURCES_KEY',
+  'AUTHORIZATION_TOKEN',
+  'AUTH_TOKEN',
+  'NEXT_PUBLIC_API_KEY',
+  'NEXT_PUBLIC_NEWS_API_KEY',
+  'NEXT_PUBLIC_API_TOKEN',
+  'NEXT_PUBLIC_NEWS_API_TOKEN',
+];
+
+function readEnvCaseInsensitive(env: Record<string, string | undefined>, keys: string[]): string {
+  for (const key of keys) {
+    const val = cleanEnvString(env[key]);
+    if (val) return val;
+  }
+  const lowerMap = new Map<string, string>();
+  for (const [k, v] of Object.entries(env)) {
+    if (v !== undefined && v !== null) {
+      lowerMap.set(String(k).trim().toLowerCase(), v);
+    }
+  }
+  for (const key of keys) {
+    const val = cleanEnvString(lowerMap.get(key.toLowerCase()));
+    if (val) return val;
+  }
+  return '';
+}
+
+function parseNewsApiBaseUrl(raw?: string): { baseUrl: string; embeddedKey: string } {
   let cleaned = cleanEnvString(raw).replace(/\/+$/, '');
-  if (!cleaned) return DEFAULT_NEWS_API_BASE_URL;
-  cleaned = cleaned.replace(/\/api$/i, '').replace(/\/+$/, '');
+  if (!cleaned) return { baseUrl: DEFAULT_NEWS_API_BASE_URL, embeddedKey: '' };
   if (!/^https?:\/\//i.test(cleaned)) {
     cleaned = `https://${cleaned}`;
   }
   try {
     const parsed = new URL(cleaned);
+    const embeddedKey = cleanEnvString(
+      parsed.searchParams.get('ref') ||
+        parsed.searchParams.get('key') ||
+        parsed.searchParams.get('token') ||
+        parsed.searchParams.get('api_key') ||
+        parsed.searchParams.get('apikey') ||
+        ''
+    );
     if (parsed.hostname.toLowerCase() === 'workers.dev') {
-      return DEFAULT_NEWS_API_BASE_URL;
+      return { baseUrl: DEFAULT_NEWS_API_BASE_URL, embeddedKey };
     }
-    return parsed.origin + parsed.pathname.replace(/\/+$/, '');
+    const cleanPath = parsed.pathname.replace(/\/+$/, '').replace(/\/api$/i, '').replace(/\/+$/, '');
+    return { baseUrl: parsed.origin + cleanPath, embeddedKey };
   } catch {
-    return DEFAULT_NEWS_API_BASE_URL;
+    return { baseUrl: DEFAULT_NEWS_API_BASE_URL, embeddedKey: '' };
   }
 }
 
 export function resolveNewsApiConfig(env: NodeJS.ProcessEnv = process.env) {
   const e = env as Record<string, string | undefined>;
-  const rawBaseUrl =
-    e.NEWS_API_BASE_URL ||
-    e.API_URL_BASE ||
-    e.API_BASE_URL ||
-    e.NEWS_API_URL ||
-    e.NEXT_PUBLIC_NEWS_API_BASE_URL ||
-    e.NEXT_PUBLIC_API_BASE_URL ||
-    e.api_url_base ||
-    e.news_api_base_url ||
-    '';
-  const baseUrl = normalizeNewsApiBaseUrl(rawBaseUrl);
+  const rawBaseUrl = readEnvCaseInsensitive(e, [
+    'NEWS_API_BASE_URL',
+    'API_URL_BASE',
+    'API_BASE_URL',
+    'NEWS_API_URL',
+    'NEXT_PUBLIC_NEWS_API_BASE_URL',
+    'NEXT_PUBLIC_API_BASE_URL',
+  ]);
+  const { baseUrl, embeddedKey } = parseNewsApiBaseUrl(rawBaseUrl);
 
   // Lê exclusivamente das variáveis de ambiente do servidor (nunca inline no código)
-  let apiKey = cleanEnvString(
-    e.API_KEY ||
-      e.NEWS_API_KEY ||
-      e.APIKEY ||
-      e.NEWS_SOURCES_API_KEY ||
-      e.X_API_KEY ||
-      e.API_SECRET_KEY ||
-      e.NEXT_PUBLIC_API_KEY ||
-      e.NEXT_PUBLIC_NEWS_API_KEY ||
-      e.api_key ||
-      e.news_api_key ||
-      e.apikey ||
-      e.x_api_key ||
-      ''
-  );
+  let apiKey = readEnvCaseInsensitive(e, NEWS_API_KEY_ALIASES) || embeddedKey;
   if (/^bearer\s+/i.test(apiKey)) {
     apiKey = apiKey.replace(/^bearer\s+/i, '').trim();
   }
