@@ -6,7 +6,7 @@ import { getNewsApiConfig, getNewsApiHeaders } from './api-config';
 import { ALL_NEWS_SOURCES, ALL_CATEGORIES, mergeDynamicCategories } from './sources';
 import { NewsItem, NewsApiSourceItem } from './types';
 import { slugify, categorySlugify } from './slug';
-import { cleanTitle, cleanFullNewsText, isForbiddenVideoPost, removeTruncationMarkers, fixEncoding, repairAndSanitizeArticleHtml, extractAllImagesFromHtml, stripHtmlTags, normalizeImageKey, extractSourceNewsSlug, matchSlugCandidate } from './sanitizer';
+import { cleanTitle, cleanFullNewsText, isForbiddenVideoPost, removeTruncationMarkers, fixEncoding, repairAndSanitizeArticleHtml, extractAllImagesFromHtml, stripHtmlTags, normalizeImageKey, extractSourceNewsSlug, matchSlugCandidate, upgradeImageResolution, pickBestImgSrcFromAttrs, isLowResThumbnailUrl } from './sanitizer';
 import { ensureCompleteArticleText } from './article-extractor';
 
 interface UpstreamArticleItem {
@@ -20,6 +20,8 @@ interface UpstreamArticleItem {
   category?: string;
   imageUrl?: string;
   mediaUrl?: string;
+  thumbnail?: string;
+  image?: string;
   author?: string;
   link?: string;
   alt?: string;
@@ -83,11 +85,12 @@ function isValidImageUrl(url?: string): boolean {
 function extractImagesFromContent(content?: string): string[] {
   if (!content) return [];
   const images: string[] = [];
-  const imgRegex = /<img\b[^>]*src=["']([^"']+)["'][^>]*>/gi;
+  const imgRegex = /<img\b([^>]*)>/gi;
   let match;
   while ((match = imgRegex.exec(content)) !== null) {
-    if (isValidImageUrl(match[1])) {
-      images.push(match[1]);
+    const src = pickBestImgSrcFromAttrs(match[1] || '');
+    if (isValidImageUrl(src)) {
+      images.push(src);
     }
   }
   return images;
@@ -187,12 +190,16 @@ function buildNewsItemFromUpstream(
   const categoryId = categorySlugify(effectiveCategory);
 
   // Extract potential image from raw description if it contains <img
-  const descImgMatch =
-    (item.description || '').match(/<img\b[^>]*src=["']([^"']+)["'][^>]*>/i) ||
-    (item.description || '').match(/&lt;img\b[^&]*src=[&"']([^&"']+)[&"'][^&]*&gt;/i);
+  const descImgTagMatch =
+    (item.description || '').match(/<img\b([^>]*)>/i) ||
+    (item.description || '').match(/&lt;img\b([^&]*)&gt;/i);
   let extractedFromDesc = '';
-  if (descImgMatch && descImgMatch[1]) {
-    extractedFromDesc = descImgMatch[1].replace(/s2-Norma\s*Jur[ií]dica/gi, 's2-globo').trim();
+  if (descImgTagMatch && descImgTagMatch[1]) {
+    extractedFromDesc = pickBestImgSrcFromAttrs(descImgTagMatch[1]);
+    if (!extractedFromDesc) {
+      const fallbackDescSrc = (item.description || '').match(/src=[&"']+([^&"']+)/i);
+      if (fallbackDescSrc?.[1]) extractedFromDesc = upgradeImageResolution(fallbackDescSrc[1]);
+    }
   }
 
   // Summary - strictly stripped of all HTML tags and attributes (including truncated tags)
@@ -204,22 +211,31 @@ function buildNewsItemFromUpstream(
     summary = summary.substring(0, 260).replace(/\s+[^\s]*$/, '') + '…';
   }
 
-  // Collect article images strictly belonging to this specific article (deduplicated by canonical key)
+  // Collect article images strictly belonging to this specific article (upgraded & deduplicated by canonical key)
   const images: string[] = [];
   const seenImgKeys = new Set<string>();
   const addImg = (u?: string) => {
     if (!u) return;
-    const fixed = u.replace(/s2-Norma\s*Jur[ií]dica/gi, 's2-globo').trim();
+    const fixed = upgradeImageResolution(u);
     if (!isValidImageUrl(fixed)) return;
     const key = normalizeImageKey(fixed);
-    if (key && !seenImgKeys.has(key)) {
-      seenImgKeys.add(key);
-      images.push(fixed);
+    if (key) {
+      if (!seenImgKeys.has(key)) {
+        seenImgKeys.add(key);
+        images.push(fixed);
+      } else {
+        // Replace existing low-res variant with higher-res variant if discovered later in body/srcset
+        const idx = images.findIndex((existing) => normalizeImageKey(existing) === key);
+        if (idx !== -1 && isLowResThumbnailUrl(images[idx]) && !isLowResThumbnailUrl(fixed)) {
+          images[idx] = fixed;
+        }
+      }
     }
   };
 
   if (item.imageUrl) addImg(item.imageUrl);
   if (item.mediaUrl) addImg(item.mediaUrl);
+  if (item.image) addImg(item.image);
   if (extractedFromDesc) addImg(extractedFromDesc);
 
   const lookupKeys = [String(item.id || ''), String(item.slug || ''), item.title].filter(Boolean);
@@ -229,8 +245,11 @@ function buildNewsItemFromUpstream(
   }
 
   extractAllImagesFromHtml(item.content || '').forEach(addImg);
+  if (item.thumbnail) addImg(item.thumbnail);
 
-  const finalImageUrl = images[0] || '';
+  // Prefer first non-low-res image if the initial image was a small filename thumbnail (-200x133.jpg)
+  const highResFirst = images.find((img) => !isLowResThumbnailUrl(img));
+  const finalImageUrl = highResFirst || images[0] || '';
 
   const rawContentHtml = ensureCompleteArticleText(
     item.content ? item.content.split(/\n\n+/).map(p => `<p>${cleanFullNewsText(p)}</p>`).join('') : summary,

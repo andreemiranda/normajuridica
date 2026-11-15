@@ -1,4 +1,11 @@
 // lib/sanitizer.ts
+import {
+  upgradeImageResolution,
+  pickBestImgSrcFromAttrs,
+  isLowResThumbnailUrl,
+} from './image-url';
+
+export { upgradeImageResolution, pickBestImgSrcFromAttrs, isLowResThumbnailUrl };
 
 export const BLOCKED_BRAND_TERMS = [
   'Portal News',
@@ -249,7 +256,7 @@ export function extractAllImagesFromHtml(html: string): string[] {
   const seenKeys = new Set<string>();
   const add = (url?: string) => {
     if (!url || typeof url !== 'string') return;
-    const u = url.trim().replace(/s2-Norma\s*Jur[ií]dica/gi, 's2-globo');
+    const u = upgradeImageResolution(url);
     if (!u.startsWith('http://') && !u.startsWith('https://')) return;
     const lower = u.toLowerCase();
     if (lower.includes('placeholder') || lower.includes('data:image') || lower.includes('blank.gif') || lower.includes('1x1')) return;
@@ -260,11 +267,12 @@ export function extractAllImagesFromHtml(html: string): string[] {
     }
   };
 
-  // Extract from <img> src attributes only (genuine images in content)
-  const imgRegex = /<img\b[^>]*src=["']([^"']+)["'][^>]*>/gi;
+  // Extract highest-resolution src/srcset from <img> tags
+  const imgRegex = /<img\b([^>]*)>/gi;
   let match;
   while ((match = imgRegex.exec(html)) !== null) {
-    add(match[1]);
+    const best = pickBestImgSrcFromAttrs(match[1] || '');
+    if (best) add(best);
   }
 
   return images;
@@ -278,20 +286,9 @@ export function deduplicateArticleImagesHtml(html: string, excludeUrls: string[]
     if (key) seen.add(key);
   }
 
-  let res = html.replace(/<img\b([^>]*)>/gi, (fullTag, attrs) => {
-    const srcMatch = attrs.match(/src=["']([^"']+)["']/i);
-    let src = srcMatch ? srcMatch[1].trim() : '';
+  let res = html.replace(/<img\b([^>]*)>/gi, (_fullTag, attrs) => {
+    const src = pickBestImgSrcFromAttrs(attrs || '');
     if (!src) return '';
-    src = src.replace(/s2-Norma\s*Jur[ií]dica/gi, 's2-globo');
-    const lower = src.toLowerCase();
-    if (
-      lower.includes('placeholder') ||
-      lower.includes('data:image') ||
-      lower.includes('blank.gif') ||
-      lower.includes('1x1')
-    ) {
-      return '';
-    }
 
     const key = normalizeImageKey(src);
     if (!key || seen.has(key)) {
@@ -806,9 +803,8 @@ export function splitArticleHtmlIntoBlocks(
 
     const anchorAttrs = match[1] || '';
     const imgAttrs = match[1] !== undefined ? match[2] || '' : match[3] || '';
-    const srcMatch = imgAttrs.match(/src=["']([^"']+)["']/i);
+    const src = upgradeImageResolution(pickBestImgSrcFromAttrs(imgAttrs) || (imgAttrs.match(/src=["']([^"']+)["']/i)?.[1] || ''));
     const altMatch = imgAttrs.match(/alt=["']([^"']*)["']/i);
-    const src = srcMatch ? srcMatch[1].replace(/s2-Norma\s*Jur[ií]dica/gi, 's2-globo').trim() : '';
     const alt = altMatch ? altMatch[1] : 'Imagem da matéria';
 
     const hrefMatch = anchorAttrs ? anchorAttrs.match(/\bhref=["']([^"']+)["']/i) : null;

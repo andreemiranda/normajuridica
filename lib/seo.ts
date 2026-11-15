@@ -1,6 +1,7 @@
 // lib/seo.ts
 import { SITE_CONFIG, getBaseUrl } from './site-config';
 import { NewsItem } from './types';
+import { upgradeImageResolution } from './image-url';
 
 export function getSeoCacheHeaders(): Record<string, string> {
   return {
@@ -79,7 +80,7 @@ export function generateNewsArticleSchema(article: NewsItem, baseUrl?: string): 
     },
     headline: article.title,
     description: article.summary,
-    image: images.map(img => (img.startsWith('http') ? img : `${base}${img}`)),
+    image: images.map(img => (img.startsWith('http') ? upgradeImageResolution(img) : `${base}${img}`)),
     datePublished: article.isoDate || article.pubDate,
     dateModified: article.isoDate || article.pubDate,
     author: {

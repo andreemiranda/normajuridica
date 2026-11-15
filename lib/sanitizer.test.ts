@@ -12,6 +12,8 @@ import {
   processArticleLinksHtml,
   extractUnresolvedSourceNewsCandidates,
   matchSlugCandidate,
+  upgradeImageResolution,
+  extractAllImagesFromHtml,
 } from './sanitizer';
 import { mergeDynamicCategories } from './sources';
 
@@ -285,5 +287,56 @@ test('deferred fallback preserves candidate slugs for API check before redirecti
   assert.match(pass2, /href="https:\/\/portal\.example\.com\/"[^>]*data-app-link="true"/);
   assert.equal(pass2.includes('nao-existe-nem-banco-nem-api'), false);
 });
+
+test('upgradeImageResolution upgrades ?w=200, resize=, fit=, and Google thumbnails while preserving signed and high-res URLs', () => {
+  assert.equal(
+    upgradeImageResolution('https://example.com/wp-content/uploads/2026/11/foto.jpg?w=200'),
+    'https://example.com/wp-content/uploads/2026/11/foto.jpg?w=1200'
+  );
+  assert.equal(
+    upgradeImageResolution('https://i0.wp.com/site.com/wp-content/uploads/foto.jpg?w=200&h=133&ssl=1'),
+    'https://i0.wp.com/site.com/wp-content/uploads/foto.jpg?w=1200&ssl=1'
+  );
+  assert.equal(
+    upgradeImageResolution('https://i0.wp.com/site.com/foto.jpg?resize=200,133&ssl=1&amp;quality=60'),
+    'https://i0.wp.com/site.com/foto.jpg?ssl=1&quality=85&w=1200'
+  );
+  assert.equal(
+    upgradeImageResolution('https://cdn.example.com/img.webp?fit=200,150&crop=1'),
+    'https://cdn.example.com/img.webp?w=1200'
+  );
+  assert.equal(
+    upgradeImageResolution('https://cdn.example.com/img.jpg?width=320&height=180'),
+    'https://cdn.example.com/img.jpg?width=1200'
+  );
+  assert.equal(
+    upgradeImageResolution('https://lh3.googleusercontent.com/abc/foto=w200-h150-c'),
+    'https://lh3.googleusercontent.com/abc/foto=w1200'
+  );
+  assert.equal(
+    upgradeImageResolution('https://1.bp.blogspot.com/-abc/s200/foto.jpg'),
+    'https://1.bp.blogspot.com/-abc/s1200/foto.jpg'
+  );
+  // Preserves already high-res and signed URLs untouched
+  assert.equal(
+    upgradeImageResolution('https://example.com/foto.jpg?w=1024'),
+    'https://example.com/foto.jpg?w=1024'
+  );
+  const signed = 'https://bucket.s3.amazonaws.com/img.jpg?w=200&X-Amz-Signature=deadbeef';
+  assert.equal(upgradeImageResolution(signed), signed);
+});
+
+test('extractAllImagesFromHtml and deduplicateArticleImagesHtml prefer highest-resolution srcset and upgrade ?w=200', () => {
+  const html = `
+    <p>Introdução.</p>
+    <p><img src="https://site.com/wp-content/uploads/foto-200x133.jpg?w=200" srcset="https://site.com/wp-content/uploads/foto-200x133.jpg?w=200 200w, https://site.com/wp-content/uploads/foto.jpg?w=200 1200w" alt="Plenário" /></p>
+  `;
+  const extracted = extractAllImagesFromHtml(html);
+  assert.deepEqual(extracted, ['https://site.com/wp-content/uploads/foto.jpg?w=1200']);
+
+  const deduped = deduplicateArticleImagesHtml(html, []);
+  assert.match(deduped, /src="https:\/\/site\.com\/wp-content\/uploads\/foto\.jpg\?w=1200"/);
+});
+
 
 

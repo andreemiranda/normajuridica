@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { upgradeImageResolution } from '@/lib/image-url';
 
 interface OptimizedImageProps {
   src?: string;
@@ -26,9 +27,7 @@ function extractCleanUrl(raw?: string): string {
     str = imgMatch[1];
   }
 
-  // Restore any accidentally sanitized glbimg URLs
-  str = str.replace(/s2-Norma\s*Jur[ií]dica/gi, 's2-globo');
-  return str.trim();
+  return upgradeImageResolution(str);
 }
 
 export function OptimizedImage({

@@ -778,21 +778,216 @@ function getEffectiveBaseUrl(request, env) {
   return site.appUrl || CANONICAL_ORIGIN;
 }
 
-function extractImageFromItem(item) {
-  const candidates = [item.imageUrl, item.mediaUrl, item.thumbnail, item.image];
-  if (Array.isArray(item.images)) candidates.push(...item.images);
-  const rawHtml = `${item.description || ''} ${item.content || ''}`;
-  const imgMatch = rawHtml.match(/<img\b[^>]*src=["']([^"']+)["'][^>]*>/i);
-  if (imgMatch && imgMatch[1]) candidates.push(imgMatch[1]);
+const IMAGE_WIDTH_KEYS = new Set(['w', 'width', 'mw', 'maxwidth', 'imwidth', 'sw']);
+const IMAGE_HEIGHT_KEYS = new Set(['h', 'height', 'mh', 'maxheight']);
+const IMAGE_PAIR_RESIZE_KEYS = new Set(['resize', 'fit']);
+const SIGNED_IMAGE_URL_REGEX =
+  /(?:^|[?&])(?:x-amz-[a-z0-9-]+|x-goog-[a-z0-9-]+|signature|expires|sig|sv|se|sp|hmac|checksum|token|auth)=/i;
 
-  for (const c of candidates) {
-    if (typeof c !== 'string') continue;
-    const clean = c.replace(/s2-Norma\s*Jur[ií]dica/gi, 's2-globo').trim();
-    if (/^https?:\/\//i.test(clean) && !/placeholder|pixel|1x1|blank\.gif|data:image/i.test(clean)) {
-      return clean;
+export function isLowResThumbnailUrl(url = '') {
+  if (!url) return false;
+  const lower = String(url).toLowerCase();
+  const qMatch = lower.match(/[?&](?:w|width|mw|maxwidth|imwidth|sw|s|size)=(\d+)\b/);
+  if (qMatch && parseInt(qMatch[1], 10) < 600) return true;
+  const rMatch = lower.match(/[?&](?:resize|fit)=(\d+)[,x](\d+)\b/);
+  if (rMatch && parseInt(rMatch[1], 10) < 600) return true;
+  const fileMatch = lower.split('?')[0].match(/-(\d+)x(\d+)\.(?:jpe?g|png|webp|gif|avif)$/i);
+  if (fileMatch && parseInt(fileMatch[1], 10) < 600) return true;
+  return false;
+}
+
+export function upgradeImageResolution(rawUrl = '', idealWidth = 1200) {
+  if (!rawUrl || typeof rawUrl !== 'string') return '';
+  const clean = rawUrl.replace(/s2-Norma\s*Jur[ií]dica/gi, 's2-globo').replace(/&amp;/g, '&').trim();
+  if (!clean || clean === 'undefined' || clean === 'null') return '';
+  if (!/^https?:\/\//i.test(clean)) return clean;
+  if (SIGNED_IMAGE_URL_REGEX.test(clean)) return clean;
+
+  let parsed;
+  try {
+    parsed = new URL(clean);
+  } catch {
+    return clean;
+  }
+
+  const targetWidthStr = String(Math.max(800, idealWidth));
+  let mutated = false;
+  let upgradedWidth = false;
+  const keysToDelete = [];
+
+  for (const [key, val] of Array.from(parsed.searchParams.entries())) {
+    const kLower = key.toLowerCase();
+    const vTrim = val.trim();
+
+    if (IMAGE_WIDTH_KEYS.has(kLower)) {
+      if (/^\d+$/.test(vTrim)) {
+        const num = parseInt(vTrim, 10);
+        if (num > 0 && num < 800) {
+          parsed.searchParams.set(key, targetWidthStr);
+          upgradedWidth = true;
+          mutated = true;
+        }
+      }
+      continue;
+    }
+
+    if (IMAGE_PAIR_RESIZE_KEYS.has(kLower)) {
+      const m = vTrim.match(/^(\d+)\s*[,xX]\s*(\d+)$/);
+      if (m) {
+        const rw = parseInt(m[1], 10);
+        const rh = parseInt(m[2], 10);
+        if ((rw > 0 && rw < 800) || (rh > 0 && rh < 500)) {
+          keysToDelete.push(key);
+          upgradedWidth = true;
+          mutated = true;
+        }
+      }
+      continue;
+    }
+
+    if (kLower === 'sz') {
+      const m = vTrim.match(/^w(\d+)(?:-h(\d+))?/i);
+      if (m && parseInt(m[1], 10) < 800) {
+        parsed.searchParams.set(key, `w${targetWidthStr}`);
+        upgradedWidth = true;
+        mutated = true;
+      }
+      continue;
+    }
+
+    if (
+      (kLower === 's' || kLower === 'size') &&
+      /^\d+$/.test(vTrim) &&
+      /\.(?:jpe?g|png|webp|gif|avif)$/i.test(parsed.pathname)
+    ) {
+      const num = parseInt(vTrim, 10);
+      if (num > 0 && num < 800) {
+        parsed.searchParams.set(key, targetWidthStr);
+        upgradedWidth = true;
+        mutated = true;
+      }
     }
   }
-  return '';
+
+  for (const k of keysToDelete) {
+    parsed.searchParams.delete(k);
+  }
+
+  if (upgradedWidth) {
+    const hasWidthParam = Array.from(parsed.searchParams.keys()).some((k) => {
+      const kl = k.toLowerCase();
+      return IMAGE_WIDTH_KEYS.has(kl) || kl === 'sz' || kl === 's' || kl === 'size';
+    });
+    if (!hasWidthParam) {
+      parsed.searchParams.set('w', targetWidthStr);
+    }
+    for (const [key, val] of Array.from(parsed.searchParams.entries())) {
+      const kLower = key.toLowerCase();
+      if (IMAGE_HEIGHT_KEYS.has(kLower) && /^\d+$/.test(val.trim()) && parseInt(val.trim(), 10) < 800) {
+        parsed.searchParams.delete(key);
+      } else if (kLower === 'crop' && (val.trim() === '1' || val.trim().toLowerCase() === 'true')) {
+        parsed.searchParams.delete(key);
+      } else if ((kLower === 'q' || kLower === 'quality') && /^\d+$/.test(val.trim()) && parseInt(val.trim(), 10) < 80) {
+        parsed.searchParams.set(key, '85');
+      }
+    }
+  }
+
+  if (/(?:googleusercontent\.com|ggpht\.com|blogspot\.com)/i.test(parsed.hostname)) {
+    const newPath = parsed.pathname
+      .replace(/\/([sw])(\d+)(?:-[ch][a-z0-9-]*)?\//gi, (m, _p, digits) =>
+        parseInt(digits, 10) < 800 ? `/s${targetWidthStr}/` : m
+      )
+      .replace(/=([sw])(\d+)(?:-[a-z0-9-]+)*$/i, (m, _p, digits) =>
+        parseInt(digits, 10) < 800 ? `=w${targetWidthStr}` : m
+      );
+    if (newPath !== parsed.pathname) {
+      parsed.pathname = newPath;
+      mutated = true;
+    }
+  }
+
+  return mutated ? parsed.toString() : clean;
+}
+
+function normalizeImageKeyForWorker(url = '') {
+  if (!url || typeof url !== 'string') return '';
+  let clean = url.trim().replace(/s2-Norma\s*Jur[ií]dica/gi, 's2-globo');
+  clean = clean.split('#')[0].split('?')[0];
+  const glbIdx = clean.indexOf('/internal_photos/');
+  if (glbIdx !== -1) {
+    clean = clean.slice(glbIdx);
+  } else {
+    clean = clean.replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+  }
+  clean = clean.replace(/(?:-\d+x\d+|-scaled)(\.(?:jpe?g|png|webp|gif|avif))$/i, '$1');
+  return clean.toLowerCase();
+}
+
+function pickBestImgSrcFromAttrs(attrs = '') {
+  if (!attrs) return '';
+  const isUsable = (u) =>
+    /^https?:\/\//i.test(u) && !/placeholder|pixel|1x1|blank\.gif|data:image/i.test(u);
+
+  const candidates = [];
+  const srcsetMatch = attrs.match(/\b(?:data-srcset|srcset)=["']([^"']+)["']/i);
+  if (srcsetMatch && srcsetMatch[1]) {
+    for (const entry of srcsetMatch[1].split(',')) {
+      const parts = entry.trim().split(/\s+/);
+      const raw = parts[0] ? parts[0].replace(/s2-Norma\s*Jur[ií]dica/gi, 's2-globo').replace(/&amp;/g, '&').trim() : '';
+      if (!isUsable(raw)) continue;
+      let score = 500;
+      const desc = parts[1] || '';
+      const wMatch = desc.match(/^(\d+)w$/i);
+      const xMatch = desc.match(/^(\d+(?:\.\d+)?)x$/i);
+      if (wMatch) score = parseInt(wMatch[1], 10);
+      else if (xMatch) score = Math.round(parseFloat(xMatch[1]) * 800);
+      candidates.push({ url: upgradeImageResolution(raw), score });
+    }
+  }
+
+  const attrSources = [
+    attrs.match(/\bdata-original=["']([^"']+)["']/i)?.[1],
+    attrs.match(/\bdata-lazy-src=["']([^"']+)["']/i)?.[1],
+    attrs.match(/\bdata-src=["']([^"']+)["']/i)?.[1],
+    attrs.match(/\bsrc=["']([^"']+)["']/i)?.[1],
+  ];
+  for (const rawSrc of attrSources) {
+    if (!rawSrc) continue;
+    const raw = rawSrc.replace(/s2-Norma\s*Jur[ií]dica/gi, 's2-globo').replace(/&amp;/g, '&').trim();
+    if (!isUsable(raw)) continue;
+    const upgraded = upgradeImageResolution(raw);
+    candidates.push({ url: upgraded, score: isLowResThumbnailUrl(upgraded) ? 200 : 800 });
+  }
+
+  if (candidates.length === 0) return '';
+  candidates.sort((a, b) => b.score - a.score);
+  return candidates[0].url;
+}
+
+export function extractImageFromItem(item) {
+  const candidates = [item.imageUrl, item.mediaUrl, item.image];
+  if (Array.isArray(item.images)) candidates.push(...item.images);
+  const rawHtml = `${item.description || ''} ${item.content || ''}`;
+  const imgTagRegex = /<img\b([^>]*)>/gi;
+  let imgMatch;
+  while ((imgMatch = imgTagRegex.exec(rawHtml)) !== null) {
+    const best = pickBestImgSrcFromAttrs(imgMatch[1] || '');
+    if (best) candidates.push(best);
+  }
+  if (item.thumbnail) candidates.push(item.thumbnail);
+
+  const validUpgraded = [];
+  for (const c of candidates) {
+    if (typeof c !== 'string') continue;
+    const upgraded = upgradeImageResolution(c);
+    if (/^https?:\/\//i.test(upgraded) && !/placeholder|pixel|1x1|blank\.gif|data:image/i.test(upgraded)) {
+      validUpgraded.push(upgraded);
+    }
+  }
+  if (validUpgraded.length === 0) return '';
+  const highRes = validUpgraded.find((u) => !isLowResThumbnailUrl(u));
+  return highRes || validUpgraded[0];
 }
 
 function normalizeUpstreamItem(raw, fallbackCategory = 'Brasil') {
@@ -868,11 +1063,14 @@ export function sanitizeArticleHtmlForWorker(html = '', featuredImage = '') {
 
   // Deduplica imagens iguais à imagem destacada e aplica zoom-frame + legenda
   const seenImgs = new Set();
-  if (featuredImage) seenImgs.add(featuredImage.split('?')[0]);
-  out = out.replace(/<img\b([^>]*src=["']([^"']+)["'][^>]*)>/gi, (_full, attrs, src) => {
-    const clean = src.trim();
-    const key = clean.split('?')[0];
-    if (!/^https?:\/\//i.test(clean) || seenImgs.has(key)) return '';
+  if (featuredImage) {
+    const featKey = normalizeImageKeyForWorker(upgradeImageResolution(featuredImage));
+    if (featKey) seenImgs.add(featKey);
+  }
+  out = out.replace(/<img\b([^>]*)>/gi, (_full, attrs) => {
+    const clean = pickBestImgSrcFromAttrs(attrs || '');
+    const key = normalizeImageKeyForWorker(clean);
+    if (!clean || !key || seenImgs.has(key)) return '';
     seenImgs.add(key);
     const altMatch = attrs.match(/\balt=["']([^"']*)["']/i);
     const altText = altMatch && altMatch[1] ? altMatch[1].trim() : '';
@@ -962,7 +1160,15 @@ async function fetchAggregatedNews(env, { category = 'all', q = '', page = 1, li
     try {
       const hit = await cache.match(cacheKeyUrl);
       if (hit) {
-        pool = await hit.json();
+        const cachedPool = await hit.json();
+        if (Array.isArray(cachedPool)) {
+          pool = cachedPool.map((it) => {
+            if (!it || typeof it !== 'object') return it;
+            const nextImg = it.imageUrl ? upgradeImageResolution(it.imageUrl) : '';
+            const nextImages = Array.isArray(it.images) ? it.images.map((u) => upgradeImageResolution(u)) : nextImg ? [nextImg] : [];
+            return { ...it, imageUrl: nextImg, images: nextImages };
+          });
+        }
       }
     } catch {}
   }
@@ -1533,7 +1739,7 @@ function renderHeaderAndNav(activeCategorySlug = 'todas', tickerNews = [], searc
 }
 
 function renderNewsCardHtml(item, variant = 'grid') {
-  const imgSrc = item.imageUrl || '/cover.png';
+  const imgSrc = upgradeImageResolution(item.imageUrl || '') || '/cover.png';
   const slug = item.slug || item.id || '';
   if (variant === 'compact') {
     return `
@@ -2432,7 +2638,7 @@ async function renderStandaloneHtmlPage(request, env, url) {
     const related = relatedPool.filter((n) => n.slug !== article.slug).slice(0, 3);
     const mostRead = relatedPool.slice(0, 5);
     const points = buildKeyPoints(article);
-    const featuredImg = article.imageUrl || '/cover.png';
+    const featuredImg = upgradeImageResolution(article.imageUrl || '') || '/cover.png';
     const pageUrl = `${baseUrl}/noticia/${article.slug}`;
     const shareTitle = encodeURIComponent(article.title);
     const shareUrl = encodeURIComponent(pageUrl);
@@ -2441,7 +2647,7 @@ async function renderStandaloneHtmlPage(request, env, url) {
       title: `${article.title} | ${SITE_INFO.name}`,
       description: article.summary,
       canonicalUrl: pageUrl,
-      ogImageUrl: article.imageUrl || ogDefault,
+      ogImageUrl: featuredImg !== '/cover.png' ? featuredImg : ogDefault,
       newsApiOrigin,
       adsenseId,
     })}
@@ -3044,7 +3250,7 @@ async function renderStandaloneHtmlPage(request, env, url) {
       category: s.category,
       author: s.author || 'Norma Jurídica',
       timeAgo: s.timeAgo,
-      imageUrl: s.imageUrl || '/cover.png',
+      imageUrl: upgradeImageResolution(s.imageUrl || '') || '/cover.png',
     }))
   ).replace(/</g, '\\u003c');
 
@@ -3174,7 +3380,7 @@ async function renderStandaloneHtmlPage(request, env, url) {
             ? `<section id="nj-featured-carousel" class="mb-10" aria-label="Destaques Principais">
                 <div class="relative w-full aspect-[16/9] rounded-3xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-zinc-800 shadow-xl group">
                   <div class="relative w-full h-full overflow-hidden zoom-frame" data-pin-nopin="true" data-pin-no-hover="true">
-                    <img id="nj-hero-img" src="${escapeHtml(firstHero.imageUrl || '/cover.png')}" alt="${escapeHtml(firstHero.title)}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='/cover.png';" class="w-full h-full object-cover group-hover:scale-105 hover:scale-105 transition-transform duration-700 ease-out" />
+                    <img id="nj-hero-img" src="${escapeHtml(upgradeImageResolution(firstHero.imageUrl || '') || '/cover.png')}" alt="${escapeHtml(firstHero.title)}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='/cover.png';" class="w-full h-full object-cover group-hover:scale-105 hover:scale-105 transition-transform duration-700 ease-out" />
                     <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent"></div>
                     <div class="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-transparent to-transparent hidden md:block"></div>
                     <div class="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 flex-wrap z-10">

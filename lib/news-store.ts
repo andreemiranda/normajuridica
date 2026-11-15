@@ -6,7 +6,7 @@ import os from 'node:os';
 import Database from 'better-sqlite3';
 import { NewsItem, CategoryInfo } from './types';
 import { ALL_CATEGORIES, getCategoryAliases, getCategorySourceIds, mergeDynamicCategories } from './sources';
-import { stripHtmlTags, normalizeImageKey, extractAllImagesFromHtml, repairAndSanitizeArticleHtml } from './sanitizer';
+import { stripHtmlTags, normalizeImageKey, extractAllImagesFromHtml, repairAndSanitizeArticleHtml, upgradeImageResolution, isLowResThumbnailUrl } from './sanitizer';
 import { SITE_CONFIG } from './site-config';
 
 export function formatTimeAgo(dateStr: string): string {
@@ -545,7 +545,7 @@ export class SqliteNewsStore implements INewsStore {
 
     const cleanUrl = (u?: unknown): string => {
       if (!u || typeof u !== 'string') return '';
-      const trimmed = u.trim().replace(/s2-Norma\s*Jur[ií]dica/gi, 's2-globo');
+      const trimmed = upgradeImageResolution(u);
       if (!trimmed || trimmed === 'undefined' || trimmed === 'null') return '';
       return trimmed;
     };
@@ -556,9 +556,16 @@ export class SqliteNewsStore implements INewsStore {
       const cleaned = cleanUrl(u);
       if (!cleaned || cleaned === '/cover.png') return;
       const key = normalizeImageKey(cleaned);
-      if (key && !seenImgKeys.has(key)) {
-        seenImgKeys.add(key);
-        images.push(cleaned);
+      if (key) {
+        if (!seenImgKeys.has(key)) {
+          seenImgKeys.add(key);
+          images.push(cleaned);
+        } else {
+          const idx = images.findIndex((existing) => normalizeImageKey(existing) === key);
+          if (idx !== -1 && isLowResThumbnailUrl(images[idx]) && !isLowResThumbnailUrl(cleaned)) {
+            images[idx] = cleaned;
+          }
+        }
       }
     };
 
@@ -568,12 +575,13 @@ export class SqliteNewsStore implements INewsStore {
     for (const img of rawImages) addUniqueImg(img);
 
     const rawContentHtml = row.content_html ? String(row.content_html) : undefined;
-    if (!imageUrl && rawContentHtml) {
+    if (rawContentHtml) {
       const extracted = extractAllImagesFromHtml(rawContentHtml);
       extracted.forEach(addUniqueImg);
     }
 
-    const finalImageUrl = imageUrl || images[0] || undefined;
+    const highResImage = images.find((img) => !isLowResThumbnailUrl(img));
+    const finalImageUrl = highResImage || imageUrl || images[0] || undefined;
     const cleanSummary = stripHtmlTags(String(row.summary || ''));
     const rawAppUrl = (process.env.APP_URL || '').trim();
     const appUrl =

@@ -13,6 +13,8 @@ import worker, {
   sanitizeArticleHtmlForWorker,
   renderWorkerSitemapHtml,
   splitTextForTts,
+  upgradeImageResolution,
+  extractImageFromItem,
 } from '../worker.js';
 
 function stripJsonComments(content: string): string {
@@ -651,4 +653,91 @@ test('worker suporta novos aliases de token, ?ref= embutido, /api/sync estilo de
     globalThis.fetch = originalFetch;
   }
 });
+
+test('worker atualiza imagens ?w=200, resize= e srcset para alta resolução em cards, hero, matérias e /api/news', async () => {
+  assert.equal(
+    upgradeImageResolution('https://i0.wp.com/site.com/wp-content/uploads/2026/11/foto.jpg?w=200&ssl=1'),
+    'https://i0.wp.com/site.com/wp-content/uploads/2026/11/foto.jpg?w=1200&ssl=1'
+  );
+  assert.equal(
+    upgradeImageResolution('https://site.com/wp-content/uploads/foto.jpg?resize=200,133'),
+    'https://site.com/wp-content/uploads/foto.jpg?w=1200'
+  );
+  assert.equal(
+    extractImageFromItem({
+      imageUrl: 'https://site.com/wp-content/uploads/foto.jpg?w=200',
+    }),
+    'https://site.com/wp-content/uploads/foto.jpg?w=1200'
+  );
+  assert.equal(
+    extractImageFromItem({
+      thumbnail: 'https://site.com/wp-content/uploads/foto-200x133.jpg',
+      content: '<p><img src="https://site.com/wp-content/uploads/foto.jpg?w=200" /></p>',
+    }),
+    'https://site.com/wp-content/uploads/foto.jpg?w=1200'
+  );
+
+  const sanitizedBody = sanitizeArticleHtmlForWorker(
+    '<p><img src="https://site.com/wp-content/uploads/corpo.jpg?w=200" alt="Corpo" /></p>',
+    'https://site.com/wp-content/uploads/capa.jpg?w=200'
+  );
+  assert.match(sanitizedBody, /src="https:\/\/site\.com\/wp-content\/uploads\/corpo\.jpg\?w=1200"/);
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const urlStr = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    if (urlStr.includes('/api/news?')) {
+      return new Response(
+        JSON.stringify({
+          items: [
+            {
+              id: 'hd-img-1',
+              title: 'Matéria com imagem em baixa resolução corrigida automaticamente',
+              slug: 'materia-com-imagem-w200',
+              category: 'Justiça',
+              description: 'Resumo completo da matéria.',
+              content: '<p>Primeiro parágrafo.</p><p><img src="https://cdn.example.com/foto-interna.jpg?w=200" alt="Interna" /></p>',
+              publishedAt: new Date().toISOString(),
+              imageUrl: 'https://i0.wp.com/cdn.example.com/capa.jpg?w=200&h=133&ssl=1',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    return new Response(JSON.stringify({ items: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }) as typeof fetch;
+
+  try {
+    const env = {
+      NEWS_API_BASE_URL: 'https://news-sources-api.legislativemunicipal.workers.dev',
+      NEWS_API_KEY: 'key-test',
+    };
+    const apiRes = await worker.fetch(
+      new Request('https://news.mirandinhacontabilidade.workers.dev/api/news?refresh=true&limit=5'),
+      env
+    );
+    const apiJson = await apiRes.json();
+    assert.equal(apiJson.items[0].imageUrl, 'https://i0.wp.com/cdn.example.com/capa.jpg?w=1200&ssl=1');
+
+    const homeRes = await worker.fetch(
+      new Request('https://news.mirandinhacontabilidade.workers.dev/?refresh=true'),
+      env
+    );
+    const homeHtml = await homeRes.text();
+    assert.match(homeHtml, /https:\/\/i0\.wp\.com\/cdn\.example\.com\/capa\.jpg\?w=1200&amp;ssl=1/);
+    assert.equal(homeHtml.includes('?w=200'), false);
+
+    const artRes = await worker.fetch(
+      new Request('https://news.mirandinhacontabilidade.workers.dev/noticia/materia-com-imagem-w200'),
+      env
+    );
+    const artHtml = await artRes.text();
+    assert.match(artHtml, /https:\/\/cdn\.example\.com\/foto-interna\.jpg\?w=1200/);
+    assert.equal(artHtml.includes('?w=200'), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 
