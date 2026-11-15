@@ -1,9 +1,25 @@
 // lib/image-url.ts
-// Pure, runtime-agnostic helpers (Node, Browser, Edge) for upgrading low-resolution image URLs.
+// Pure, runtime-agnostic helpers (Node, Browser, Edge) for restoring natural full-resolution source image URLs.
 
-const WIDTH_PARAM_KEYS = new Set(['w', 'width', 'mw', 'maxwidth', 'imwidth', 'sw']);
-const HEIGHT_PARAM_KEYS = new Set(['h', 'height', 'mh', 'maxheight']);
-const PAIR_RESIZE_KEYS = new Set(['resize', 'fit']);
+const WIDTH_PARAM_KEYS = new Set([
+  'w',
+  'width',
+  'mw',
+  'maxwidth',
+  'minwidth',
+  'imwidth',
+  'sw',
+  'w_px',
+]);
+const HEIGHT_PARAM_KEYS = new Set([
+  'h',
+  'height',
+  'mh',
+  'maxheight',
+  'minheight',
+  'h_px',
+]);
+const RESIZE_PARAM_KEYS = new Set(['resize', 'fit', 'crop', 'sz', 'size', 's', 'zoom', 'scale']);
 const SIGNED_URL_REGEX =
   /(?:^|[?&])(?:x-amz-[a-z0-9-]+|x-goog-[a-z0-9-]+|signature|expires|sig|sv|se|sp|hmac|checksum|token|auth)=/i;
 
@@ -18,21 +34,37 @@ export function isSignedImageUrl(url: string): boolean {
 export function isLowResThumbnailUrl(url: string): boolean {
   if (!url) return false;
   const lower = url.toLowerCase();
-  // Query parameter resize below 600px
   const qMatch = lower.match(/[?&](?:w|width|mw|maxwidth|imwidth|sw|s|size)=(\d+)\b/);
   if (qMatch && parseInt(qMatch[1], 10) < 600) return true;
   const rMatch = lower.match(/[?&](?:resize|fit)=(\d+)[,x](\d+)\b/);
   if (rMatch && parseInt(rMatch[1], 10) < 600) return true;
-  // Filename dimension suffix like -200x133.jpg or -300x200.webp
   const fileMatch = lower.split('?')[0].match(/-(\d+)x(\d+)\.(?:jpe?g|png|webp|gif|avif)$/i);
   if (fileMatch && parseInt(fileMatch[1], 10) < 600) return true;
   return false;
 }
 
-export function upgradeImageResolution(rawUrl?: string, idealWidth = 1200): string {
+function unwrapNextImageProxy(rawUrl: string): string {
+  try {
+    if (/\/_next\/image\b/i.test(rawUrl)) {
+      const parsed = new URL(rawUrl, 'https://localhost');
+      const inner = parsed.searchParams.get('url');
+      if (inner && /^https?:\/\//i.test(inner)) {
+        return inner;
+      }
+    }
+  } catch {}
+  return rawUrl;
+}
+
+/**
+ * Normalizes an image URL to the natural full resolution of the source,
+ * eliminating all width/height/resize/crop query parameters while preserving signed URLs.
+ */
+export function upgradeImageResolution(rawUrl?: string): string {
   if (!rawUrl || typeof rawUrl !== 'string') return '';
   let clean = restoreCorruptedMediaDomain(rawUrl).replace(/&amp;/g, '&').trim();
   if (!clean || clean === 'undefined' || clean === 'null') return '';
+  clean = unwrapNextImageProxy(clean);
   if (!/^https?:\/\//i.test(clean)) return clean;
 
   // Never mutate presigned / tokenized URLs
@@ -47,64 +79,51 @@ export function upgradeImageResolution(rawUrl?: string, idealWidth = 1200): stri
     return clean;
   }
 
-  const targetWidthStr = String(Math.max(800, idealWidth));
   let mutated = false;
-  let upgradedWidth = false;
-
-  const entries = Array.from(parsed.searchParams.entries());
+  let strippedDimensionParam = false;
   const keysToDelete: string[] = [];
 
-  for (const [key, val] of entries) {
+  for (const [key, val] of Array.from(parsed.searchParams.entries())) {
     const kLower = key.toLowerCase();
     const vTrim = val.trim();
 
-    if (WIDTH_PARAM_KEYS.has(kLower)) {
-      if (/^\d+$/.test(vTrim)) {
-        const num = parseInt(vTrim, 10);
-        if (num > 0 && num < 800) {
-          parsed.searchParams.set(key, targetWidthStr);
-          upgradedWidth = true;
-          mutated = true;
-        }
-      }
+    if (WIDTH_PARAM_KEYS.has(kLower) || HEIGHT_PARAM_KEYS.has(kLower)) {
+      keysToDelete.push(key);
+      strippedDimensionParam = true;
+      mutated = true;
       continue;
     }
 
-    if (PAIR_RESIZE_KEYS.has(kLower)) {
-      const m = vTrim.match(/^(\d+)\s*[,xX]\s*(\d+)$/);
-      if (m) {
-        const rw = parseInt(m[1], 10);
-        const rh = parseInt(m[2], 10);
-        if ((rw > 0 && rw < 800) || (rh > 0 && rh < 500)) {
-          keysToDelete.push(key);
-          upgradedWidth = true;
-          mutated = true;
-        }
-      }
+    if (kLower === 'resize' || kLower === 'fit' || kLower === 'crop') {
+      keysToDelete.push(key);
+      strippedDimensionParam = true;
+      mutated = true;
       continue;
     }
 
-    if (kLower === 'sz') {
-      const m = vTrim.match(/^w(\d+)(?:-h(\d+))?/i);
-      if (m && parseInt(m[1], 10) < 800) {
-        parsed.searchParams.set(key, `w${targetWidthStr}`);
-        upgradedWidth = true;
-        mutated = true;
-      }
+    if (kLower === 'sz' && /^(?:w\d+(?:-h\d+)?|\d+)$/i.test(vTrim)) {
+      keysToDelete.push(key);
+      strippedDimensionParam = true;
+      mutated = true;
       continue;
     }
 
     if (
-      (kLower === 's' || kLower === 'size') &&
-      /^\d+$/.test(vTrim) &&
-      /\.(?:jpe?g|png|webp|gif|avif)$/i.test(parsed.pathname)
+      (kLower === 's' || kLower === 'size' || kLower === 'zoom' || kLower === 'scale') &&
+      (/^\d+$/.test(vTrim) || /^(?:thumb|thumbnail|small|medium)$/i.test(vTrim)) &&
+      (/\.(?:jpe?g|png|webp|gif|avif)$/i.test(parsed.pathname) ||
+        /(?:wp\.com|wordpress\.com|gravatar\.com|wp-content|uploads|cdn|img)/i.test(parsed.href))
     ) {
-      const num = parseInt(vTrim, 10);
-      if (num > 0 && num < 800) {
-        parsed.searchParams.set(key, targetWidthStr);
-        upgradedWidth = true;
-        mutated = true;
-      }
+      keysToDelete.push(key);
+      strippedDimensionParam = true;
+      mutated = true;
+      continue;
+    }
+
+    if (RESIZE_PARAM_KEYS.has(kLower) && /^\d+(?:[,xX]\d+)?$/.test(vTrim)) {
+      keysToDelete.push(key);
+      strippedDimensionParam = true;
+      mutated = true;
     }
   }
 
@@ -112,45 +131,48 @@ export function upgradeImageResolution(rawUrl?: string, idealWidth = 1200): stri
     parsed.searchParams.delete(k);
   }
 
-  if (upgradedWidth) {
-    // Ensure a width parameter is present if resize/fit was removed
-    const hasWidthParam = Array.from(parsed.searchParams.keys()).some((k) =>
-      WIDTH_PARAM_KEYS.has(k.toLowerCase()) || k.toLowerCase() === 'sz' || k.toLowerCase() === 's' || k.toLowerCase() === 'size'
-    );
-    if (!hasWidthParam) {
-      parsed.searchParams.set('w', targetWidthStr);
-    }
-
-    // Remove constraining small heights/crop flags so aspect ratio stays natural at high resolution
-    for (const [key, val] of Array.from(parsed.searchParams.entries())) {
+  if (strippedDimensionParam) {
+    // Strip quality override if it was tied to a resized thumbnail request
+    for (const key of Array.from(parsed.searchParams.keys())) {
       const kLower = key.toLowerCase();
-      if (HEIGHT_PARAM_KEYS.has(kLower) && /^\d+$/.test(val.trim()) && parseInt(val.trim(), 10) < 800) {
+      if (kLower === 'q' || kLower === 'quality' || kLower === 'strip') {
         parsed.searchParams.delete(key);
-      } else if (kLower === 'crop' && (val.trim() === '1' || val.trim().toLowerCase() === 'true')) {
-        parsed.searchParams.delete(key);
-      } else if ((kLower === 'q' || kLower === 'quality') && /^\d+$/.test(val.trim()) && parseInt(val.trim(), 10) < 80) {
-        parsed.searchParams.set(key, '85');
       }
     }
   }
 
-  // Googleusercontent / Blogger URLs (=w200-h150-c, =s200, /s200/, /w200/)
+  // Googleusercontent / Blogger URLs (=w200-h150-c, =s200, /s200/, /w200/) -> s0 (natural source resolution)
   if (/(?:googleusercontent\.com|ggpht\.com|blogspot\.com)/i.test(parsed.hostname)) {
     const newPath = parsed.pathname
-      .replace(/\/([sw])(\d+)(?:-[ch][a-z0-9-]*)?\//gi, (m, _prefix, digits) => {
-        return parseInt(digits, 10) < 800 ? `/s${targetWidthStr}/` : m;
-      })
-      .replace(/=([sw])(\d+)(?:-[a-z0-9-]+)*$/i, (m, _prefix, digits) => {
-        return parseInt(digits, 10) < 800 ? `=w${targetWidthStr}` : m;
-      });
+      .replace(/\/([sw])(\d+)(?:-[ch][a-z0-9-]*)?\//gi, (m, _prefix, digits) =>
+        parseInt(digits, 10) > 0 ? '/s0/' : m
+      )
+      .replace(/=([sw])(\d+)(?:-[a-z0-9-]+)*$/i, (m, _prefix, digits) =>
+        parseInt(digits, 10) > 0 ? '=s0' : m
+      );
     if (newPath !== parsed.pathname) {
       parsed.pathname = newPath;
       mutated = true;
     }
   }
 
+  // Strip tiny WordPress thumbnail filename suffixes (width < 500px, e.g. -200x133.jpg, -300x200.webp)
+  // while leaving glbimg signed paths and large images (-860x484, -1200x675) untouched
+  if (!/glbimg\.com/i.test(parsed.hostname)) {
+    const nextPath = parsed.pathname.replace(
+      /-(\d{2,3})x(\d{2,3})(\.(?:jpe?g|png|webp|gif|avif))$/i,
+      (full, wStr, _hStr, ext) => (parseInt(wStr, 10) < 500 ? ext : full)
+    );
+    if (nextPath !== parsed.pathname) {
+      parsed.pathname = nextPath;
+      mutated = true;
+    }
+  }
+
   return mutated ? parsed.toString() : clean;
 }
+
+export const normalizeNaturalImageUrl = upgradeImageResolution;
 
 export function pickBestImgSrcFromAttrs(attrs: string): string {
   if (!attrs) return '';

@@ -332,6 +332,68 @@ export class SqliteNewsStore implements INewsStore {
     `);
   }
 
+  private normalizeStoredImageUrls(db: Database.Database): void {
+    try {
+      const candidates = db
+        .prepare(
+          `SELECT id, image_url, images_json, content_html FROM news
+           WHERE image_url LIKE '%?%'
+              OR images_json LIKE '%?%'
+              OR content_html LIKE '%?w=%'
+              OR content_html LIKE '%?width=%'
+              OR content_html LIKE '%?resize=%'
+              OR content_html LIKE '%?fit=%'
+              OR content_html LIKE '%&w=%'
+              OR content_html LIKE '%&resize=%'`
+        )
+        .all() as Array<{
+        id: string;
+        image_url: string | null;
+        images_json: string | null;
+        content_html: string | null;
+      }>;
+
+      if (!candidates || candidates.length === 0) return;
+
+      const updateStmt = db.prepare(
+        'UPDATE news SET image_url = ?, images_json = ?, content_html = ? WHERE id = ?'
+      );
+
+      const tx = db.transaction(() => {
+        for (const row of candidates) {
+          const nextImageUrl = row.image_url ? upgradeImageResolution(row.image_url) : row.image_url;
+          let nextImagesJson = row.images_json;
+          if (row.images_json) {
+            try {
+              const arr = JSON.parse(row.images_json);
+              if (Array.isArray(arr)) {
+                const cleaned = arr.map((u) => (typeof u === 'string' ? upgradeImageResolution(u) : u));
+                nextImagesJson = JSON.stringify(cleaned);
+              }
+            } catch {}
+          }
+          let nextContentHtml = row.content_html;
+          if (row.content_html) {
+            nextContentHtml = row.content_html.replace(
+              /(<img\b[^>]*?\bsrc=["'])([^"']+)(["'][^>]*>)/gi,
+              (_m, prefix, src, suffix) => `${prefix}${upgradeImageResolution(src)}${suffix}`
+            );
+          }
+
+          if (
+            nextImageUrl !== row.image_url ||
+            nextImagesJson !== row.images_json ||
+            nextContentHtml !== row.content_html
+          ) {
+            updateStmt.run(nextImageUrl, nextImagesJson, nextContentHtml, row.id);
+          }
+        }
+      });
+
+      tx();
+    } catch {}
+  }
+
   public async init(): Promise<void> {
     if (this.initialized && this.db) return;
 
@@ -405,6 +467,7 @@ export class SqliteNewsStore implements INewsStore {
       } catch {}
 
       this.setupSchema(this.db);
+      this.normalizeStoredImageUrls(this.db);
       this.initialized = true;
 
       // Seed fallback from seed-news.json if database has fewer than 15000 items
@@ -878,7 +941,19 @@ export class SqliteNewsStore implements INewsStore {
         const id = item.id || item.slug;
         const slug = item.slug || item.id;
         const pubDateTs = parseDateToTimestamp(item.isoDate || item.pubDate);
-        const imagesJson = item.images && item.images.length > 0 ? JSON.stringify(item.images) : '[]';
+        const cleanImageUrl = item.imageUrl ? upgradeImageResolution(item.imageUrl) : null;
+        const cleanImages = Array.isArray(item.images)
+          ? item.images.map((u) => (typeof u === 'string' ? upgradeImageResolution(u) : u)).filter(Boolean)
+          : cleanImageUrl
+            ? [cleanImageUrl]
+            : [];
+        const imagesJson = cleanImages.length > 0 ? JSON.stringify(cleanImages) : '[]';
+        const cleanContentHtml = item.contentHtml
+          ? item.contentHtml.replace(
+              /(<img\b[^>]*?\bsrc=["'])([^"']+)(["'][^>]*>)/gi,
+              (_m, prefix, src, suffix) => `${prefix}${upgradeImageResolution(src)}${suffix}`
+            )
+          : null;
 
         const existing = findStmt.get(id, slug) as { id: string; title: string; summary: string; pub_date_timestamp: number } | undefined;
 
@@ -895,8 +970,8 @@ export class SqliteNewsStore implements INewsStore {
           source: item.source || 'Norma Jurídica',
           source_id: (item as unknown as { sourceId?: string }).sourceId || '',
           summary: item.summary || '',
-          content_html: item.contentHtml || null,
-          image_url: item.imageUrl || null,
+          content_html: cleanContentHtml,
+          image_url: cleanImageUrl,
           images_json: imagesJson,
           image_caption: item.imageCaption || null,
           author: item.author || 'Norma Jurídica',

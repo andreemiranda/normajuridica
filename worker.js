@@ -51,45 +51,106 @@ const ALL_CATEGORIES = [
 ];
 
 const DEFAULT_SOURCE_IDS = [
-  '8742125891673', '8193975452621', '2754168962593', '6571187291942',
-  '6424291362274', '5183624795316', '9482399189391', '1216294345584',
-  '4334469414432', '1144428532544', '7727428425279', '3386542816798',
-  '2429537983919', '6242412692949', '3422817479195', '8281449136684',
-  '4524183818294', '9124882157745', '8132269214748', '5498139197391',
-  '4415826156744', '9329418888697', '8346116142997', '1492834928862',
-  '2431124818641', '8833539123215', '9886348421411', '3347141892497',
+  '6571187291942', '1216294345584', '4334469414432', '7727428425279',
+  '3218295838848', '3388113412422', '9444246624891', '3592837212343',
+  '3313974548439', '7125539114898', '7915414156447', '6424291362274',
+  '5498139197391', '9482399189391', '8132269214748', '3429813199232',
+  '5432383432343', '8943219782427', '9981429932433', '2518991918643',
+  '6874538729284', '1144428532544', '6242412692949', '8281449136684',
+  '9886348421411', '3386542816798', '4524183818294', '2429537983919',
+  '9124882157745', '5183624795316', '3422817479195', '6389841444633',
+  '8346116142997', '4168916172248', '8929856116462', '1492834928862',
+  '5923414182828', '2433821824848', '9436443519823', '1839328484191',
+  '3324424181638', '6196524489144', '4114381242158', '3849343233418',
+  '3543958594834', '3845881883451', '1422286119169', '2748323482438',
+  '9257989274575', '4393858142416', '2186249285838', '6632828331491',
+  '4792857824177', '6119924343182', '6489199234844', '4584883333742',
+  '8519233519764', '1284929119511', '3347141892497', '1245372445124',
+  '9329418888697', '6585819492491', '1824349914845', '8454432466834',
+  '9343643133947', '9474943656715', '9978226349482', '8928139593792',
+  '2543318141136', '9863321459192', '9848634844762', '7392433713338',
+  '4415826156744', '8833539123215', '2431124818641', '1183417944433',
+  '3815913481419', '8742125891673', '8193975452621', '2754168962593',
 ];
 
 const SOURCE_CATEGORY_MAP = {
-  '8281449136684': 'Política',
+  '6571187291942': 'Tocantins',
+  '1216294345584': 'Tocantins',
+  '4334469414432': 'Tocantins',
+  '7727428425279': 'Tocantins',
+  '3218295838848': 'Tocantins',
+  '3388113412422': 'Tocantins',
+  '9444246624891': 'Tocantins',
+  '3592837212343': 'Tocantins',
+  '3313974548439': 'Tocantins',
+  '7125539114898': 'Tocantins',
+  '7915414156447': 'Tocantins',
+  '6424291362274': 'Educação',
+  '5498139197391': 'Educação',
+  '9482399189391': 'Justiça',
+  '8132269214748': 'Justiça',
+  '3429813199232': 'Justiça',
+  '5432383432343': 'Justiça',
+  '8943219782427': 'Justiça',
+  '9981429932433': 'Justiça',
+  '2518991918643': 'Justiça',
+  '6874538729284': 'Justiça',
+  '1144428532544': 'Brasil',
+  '6242412692949': 'Brasil',
+  '8281449136684': 'Brasil',
+  '9886348421411': 'Brasil',
   '3386542816798': 'Economia',
   '4524183818294': 'Economia',
   '2429537983919': 'Esporte',
   '9124882157745': 'Esporte',
   '5183624795316': 'Esporte',
-  '9482399189391': 'Justiça',
-  '8132269214748': 'Justiça',
-  '3429813199232': 'Justiça',
-  '5432383432343': 'Justiça',
-  '6424291362274': 'Educação',
-  '5498139197391': 'Educação',
-  '4415826156744': 'Tecnologia & Games',
-  '9329418888697': 'Pará',
-  '6571187291942': 'Tocantins',
-  '1216294345584': 'Tocantins',
-  '4334469414432': 'Tocantins',
-  '7727428425279': 'Tocantins',
-  '8346116142997': 'Goiás',
+  '3422817479195': 'Finanças',
+  '6389841444633': 'Palmeiras',
+  '8346116142997': 'Saúde',
+  '4168916172248': 'Goiás',
+  '8929856116462': 'Goiás',
   '1492834928862': 'Santa Catarina',
-  '2431124818641': 'Mundo',
-  '8833539123215': 'Cultura',
-  '1144428532544': 'Brasil',
-  '6242412692949': 'Brasil',
-  '9886348421411': 'Saúde',
+  '5923414182828': 'Santa Catarina',
+  '2433821824848': 'Sergipe',
+  '9436443519823': 'Vale do Paraíba e região',
+  '1839328484191': 'São Carlos e Araraquara',
+  '3324424181638': 'Santos e Região',
+  '6196524489144': 'Ribeirão Preto e Franca',
+  '4114381242158': 'Mogi das Cruzes e Suzano',
+  '3849343233418': 'Campinas e região',
+  '3543958594834': 'Bauru e Marília',
+  '3845881883451': 'Roraima',
+  '1422286119169': 'Rondônia',
+  '2748323482438': 'Rio Grande do Sul',
+  '9257989274575': 'Rio Grande do Norte',
+  '4393858142416': 'Sul e Costa Verde Fluminense',
+  '2186249285838': 'Norte Fluminense',
+  '6632828331491': 'Região dos Lagos Fluminense',
+  '4792857824177': 'Região Serrana Fluminense',
+  '6119924343182': 'Petrolina e Região',
+  '6489199234844': 'Caruaru e Região',
+  '4584883333742': 'Norte e Noroeste do Paraná',
+  '8519233519764': 'Oeste e Sudoeste do Paraná',
+  '1284929119511': 'Campos Gerais e Sul do Paraná',
   '3347141892497': 'Paraná',
-  '6389841444633': 'Esporte',
-  '3815913481419': 'Esporte',
-  '3422817479195': 'Economia',
+  '1245372445124': 'Paraíba',
+  '9329418888697': 'Pará',
+  '6585819492491': 'Zona da Mata Mineira',
+  '1824349914845': 'Vales de Minas Gerais',
+  '8454432466834': 'Sul de Minas',
+  '9343643133947': 'Grande Minas',
+  '9474943656715': 'Centro-Oeste de Minas',
+  '9978226349482': 'Maranhão',
+  '8928139593792': 'Amazonas',
+  '2543318141136': 'Amapá',
+  '9863321459192': 'Alagoas',
+  '9848634844762': 'Acre',
+  '7392433713338': 'Turismo e Viagem',
+  '4415826156744': 'Tecnologia e Games',
+  '8833539123215': 'Pop & Arte',
+  '2431124818641': 'Mundo',
+  '1183417944433': 'Loterias',
+  '3815913481419': 'Autoesporte',
   '8742125891673': 'Brasil',
   '8193975452621': 'Brasil',
   '2754168962593': 'Brasil',
@@ -778,9 +839,9 @@ function getEffectiveBaseUrl(request, env) {
   return site.appUrl || CANONICAL_ORIGIN;
 }
 
-const IMAGE_WIDTH_KEYS = new Set(['w', 'width', 'mw', 'maxwidth', 'imwidth', 'sw']);
-const IMAGE_HEIGHT_KEYS = new Set(['h', 'height', 'mh', 'maxheight']);
-const IMAGE_PAIR_RESIZE_KEYS = new Set(['resize', 'fit']);
+const IMAGE_WIDTH_KEYS = new Set(['w', 'width', 'mw', 'maxwidth', 'minwidth', 'imwidth', 'sw', 'w_px']);
+const IMAGE_HEIGHT_KEYS = new Set(['h', 'height', 'mh', 'maxheight', 'minheight', 'h_px']);
+const IMAGE_RESIZE_KEYS = new Set(['resize', 'fit', 'crop', 'sz', 'size', 's', 'zoom', 'scale']);
 const SIGNED_IMAGE_URL_REGEX =
   /(?:^|[?&])(?:x-amz-[a-z0-9-]+|x-goog-[a-z0-9-]+|signature|expires|sig|sv|se|sp|hmac|checksum|token|auth)=/i;
 
@@ -796,10 +857,24 @@ export function isLowResThumbnailUrl(url = '') {
   return false;
 }
 
-export function upgradeImageResolution(rawUrl = '', idealWidth = 1200) {
+function unwrapNextImageProxy(rawUrl = '') {
+  try {
+    if (/\/_next\/image\b/i.test(rawUrl)) {
+      const parsed = new URL(rawUrl, 'https://localhost');
+      const inner = parsed.searchParams.get('url');
+      if (inner && /^https?:\/\//i.test(inner)) {
+        return inner;
+      }
+    }
+  } catch {}
+  return rawUrl;
+}
+
+export function upgradeImageResolution(rawUrl = '') {
   if (!rawUrl || typeof rawUrl !== 'string') return '';
-  const clean = rawUrl.replace(/s2-Norma\s*Jur[ií]dica/gi, 's2-globo').replace(/&amp;/g, '&').trim();
+  let clean = rawUrl.replace(/s2-Norma\s*Jur[ií]dica/gi, 's2-globo').replace(/&amp;/g, '&').trim();
   if (!clean || clean === 'undefined' || clean === 'null') return '';
+  clean = unwrapNextImageProxy(clean);
   if (!/^https?:\/\//i.test(clean)) return clean;
   if (SIGNED_IMAGE_URL_REGEX.test(clean)) return clean;
 
@@ -810,62 +885,51 @@ export function upgradeImageResolution(rawUrl = '', idealWidth = 1200) {
     return clean;
   }
 
-  const targetWidthStr = String(Math.max(800, idealWidth));
   let mutated = false;
-  let upgradedWidth = false;
+  let strippedDimensionParam = false;
   const keysToDelete = [];
 
   for (const [key, val] of Array.from(parsed.searchParams.entries())) {
     const kLower = key.toLowerCase();
     const vTrim = val.trim();
 
-    if (IMAGE_WIDTH_KEYS.has(kLower)) {
-      if (/^\d+$/.test(vTrim)) {
-        const num = parseInt(vTrim, 10);
-        if (num > 0 && num < 800) {
-          parsed.searchParams.set(key, targetWidthStr);
-          upgradedWidth = true;
-          mutated = true;
-        }
-      }
+    if (IMAGE_WIDTH_KEYS.has(kLower) || IMAGE_HEIGHT_KEYS.has(kLower)) {
+      keysToDelete.push(key);
+      strippedDimensionParam = true;
+      mutated = true;
       continue;
     }
 
-    if (IMAGE_PAIR_RESIZE_KEYS.has(kLower)) {
-      const m = vTrim.match(/^(\d+)\s*[,xX]\s*(\d+)$/);
-      if (m) {
-        const rw = parseInt(m[1], 10);
-        const rh = parseInt(m[2], 10);
-        if ((rw > 0 && rw < 800) || (rh > 0 && rh < 500)) {
-          keysToDelete.push(key);
-          upgradedWidth = true;
-          mutated = true;
-        }
-      }
+    if (kLower === 'resize' || kLower === 'fit' || kLower === 'crop') {
+      keysToDelete.push(key);
+      strippedDimensionParam = true;
+      mutated = true;
       continue;
     }
 
-    if (kLower === 'sz') {
-      const m = vTrim.match(/^w(\d+)(?:-h(\d+))?/i);
-      if (m && parseInt(m[1], 10) < 800) {
-        parsed.searchParams.set(key, `w${targetWidthStr}`);
-        upgradedWidth = true;
-        mutated = true;
-      }
+    if (kLower === 'sz' && /^(?:w\d+(?:-h\d+)?|\d+)$/i.test(vTrim)) {
+      keysToDelete.push(key);
+      strippedDimensionParam = true;
+      mutated = true;
       continue;
     }
 
     if (
-      (kLower === 's' || kLower === 'size') &&
-      /^\d+$/.test(vTrim) &&
-      /\.(?:jpe?g|png|webp|gif|avif)$/i.test(parsed.pathname)
+      (kLower === 's' || kLower === 'size' || kLower === 'zoom' || kLower === 'scale') &&
+      (/^\d+$/.test(vTrim) || /^(?:thumb|thumbnail|small|medium)$/i.test(vTrim)) &&
+      (/\.(?:jpe?g|png|webp|gif|avif)$/i.test(parsed.pathname) ||
+        /(?:wp\.com|wordpress\.com|gravatar\.com|wp-content|uploads|cdn|img)/i.test(parsed.href))
     ) {
-      const num = parseInt(vTrim, 10);
-      if (num > 0 && num < 800) {
-        parsed.searchParams.set(key, targetWidthStr);
-        upgradedWidth = true;
-        mutated = true;
-      }
+      keysToDelete.push(key);
+      strippedDimensionParam = true;
+      mutated = true;
+      continue;
+    }
+
+    if (IMAGE_RESIZE_KEYS.has(kLower) && /^\d+(?:[,xX]\d+)?$/.test(vTrim)) {
+      keysToDelete.push(key);
+      strippedDimensionParam = true;
+      mutated = true;
     }
   }
 
@@ -873,22 +937,11 @@ export function upgradeImageResolution(rawUrl = '', idealWidth = 1200) {
     parsed.searchParams.delete(k);
   }
 
-  if (upgradedWidth) {
-    const hasWidthParam = Array.from(parsed.searchParams.keys()).some((k) => {
-      const kl = k.toLowerCase();
-      return IMAGE_WIDTH_KEYS.has(kl) || kl === 'sz' || kl === 's' || kl === 'size';
-    });
-    if (!hasWidthParam) {
-      parsed.searchParams.set('w', targetWidthStr);
-    }
-    for (const [key, val] of Array.from(parsed.searchParams.entries())) {
+  if (strippedDimensionParam) {
+    for (const key of Array.from(parsed.searchParams.keys())) {
       const kLower = key.toLowerCase();
-      if (IMAGE_HEIGHT_KEYS.has(kLower) && /^\d+$/.test(val.trim()) && parseInt(val.trim(), 10) < 800) {
+      if (kLower === 'q' || kLower === 'quality' || kLower === 'strip') {
         parsed.searchParams.delete(key);
-      } else if (kLower === 'crop' && (val.trim() === '1' || val.trim().toLowerCase() === 'true')) {
-        parsed.searchParams.delete(key);
-      } else if ((kLower === 'q' || kLower === 'quality') && /^\d+$/.test(val.trim()) && parseInt(val.trim(), 10) < 80) {
-        parsed.searchParams.set(key, '85');
       }
     }
   }
@@ -896,13 +949,24 @@ export function upgradeImageResolution(rawUrl = '', idealWidth = 1200) {
   if (/(?:googleusercontent\.com|ggpht\.com|blogspot\.com)/i.test(parsed.hostname)) {
     const newPath = parsed.pathname
       .replace(/\/([sw])(\d+)(?:-[ch][a-z0-9-]*)?\//gi, (m, _p, digits) =>
-        parseInt(digits, 10) < 800 ? `/s${targetWidthStr}/` : m
+        parseInt(digits, 10) > 0 ? '/s0/' : m
       )
       .replace(/=([sw])(\d+)(?:-[a-z0-9-]+)*$/i, (m, _p, digits) =>
-        parseInt(digits, 10) < 800 ? `=w${targetWidthStr}` : m
+        parseInt(digits, 10) > 0 ? '=s0' : m
       );
     if (newPath !== parsed.pathname) {
       parsed.pathname = newPath;
+      mutated = true;
+    }
+  }
+
+  if (!/glbimg\.com/i.test(parsed.hostname)) {
+    const nextPath = parsed.pathname.replace(
+      /-(\d{2,3})x(\d{2,3})(\.(?:jpe?g|png|webp|gif|avif))$/i,
+      (full, wStr, _hStr, ext) => (parseInt(wStr, 10) < 500 ? ext : full)
+    );
+    if (nextPath !== parsed.pathname) {
+      parsed.pathname = nextPath;
       mutated = true;
     }
   }
@@ -966,7 +1030,7 @@ function pickBestImgSrcFromAttrs(attrs = '') {
 }
 
 export function extractImageFromItem(item) {
-  const candidates = [item.imageUrl, item.mediaUrl, item.image];
+  const candidates = [item.imageUrl, item.mediaUrl, item.image, item.urlToImage, item.featured_image, item.enclosure?.url];
   if (Array.isArray(item.images)) candidates.push(...item.images);
   const rawHtml = `${item.description || ''} ${item.content || ''}`;
   const imgTagRegex = /<img\b([^>]*)>/gi;
@@ -990,7 +1054,7 @@ export function extractImageFromItem(item) {
   return highRes || validUpgraded[0];
 }
 
-function normalizeUpstreamItem(raw, fallbackCategory = 'Brasil') {
+function normalizeUpstreamItem(raw, fallbackCategory = 'Brasil', sourceId = '') {
   if (!raw || !raw.title) return null;
   const title = stripHtmlTags(raw.title).replace(/\s+/g, ' ').trim();
   if (title.length < 5) return null;
@@ -1022,6 +1086,7 @@ function normalizeUpstreamItem(raw, fallbackCategory = 'Brasil') {
     contentHtml,
     category,
     categoryId,
+    sourceId: String(sourceId || raw.sourceId || ''),
     author: raw.author && !/^\d+$/.test(String(raw.author)) ? String(raw.author).trim() : 'Norma Jurídica',
     pubDate,
     isoDate: pubDate,
@@ -1148,104 +1213,316 @@ function isSourceDescriptor(raw) {
   return Boolean(raw && !raw.title && raw.id && (raw.endpoint || raw.type || raw.category));
 }
 
-async function fetchAggregatedNews(env, { category = 'all', q = '', page = 1, limit = 24, sourceId = '', refresh = false } = {}) {
-  const normCat = normalizeCategoryText(category);
-  const { domain: siteDomain } = resolveWorkerSiteConfig(env);
-  const cacheKeyUrl = `https://edge-cache.${siteDomain}/news?cat=${encodeURIComponent(normCat || 'all')}&sid=${encodeURIComponent(sourceId)}`;
+const EDGE_CACHE_VERSION = 'v3';
+const SHARD_SIZE = 25;
+const SHARD_FRESH_TTL_MS = 60 * 1000;
+const MAX_TOTAL_ITEMS = 15000;
+const MAX_PER_SHARD_ITEMS = 4500;
+const RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 
-  let pool = null;
-  const cache = typeof caches !== 'undefined' ? caches.default : null;
+function getSourceShards() {
+  const shards = [];
+  for (let i = 0; i < DEFAULT_SOURCE_IDS.length; i += SHARD_SIZE) {
+    shards.push(DEFAULT_SOURCE_IDS.slice(i, i + SHARD_SIZE));
+  }
+  return shards;
+}
 
-  if (cache && !refresh) {
-    try {
-      const hit = await cache.match(cacheKeyUrl);
-      if (hit) {
-        const cachedPool = await hit.json();
-        if (Array.isArray(cachedPool)) {
-          pool = cachedPool.map((it) => {
-            if (!it || typeof it !== 'object') return it;
-            const nextImg = it.imageUrl ? upgradeImageResolution(it.imageUrl) : '';
-            const nextImages = Array.isArray(it.images) ? it.images.map((u) => upgradeImageResolution(u)) : nextImg ? [nextImg] : [];
-            return { ...it, imageUrl: nextImg, images: nextImages };
-          });
-        }
-      }
-    } catch {}
+function normalizeCachedItemImages(it) {
+  if (!it || typeof it !== 'object') return it;
+  const nextImg = it.imageUrl ? upgradeImageResolution(it.imageUrl) : '';
+  const nextImages = Array.isArray(it.images)
+    ? it.images.map((u) => upgradeImageResolution(u)).filter(Boolean)
+    : nextImg
+      ? [nextImg]
+      : [];
+  const nextTimeAgo = it.pubDate ? formatTimeAgo(it.pubDate) : it.timeAgo;
+  return { ...it, imageUrl: nextImg, images: nextImages, timeAgo: nextTimeAgo };
+}
+
+function toShardIndexItem(item) {
+  return {
+    id: item.id,
+    slug: item.slug,
+    title: item.title,
+    summary: item.summary,
+    category: item.category,
+    categoryId: item.categoryId,
+    sourceId: item.sourceId || '',
+    author: item.author || 'Norma Jurídica',
+    pubDate: item.pubDate,
+    isoDate: item.isoDate || item.pubDate,
+    timeAgo: item.timeAgo,
+    imageUrl: item.imageUrl || '',
+    images: Array.isArray(item.images) ? item.images : item.imageUrl ? [item.imageUrl] : [],
+    link: item.link || `/noticia/${item.slug}`,
+    sourceUrl: item.sourceUrl || '',
+  };
+}
+
+function mergeAndPrunePool(primaryItems = [], secondaryItems = [], maxCount = MAX_PER_SHARD_ITEMS) {
+  const cutoffMs = Date.now() - RETENTION_MS;
+  const bySlug = new Map();
+  for (const raw of [...secondaryItems, ...primaryItems]) {
+    if (!raw || !raw.slug) continue;
+    const item = normalizeCachedItemImages(raw);
+    const ts = new Date(item.pubDate || 0).getTime();
+    if (!Number.isNaN(ts) && ts > 0 && ts < cutoffMs) continue;
+    const existing = bySlug.get(item.slug);
+    if (!existing) {
+      bySlug.set(item.slug, item);
+    } else {
+      bySlug.set(item.slug, {
+        ...existing,
+        ...item,
+        sourceId: item.sourceId || existing.sourceId || '',
+        imageUrl: item.imageUrl || existing.imageUrl || '',
+        images: item.images && item.images.length ? item.images : existing.images || [],
+        contentHtml: item.contentHtml || existing.contentHtml,
+      });
+    }
+  }
+  const merged = Array.from(bySlug.values());
+  merged.sort((a, b) => new Date(b.pubDate || 0).getTime() - new Date(a.pubDate || 0).getTime());
+  return merged.slice(0, maxCount);
+}
+
+function ingestUpstreamPayload(res, fallbackCat, sourceId = '', collected = [], seenSlugs = new Set()) {
+  const arr = Array.isArray(res?.items) ? res.items : Array.isArray(res) ? res : [];
+  const discoveredSources = [];
+  for (const raw of arr) {
+    if (isSourceDescriptor(raw)) {
+      discoveredSources.push({ id: String(raw.id), category: raw.category || fallbackCat || 'Brasil' });
+      continue;
+    }
+    const item = normalizeUpstreamItem(raw, fallbackCat, sourceId);
+    if (item && !seenSlugs.has(item.slug)) {
+      seenSlugs.add(item.slug);
+      collected.push(item);
+    }
+  }
+  return discoveredSources;
+}
+
+async function fetchShardFromUpstream(env, shardIdx, shardSources, existingItems = [], { stripContent = true } = {}) {
+  const collected = [];
+  const seenSlugs = new Set();
+  const discoveredMap = new Map();
+  let batch = [...shardSources];
+
+  if (shardIdx === 0) {
+    const rootFeed = await fetchUpstreamJson(env, '/api/news?active=true&limit=250');
+    const discovered = ingestUpstreamPayload(rootFeed, 'Brasil', '', collected, seenSlugs);
+    for (const d of discovered) {
+      discoveredMap.set(d.id, d.category);
+    }
+    if (discovered.length > 0) {
+      batch = Array.from(new Set([...discovered.map((d) => d.id), ...shardSources])).slice(0, SHARD_SIZE + 3);
+    }
   }
 
-  if (!pool) {
-    const collected = [];
-    const seenSlugs = new Set();
-    const ingestPayload = (res, fallbackCat) => {
-      const arr = Array.isArray(res?.items) ? res.items : Array.isArray(res) ? res : [];
-      const discoveredSources = [];
-      for (const raw of arr) {
-        if (isSourceDescriptor(raw)) {
-          discoveredSources.push({ id: String(raw.id), category: raw.category || fallbackCat || 'Brasil' });
-          continue;
-        }
-        const item = normalizeUpstreamItem(raw, fallbackCat);
-        if (item && !seenSlugs.has(item.slug)) {
-          seenSlugs.add(item.slug);
-          collected.push(item);
-        }
-      }
-      return discoveredSources;
-    };
+  const results = await Promise.all(
+    batch.map((sid) => fetchUpstreamJson(env, `/api/news/${encodeURIComponent(sid)}?limit=250`))
+  );
+  results.forEach((res, idx) => {
+    const sid = batch[idx];
+    const fallbackCat = discoveredMap.get(sid) || SOURCE_CATEGORY_MAP[sid] || 'Brasil';
+    ingestUpstreamPayload(res, fallbackCat, sid, collected, seenSlugs);
+  });
 
-    if (sourceId) {
-      const data = await fetchUpstreamJson(env, `/api/news/${encodeURIComponent(sourceId)}?limit=100`);
-      ingestPayload(data, SOURCE_CATEGORY_MAP[sourceId] || 'Brasil');
-    } else if (normCat && normCat !== 'all' && normCat !== 'todas') {
-      const displayCat = resolveCategoryDisplayName(normCat);
+  if (shardIdx === getSourceShards().length - 1) {
+    const extraPages = await Promise.all([
+      fetchUpstreamJson(env, '/api/news?limit=250&page=1'),
+      fetchUpstreamJson(env, '/api/news?limit=250&page=2'),
+    ]);
+    for (const pageRes of extraPages) {
+      ingestUpstreamPayload(pageRes, 'Brasil', '', collected, seenSlugs);
+    }
+  }
+
+  const normalizedNew = stripContent ? collected.map(toShardIndexItem) : collected;
+  return mergeAndPrunePool(normalizedNew, existingItems, MAX_PER_SHARD_ITEMS);
+}
+
+async function readShardCache(cache, cacheUrl) {
+  if (!cache) return null;
+  try {
+    const hit = await cache.match(cacheUrl);
+    if (!hit) return null;
+    const data = await hit.json();
+    if (Array.isArray(data)) {
+      return { updatedAt: 0, items: data };
+    }
+    if (data && Array.isArray(data.items)) {
+      return { updatedAt: Number(data.updatedAt) || 0, items: data.items };
+    }
+  } catch {}
+  return null;
+}
+
+async function writeShardCache(cache, cacheUrl, items) {
+  if (!cache || !Array.isArray(items) || items.length === 0) return;
+  try {
+    await cache.put(
+      cacheUrl,
+      new Response(JSON.stringify({ updatedAt: Date.now(), items }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=604800',
+        },
+      })
+    );
+  } catch {}
+}
+
+async function fetchAggregatedNews(
+  env,
+  { category = 'all', q = '', page = 1, limit = 24, sourceId = '', refresh = false, hydrate = false, shard = -1 } = {}
+) {
+  const normCat = normalizeCategoryText(category);
+  const { domain: siteDomain } = resolveWorkerSiteConfig(env);
+  const cache = typeof caches !== 'undefined' ? caches.default : null;
+  const shards = getSourceShards();
+  const totalShards = shards.length;
+  const shardUrl = (idx) => `https://edge-cache.${siteDomain}/${EDGE_CACHE_VERSION}/shard-${idx}`;
+
+  if (sourceId) {
+    const sidCacheUrl = `https://edge-cache.${siteDomain}/${EDGE_CACHE_VERSION}/source-${encodeURIComponent(sourceId)}`;
+    const existing = await readShardCache(cache, sidCacheUrl);
+    let pool = existing && !refresh && Date.now() - existing.updatedAt < SHARD_FRESH_TTL_MS ? existing.items : null;
+    if (!pool) {
+      const collected = [];
+      const data = await fetchUpstreamJson(env, `/api/news/${encodeURIComponent(sourceId)}?limit=250`);
+      ingestUpstreamPayload(data, SOURCE_CATEGORY_MAP[sourceId] || 'Brasil', sourceId, collected, new Set());
+      const nextItems = cache ? collected.map(toShardIndexItem) : collected;
+      pool = mergeAndPrunePool(nextItems, existing?.items || [], MAX_PER_SHARD_ITEMS);
+      await writeShardCache(cache, sidCacheUrl, pool);
+    } else {
+      pool = pool.map(normalizeCachedItemImages);
+    }
+    let filtered = pool;
+    if (q && q.trim()) {
+      const qLower = q.toLowerCase().trim();
+      filtered = filtered.filter(
+        (i) => i.title.toLowerCase().includes(qLower) || i.summary.toLowerCase().includes(qLower) || i.category.toLowerCase().includes(qLower)
+      );
+    }
+    const total = filtered.length;
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.min(Math.max(1, limit), 20000);
+    const offset = (safePage - 1) * safeLimit;
+    return {
+      items: filtered.slice(offset, offset + safeLimit),
+      total,
+      page: safePage,
+      limit: safeLimit,
+      totalPages: Math.max(1, Math.ceil(total / safeLimit)),
+      hydration: { hydratedShards: 1, totalShards: 1, pendingShards: 0, activeSourcesCount: DEFAULT_SOURCE_IDS.length },
+    };
+  }
+
+  const shardRecords = cache
+    ? await Promise.all(shards.map((_, idx) => readShardCache(cache, shardUrl(idx))))
+    : shards.map(() => null);
+
+  let pool = [];
+  if (cache) {
+    const missingIdx = shardRecords.findIndex((r) => !r || r.items.length === 0);
+    let targetIdx = -1;
+
+    if (shard >= 0 && shard < totalShards) {
+      targetIdx = shard;
+    } else if (hydrate) {
+      if (missingIdx !== -1) {
+        targetIdx = missingIdx;
+      } else {
+        let oldestIdx = 0;
+        let oldestAt = shardRecords[0]?.updatedAt || 0;
+        for (let i = 1; i < totalShards; i++) {
+          const ts = shardRecords[i]?.updatedAt || 0;
+          if (ts < oldestAt) {
+            oldestAt = ts;
+            oldestIdx = i;
+          }
+        }
+        targetIdx = oldestIdx;
+      }
+    } else if (missingIdx === 0 || refresh) {
+      targetIdx = missingIdx !== -1 ? missingIdx : 0;
+      if (refresh && missingIdx === -1) {
+        let oldestIdx = 0;
+        let oldestAt = shardRecords[0]?.updatedAt || 0;
+        for (let i = 1; i < totalShards; i++) {
+          const ts = shardRecords[i]?.updatedAt || 0;
+          if (ts < oldestAt) {
+            oldestAt = ts;
+            oldestIdx = i;
+          }
+        }
+        targetIdx = oldestIdx;
+      }
+    } else {
+      const anyStale = shardRecords.findIndex((r) => r && Date.now() - r.updatedAt > SHARD_FRESH_TTL_MS);
+      if (anyStale !== -1 && (normCat === 'all' || normCat === 'todas' || !normCat)) {
+        targetIdx = anyStale;
+      }
+    }
+
+    if (targetIdx !== -1) {
+      const existingItems = shardRecords[targetIdx]?.items || [];
+      const updatedShard = await fetchShardFromUpstream(env, targetIdx, shards[targetIdx], existingItems, { stripContent: true });
+      if (updatedShard.length > 0) {
+        shardRecords[targetIdx] = { updatedAt: Date.now(), items: updatedShard };
+        await writeShardCache(cache, shardUrl(targetIdx), updatedShard);
+      }
+    }
+
+    const hydratedItems = shardRecords.flatMap((r) => (r && Array.isArray(r.items) ? r.items : []));
+    pool = mergeAndPrunePool(hydratedItems, [], MAX_TOTAL_ITEMS);
+  } else {
+    // Ambiente sem Cache API (ex: testes unitários em Node.js): consulta Lote 0 mantendo contentHtml em memória
+    const collected = await fetchShardFromUpstream(env, 0, shards[0], [], { stripContent: false });
+    pool = collected;
+  }
+
+  const isCategoryFilter = Boolean(normCat && normCat !== 'all' && normCat !== 'todas');
+  if (isCategoryFilter) {
+    const displayCat = resolveCategoryDisplayName(normCat);
+    const catCacheUrl = `https://edge-cache.${siteDomain}/${EDGE_CACHE_VERSION}/cat-${encodeURIComponent(normCat)}`;
+    const existingCat = await readShardCache(cache, catCacheUrl);
+    const matchesFromShards = pool.filter((item) => normalizeCategoryText(item.category || item.categoryId) === normCat);
+    let catItems = mergeAndPrunePool(matchesFromShards, existingCat?.items || [], MAX_PER_SHARD_ITEMS);
+
+    const catNeedsFetch =
+      !cache ||
+      refresh ||
+      !existingCat ||
+      Date.now() - existingCat.updatedAt > SHARD_FRESH_TTL_MS ||
+      catItems.length < limit;
+
+    if (catNeedsFetch) {
       const matchingSources = Object.entries(SOURCE_CATEGORY_MAP)
         .filter(([, cat]) => normalizeCategoryText(cat) === normCat)
         .map(([id]) => id);
-
       const catCatalog = await fetchUpstreamJson(env, `/api/news?category=${encodeURIComponent(displayCat)}&active=true&limit=50`);
-      const discovered = ingestPayload(catCatalog, displayCat);
-      const sourceIds = Array.from(new Set([...discovered.map((d) => d.id), ...matchingSources])).slice(0, 10);
-
+      const collected = [];
+      const seenSlugs = new Set();
+      const discovered = ingestUpstreamPayload(catCatalog, displayCat, '', collected, seenSlugs);
+      const sourceIds = Array.from(new Set([...discovered.map((d) => d.id), ...matchingSources])).slice(0, 12);
       const results = await Promise.all([
-        fetchUpstreamJson(env, `/api/news/category/${encodeURIComponent(normCat)}?limit=120`),
-        ...sourceIds.map((id) => fetchUpstreamJson(env, `/api/news/${id}?limit=80`)),
+        fetchUpstreamJson(env, `/api/news/category/${encodeURIComponent(normCat)}?limit=250`),
+        ...sourceIds.map((id) => fetchUpstreamJson(env, `/api/news/${encodeURIComponent(id)}?limit=250`)),
       ]);
-      for (const res of results) {
-        ingestPayload(res, displayCat);
-      }
-    } else {
-      // Feed principal: descobre fontes ativas via /api/news e consulta principais fontes em paralelo
-      const rootFeed = await fetchUpstreamJson(env, '/api/news?active=true&limit=150');
-      const discovered = ingestPayload(rootFeed, 'Brasil');
-      const discoveredMap = new Map(discovered.map((d) => [d.id, d.category]));
-      const batchSources = Array.from(new Set([...discovered.map((d) => d.id), ...DEFAULT_SOURCE_IDS])).slice(0, 16);
-
-      const results = await Promise.all(
-        batchSources.map((id) => fetchUpstreamJson(env, `/api/news/${id}?limit=40`))
-      );
       results.forEach((res, idx) => {
-        const sid = batchSources[idx];
-        const fallbackCat = discoveredMap.get(sid) || SOURCE_CATEGORY_MAP[sid] || 'Brasil';
-        ingestPayload(res, fallbackCat);
+        const sid = idx === 0 ? '' : sourceIds[idx - 1];
+        ingestUpstreamPayload(res, displayCat, sid, collected, seenSlugs);
       });
+      const nextCat = cache ? collected.map(toShardIndexItem) : collected;
+      catItems = mergeAndPrunePool(nextCat, catItems, MAX_PER_SHARD_ITEMS);
+      await writeShardCache(cache, catCacheUrl, catItems);
     }
 
-    collected.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
-    pool = collected;
-
-    if (cache && pool.length > 0) {
-      try {
-        await cache.put(
-          cacheKeyUrl,
-          new Response(JSON.stringify(pool), {
-            headers: {
-              'Content-Type': 'application/json',
-              'Cache-Control': 'public, max-age=60',
-            },
-          })
-        );
-      } catch {}
-    }
+    pool = catItems;
   }
 
   let filtered = Array.isArray(pool) ? pool : [];
@@ -1259,32 +1536,119 @@ async function fetchAggregatedNews(env, { category = 'all', q = '', page = 1, li
     );
   }
 
+  const hydratedShards = cache ? shardRecords.filter((r) => r && r.items && r.items.length > 0).length : 1;
+  const pendingShards = Math.max(0, totalShards - hydratedShards);
   const total = filtered.length;
   const safePage = Math.max(1, page);
-  const safeLimit = Math.min(Math.max(1, limit), 100);
+  const safeLimit = Math.min(Math.max(1, limit), 20000);
   const offset = (safePage - 1) * safeLimit;
   const items = filtered.slice(offset, offset + safeLimit);
 
-  return { items, total, page: safePage, limit: safeLimit, totalPages: Math.max(1, Math.ceil(total / safeLimit)) };
+  return {
+    items,
+    total,
+    page: safePage,
+    limit: safeLimit,
+    totalPages: Math.max(1, Math.ceil(total / safeLimit)),
+    hydration: {
+      hydratedShards,
+      totalShards,
+      pendingShards,
+      activeSourcesCount: DEFAULT_SOURCE_IDS.length,
+    },
+  };
+}
+
+function refreshContentHtmlImages(html = '', featuredImage = '') {
+  if (!html) return '';
+  return String(html).replace(/<img\b([^>]*)>/gi, (full, attrs) => {
+    const srcMatch = attrs.match(/\bsrc=["']([^"']+)["']/i);
+    if (!srcMatch || !srcMatch[1]) return full;
+    const upgraded = upgradeImageResolution(srcMatch[1]);
+    if (!upgraded || upgraded === srcMatch[1]) return full;
+    return full.replace(srcMatch[0], `src="${escapeHtml(upgraded)}"`);
+  }) || (featuredImage ? `<p>${escapeHtml(featuredImage)}</p>` : '');
 }
 
 async function findArticleBySlug(env, slug) {
   if (!slug) return null;
   const decoded = decodeURIComponent(slug).toLowerCase().trim();
-  const { items } = await fetchAggregatedNews(env, { category: 'all', limit: 100, page: 1 });
-  let match = items.find((i) => i.slug.toLowerCase() === decoded || i.id.toLowerCase() === decoded);
-  if (match) return match;
+  const { domain: siteDomain } = resolveWorkerSiteConfig(env);
+  const cache = typeof caches !== 'undefined' ? caches.default : null;
+  const articleCacheUrl = `https://edge-cache.${siteDomain}/${EDGE_CACHE_VERSION}/article/${encodeURIComponent(decoded)}`;
 
-  // Tenta busca direta na API pelo termo/slug
-  const parts = decoded.split('-').slice(0, 6).join(' ');
-  const direct = await fetchUpstreamJson(env, `/api/news?q=${encodeURIComponent(parts)}&limit=30`);
+  if (cache) {
+    try {
+      const hit = await cache.match(articleCacheUrl);
+      if (hit) {
+        const cachedArticle = await hit.json();
+        if (cachedArticle && cachedArticle.title) {
+          const normalized = normalizeCachedItemImages(cachedArticle);
+          normalized.contentHtml = refreshContentHtmlImages(normalized.contentHtml || '', normalized.imageUrl);
+          return normalized;
+        }
+      }
+    } catch {}
+  }
+
+  const { items } = await fetchAggregatedNews(env, { category: 'all', limit: 20000, page: 1 });
+  const match = items.find((i) => i.slug.toLowerCase() === decoded || i.id.toLowerCase() === decoded);
+
+  if (match && match.contentHtml && match.contentHtml.length > 80) {
+    match.contentHtml = refreshContentHtmlImages(match.contentHtml, match.imageUrl);
+    return match;
+  }
+
+  if (match && match.sourceId) {
+    const srcRes = await fetchUpstreamJson(env, `/api/news/${encodeURIComponent(match.sourceId)}?limit=250`);
+    const arr = Array.isArray(srcRes?.items) ? srcRes.items : Array.isArray(srcRes) ? srcRes : [];
+    for (const raw of arr) {
+      const norm = normalizeUpstreamItem(raw, match.category, match.sourceId);
+      if (norm && (norm.slug.toLowerCase() === decoded || norm.id.toLowerCase() === decoded)) {
+        if (cache) {
+          try {
+            await cache.put(
+              articleCacheUrl,
+              new Response(JSON.stringify(norm), {
+                headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=86400' },
+              })
+            );
+          } catch {}
+        }
+        return norm;
+      }
+    }
+  }
+
+  const queryText = match
+    ? match.title.split(/\s+/).slice(0, 6).join(' ')
+    : decoded.split('-').slice(0, 6).join(' ');
+  const direct = await fetchUpstreamJson(env, `/api/news?q=${encodeURIComponent(queryText)}&limit=30`);
   const arr = Array.isArray(direct?.items) ? direct.items : Array.isArray(direct) ? direct : [];
   for (const raw of arr) {
-    const norm = normalizeUpstreamItem(raw);
+    const norm = normalizeUpstreamItem(raw, match?.category || 'Brasil', match?.sourceId || '');
     if (norm && (norm.slug.toLowerCase() === decoded || decoded.includes(norm.slug.slice(0, 40)))) {
+      if (cache) {
+        try {
+          await cache.put(
+            articleCacheUrl,
+            new Response(JSON.stringify(norm), {
+              headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=86400' },
+            })
+          );
+        } catch {}
+      }
       return norm;
     }
   }
+
+  if (match) {
+    return {
+      ...match,
+      contentHtml: `<p>${escapeHtml(match.summary)}</p><p>Reportagem publicada na editoria de <strong>${escapeHtml(match.category)}</strong>. Consulte os destaques e pontos principais acima para acompanhar o conteúdo consolidado pela redação do Norma Jurídica.</p>`,
+    };
+  }
+
   return null;
 }
 
@@ -2235,14 +2599,28 @@ async function handleApiRequest(request, env, url) {
     }
     const latencyMs = Date.now() - probeStart;
 
-    let cachedSummary = { items: [], total: 0 };
-    if (action === 'sync') {
-      cachedSummary = await fetchAggregatedNews(env, { category: 'all', limit: 100, page: 1, refresh: true });
+    let cachedSummary = { items: [], total: 0, hydration: { hydratedShards: 0, totalShards: getSourceShards().length, pendingShards: getSourceShards().length, activeSourcesCount: DEFAULT_SOURCE_IDS.length } };
+    const shardParam = url.searchParams.has('shard') ? parseInt(url.searchParams.get('shard') || '-1', 10) : -1;
+    if (action === 'sync' || action === 'hydrate') {
+      cachedSummary = await fetchAggregatedNews(env, {
+        category: 'all',
+        limit: 100,
+        page: 1,
+        refresh: true,
+        hydrate: true,
+        shard: shardParam,
+      });
     } else if (probeRes.data) {
       cachedSummary = await fetchAggregatedNews(env, { category: 'all', limit: 1, page: 1 });
     }
     const latestItem = cachedSummary.items[0] || null;
     const totalStored = cachedSummary.total || 0;
+    const hydration = cachedSummary.hydration || {
+      hydratedShards: 0,
+      totalShards: getSourceShards().length,
+      pendingShards: getSourceShards().length,
+      activeSourcesCount: DEFAULT_SOURCE_IDS.length,
+    };
     const syncIntervalSec = parseInt(readEnvVar(env, ['NEWS_SYNC_INTERVAL_SECONDS']) || '60', 10) || 60;
     const maxItems = Math.max(15000, parseInt(readEnvVar(env, ['NEWS_STORE_MAX_ITEMS']) || '15000', 10) || 15000);
     const maxPerSource = Math.max(350, parseInt(readEnvVar(env, ['NEWS_STORE_MAX_PER_SOURCE']) || '350', 10) || 350);
@@ -2257,6 +2635,7 @@ async function handleApiRequest(request, env, url) {
         databasePath: 'edge-cache',
         isEphemeral: false,
         totalStored,
+        hydration,
         capacity: { maxItems, maxPerSource, retentionDays, syncIntervalSeconds: syncIntervalSec },
       },
       site: {
@@ -2351,19 +2730,19 @@ async function handleApiRequest(request, env, url) {
     <div class="grid">
       <div class="stat-box">
         <div class="stat-label">Notícias no Feed / Edge</div>
-        <div class="stat-value" style="color: ${totalStored > 0 ? '#34d399' : '#fbbf24'};">${totalStored.toLocaleString('pt-BR')}</div>
+        <div id="nj-sync-total" class="stat-value" style="color: ${totalStored > 0 ? '#34d399' : '#fbbf24'};">${totalStored.toLocaleString('pt-BR')}</div>
       </div>
       <div class="stat-box">
         <div class="stat-label">Capacidade Máxima (FIFO)</div>
         <div class="stat-value">${maxItems.toLocaleString('pt-BR')} itens</div>
       </div>
       <div class="stat-box">
-        <div class="stat-label">Limite por Fonte / Retenção</div>
-        <div class="stat-value">${maxPerSource} / ${retentionDays} dias</div>
+        <div class="stat-label">Lotes de Fontes Ativas</div>
+        <div id="nj-sync-shards" class="stat-value">${hydration.hydratedShards}/${hydration.totalShards} (${hydration.activeSourcesCount} fontes)</div>
       </div>
       <div class="stat-box">
-        <div class="stat-label">Intervalo de Sincronização</div>
-        <div class="stat-value">${syncIntervalSec}s (Edge Cache)</div>
+        <div class="stat-label">Limite por Fonte / Retenção</div>
+        <div class="stat-value">${maxPerSource} / ${retentionDays} dias</div>
       </div>
     </div>
     <div class="card">
@@ -2384,6 +2763,40 @@ async function handleApiRequest(request, env, url) {
       Verificação executada em ${escapeHtml(brtTime)} (Horário de Brasília) • ${escapeHtml(payload.timestamp)}
     </div>
   </div>
+  ${
+    isUpstreamOk && hydration.pendingShards > 0
+      ? `<script>
+          (function(){
+            var pending = ${hydration.pendingShards};
+            var step = 0;
+            function nextHydrate() {
+              if (step >= ${hydration.totalShards}) return;
+              step++;
+              fetch('/api/sync?action=hydrate', { cache: 'no-store' })
+                .then(function(r){ return r.ok ? r.json() : null; })
+                .then(function(d){
+                  if (!d || !d.storage) return;
+                  var tEl = document.getElementById('nj-sync-total');
+                  var sEl = document.getElementById('nj-sync-shards');
+                  if (tEl && typeof d.storage.totalStored === 'number') {
+                    tEl.textContent = d.storage.totalStored.toLocaleString('pt-BR');
+                    if (d.storage.totalStored > 0) tEl.style.color = '#34d399';
+                  }
+                  var h = d.storage.hydration;
+                  if (sEl && h) {
+                    sEl.textContent = h.hydratedShards + '/' + h.totalShards + ' (' + h.activeSourcesCount + ' fontes)';
+                  }
+                  if (h && h.pendingShards > 0) {
+                    setTimeout(nextHydrate, 250);
+                  }
+                })
+                .catch(function(){});
+            }
+            setTimeout(nextHydrate, 250);
+          })();
+        </script>`
+      : ''
+  }
 </body>
 </html>`;
       return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
@@ -2530,7 +2943,7 @@ async function handleSeoRoutes(request, env, url) {
   }
 
   if (pathname === '/sitemap-posts.xml' || pathname === '/sitemap-images.xml') {
-    const { items } = await fetchAggregatedNews(env, { category: 'all', limit: 100, page: 1 });
+    const { items } = await fetchAggregatedNews(env, { category: 'all', limit: 1000, page: 1 });
     if (pathname === '/sitemap-images.xml') {
       const entries = items
         .filter((i) => i.imageUrl)
@@ -3200,7 +3613,7 @@ async function renderStandaloneHtmlPage(request, env, url) {
   const refresh = url.searchParams.get('refresh') === '1' || url.searchParams.get('refresh') === 'true';
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10) || 1);
   const limit = isFavorites ? 100 : isCategory ? 12 : 24;
-  const { items, totalPages } = await fetchAggregatedNews(env, { category: isFavorites ? 'all' : catSlug, q, page, limit, refresh });
+  const { items, totalPages, hydration } = await fetchAggregatedNews(env, { category: isFavorites ? 'all' : catSlug, q, page, limit, refresh });
   const catTitle = isFavorites ? 'Minha Lista' : isCategory ? resolveCategoryDisplayName(catSlug) : 'Destaques';
 
   // Render dedicated 3-column Category layout when on /categoria/[slug] (matching app/categoria/[slug]/page.tsx)
@@ -3498,6 +3911,23 @@ async function renderStandaloneHtmlPage(request, env, url) {
                   if (topSlug && topSlug !== knownSlug) location.reload();
                 }).catch(function(){});
               }, 60000);
+              var pendingShards = ${Number(hydration?.pendingShards || 0)};
+              var totalShards = ${Number(hydration?.totalShards || 4)};
+              if (pendingShards > 0) {
+                var hStep = 0;
+                var bgHydrate = function() {
+                  if (hStep >= totalShards) return;
+                  hStep++;
+                  fetch('/api/sync?action=hydrate', { cache: 'no-store' })
+                    .then(function(r){ return r.ok ? r.json() : null; })
+                    .then(function(d){
+                      var rem = d && d.storage && d.storage.hydration ? d.storage.hydration.pendingShards : 0;
+                      if (rem > 0) setTimeout(bgHydrate, 350);
+                    })
+                    .catch(function(){});
+                };
+                setTimeout(bgHydrate, 400);
+              }
             })();
           </script>`
         : ''
@@ -3576,7 +4006,7 @@ const workerHandler = {
 
   async scheduled(_event, env = {}, ctx) {
     const task = (async () => {
-      await fetchAggregatedNews(env, { category: 'all', limit: 100, refresh: true });
+      await fetchAggregatedNews(env, { category: 'all', limit: 1, hydrate: true, refresh: true });
       const safeOrigin = resolveSafeOriginUrl(env, new URL(CANONICAL_ORIGIN), new Headers());
       const cronSecret = String(env.REVALIDATE_SECRET || env.CRON_SECRET || '').trim();
       if (safeOrigin) {

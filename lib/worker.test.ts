@@ -654,34 +654,47 @@ test('worker suporta novos aliases de token, ?ref= embutido, /api/sync estilo de
   }
 });
 
-test('worker atualiza imagens ?w=200, resize= e srcset para alta resolução em cards, hero, matérias e /api/news', async () => {
+test('worker elimina ?w=200, resize= e srcset para resolução natural da fonte em cards, hero, matérias e /api/news', async () => {
   assert.equal(
     upgradeImageResolution('https://i0.wp.com/site.com/wp-content/uploads/2026/11/foto.jpg?w=200&ssl=1'),
-    'https://i0.wp.com/site.com/wp-content/uploads/2026/11/foto.jpg?w=1200&ssl=1'
+    'https://i0.wp.com/site.com/wp-content/uploads/2026/11/foto.jpg?ssl=1'
   );
   assert.equal(
     upgradeImageResolution('https://site.com/wp-content/uploads/foto.jpg?resize=200,133'),
-    'https://site.com/wp-content/uploads/foto.jpg?w=1200'
+    'https://site.com/wp-content/uploads/foto.jpg'
+  );
+  assert.equal(
+    upgradeImageResolution('https://lh3.googleusercontent.com/abc/foto=w200-h150-c'),
+    'https://lh3.googleusercontent.com/abc/foto=s0'
+  );
+  assert.equal(
+    upgradeImageResolution('https://site.com/wp-content/uploads/foto-200x133.jpg'),
+    'https://site.com/wp-content/uploads/foto.jpg'
+  );
+  assert.equal(
+    upgradeImageResolution('https://bucket.s3.amazonaws.com/img.jpg?w=200&X-Amz-Signature=deadbeef'),
+    'https://bucket.s3.amazonaws.com/img.jpg?w=200&X-Amz-Signature=deadbeef'
   );
   assert.equal(
     extractImageFromItem({
       imageUrl: 'https://site.com/wp-content/uploads/foto.jpg?w=200',
     }),
-    'https://site.com/wp-content/uploads/foto.jpg?w=1200'
+    'https://site.com/wp-content/uploads/foto.jpg'
   );
   assert.equal(
     extractImageFromItem({
       thumbnail: 'https://site.com/wp-content/uploads/foto-200x133.jpg',
       content: '<p><img src="https://site.com/wp-content/uploads/foto.jpg?w=200" /></p>',
     }),
-    'https://site.com/wp-content/uploads/foto.jpg?w=1200'
+    'https://site.com/wp-content/uploads/foto.jpg'
   );
 
   const sanitizedBody = sanitizeArticleHtmlForWorker(
     '<p><img src="https://site.com/wp-content/uploads/corpo.jpg?w=200" alt="Corpo" /></p>',
     'https://site.com/wp-content/uploads/capa.jpg?w=200'
   );
-  assert.match(sanitizedBody, /src="https:\/\/site\.com\/wp-content\/uploads\/corpo\.jpg\?w=1200"/);
+  assert.match(sanitizedBody, /src="https:\/\/site\.com\/wp-content\/uploads\/corpo\.jpg"/);
+  assert.equal(sanitizedBody.includes('?w=200'), false);
 
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async (input: RequestInfo | URL) => {
@@ -718,26 +731,127 @@ test('worker atualiza imagens ?w=200, resize= e srcset para alta resolução em 
       env
     );
     const apiJson = await apiRes.json();
-    assert.equal(apiJson.items[0].imageUrl, 'https://i0.wp.com/cdn.example.com/capa.jpg?w=1200&ssl=1');
+    assert.equal(apiJson.items[0].imageUrl, 'https://i0.wp.com/cdn.example.com/capa.jpg?ssl=1');
 
     const homeRes = await worker.fetch(
       new Request('https://news.mirandinhacontabilidade.workers.dev/?refresh=true'),
       env
     );
     const homeHtml = await homeRes.text();
-    assert.match(homeHtml, /https:\/\/i0\.wp\.com\/cdn\.example\.com\/capa\.jpg\?w=1200&amp;ssl=1/);
+    assert.match(homeHtml, /https:\/\/i0\.wp\.com\/cdn\.example\.com\/capa\.jpg\?ssl=1/);
     assert.equal(homeHtml.includes('?w=200'), false);
+    assert.equal(homeHtml.includes('?w=1200'), false);
 
     const artRes = await worker.fetch(
       new Request('https://news.mirandinhacontabilidade.workers.dev/noticia/materia-com-imagem-w200'),
       env
     );
     const artHtml = await artRes.text();
-    assert.match(artHtml, /https:\/\/cdn\.example\.com\/foto-interna\.jpg\?w=1200/);
+    assert.match(artHtml, /https:\/\/cdn\.example\.com\/foto-interna\.jpg/);
     assert.equal(artHtml.includes('?w=200'), false);
   } finally {
     globalThis.fetch = originalFetch;
   }
 });
+
+test('worker hidrata todas as 77+ fontes em lotes no Edge Cache e resolve matérias de qualquer lote', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalCaches = (globalThis as Record<string, unknown>).caches;
+
+  // Mock completo de Cloudflare caches.default em memória
+  const cacheMap = new Map<string, string>();
+  (globalThis as Record<string, unknown>).caches = {
+    default: {
+      async match(key: string | Request) {
+        const k = typeof key === 'string' ? key : key.url;
+        const body = cacheMap.get(k);
+        return body ? new Response(body, { status: 200, headers: { 'Content-Type': 'application/json' } }) : undefined;
+      },
+      async put(key: string | Request, res: Response) {
+        const k = typeof key === 'string' ? key : key.url;
+        cacheMap.set(k, await res.text());
+      },
+    },
+  };
+
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const urlStr = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    const parsed = new URL(urlStr);
+
+    if (parsed.pathname === '/api/types') {
+      return new Response(JSON.stringify({ types: ['wp-api'] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    const srcMatch = parsed.pathname.match(/^\/api\/news\/(\d+)$/);
+    if (srcMatch) {
+      const sid = srcMatch[1];
+      const items = Array.from({ length: 12 }, (_, idx) => ({
+        id: `${sid}-${idx}`,
+        slug: `noticia-fonte-${sid}-item-${idx}`,
+        title: `Reportagem ${idx} da fonte oficial ${sid} sobre serviços públicos`,
+        description: `Resumo da reportagem ${idx} da fonte ${sid}.`,
+        content: `<p>Corpo completo da reportagem ${idx} da fonte ${sid}.</p><p><img src="https://cdn.example.com/${sid}-${idx}.jpg?w=200" alt="Foto" /></p>`,
+        publishedAt: new Date(Date.now() - idx * 60000).toISOString(),
+        imageUrl: `https://cdn.example.com/${sid}-${idx}.jpg?w=200&resize=200,133`,
+      }));
+      return new Response(JSON.stringify({ items }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    return new Response(JSON.stringify({ items: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }) as typeof fetch;
+
+  try {
+    const env = {
+      NEWS_API_BASE_URL: 'https://news-sources-api.legislativemunicipal.workers.dev',
+      NEWS_API_KEY: 'key-test',
+    };
+
+    // Hidrata todos os lotes sequencialmente via /api/sync?action=hydrate
+    const firstSyncRes = await worker.fetch(
+      new Request('https://news.mirandinhacontabilidade.workers.dev/api/sync?action=hydrate'),
+      env
+    );
+    const firstSync = await firstSyncRes.json();
+    assert.ok(firstSync.storage.hydration.activeSourcesCount >= 77);
+    assert.ok(firstSync.storage.hydration.totalShards >= 4);
+
+    for (let i = 1; i < firstSync.storage.hydration.totalShards; i++) {
+      await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/api/sync?action=hydrate'), env);
+    }
+
+    const finalSyncRes = await worker.fetch(
+      new Request('https://news.mirandinhacontabilidade.workers.dev/api/sync'),
+      env
+    );
+    const finalSync = await finalSyncRes.json();
+    assert.equal(finalSync.storage.hydration.pendingShards, 0);
+    assert.equal(finalSync.storage.hydration.hydratedShards, finalSync.storage.hydration.totalShards);
+    assert.ok(finalSync.storage.totalStored >= 80 * 12);
+
+    // Verifica que todas as URLs no /api/news estão em resolução natural sem ?w=200
+    const apiRes = await worker.fetch(
+      new Request('https://news.mirandinhacontabilidade.workers.dev/api/news?limit=24&page=10'),
+      env
+    );
+    const apiJson = await apiRes.json();
+    assert.equal(apiJson.total, finalSync.storage.totalStored);
+    assert.equal(apiJson.items.length, 24);
+    assert.equal(apiJson.items.some((it: { imageUrl: string }) => it.imageUrl.includes('?w=200')), false);
+
+    // Verifica abertura de matéria do último lote (fonte 2754168962593) com hidratação de corpo completo
+    const deepArticleRes = await worker.fetch(
+      new Request('https://news.mirandinhacontabilidade.workers.dev/noticia/noticia-fonte-2754168962593-item-5'),
+      env
+    );
+    assert.equal(deepArticleRes.status, 200);
+    const deepArticleHtml = await deepArticleRes.text();
+    assert.match(deepArticleHtml, /Corpo completo da reportagem 5 da fonte 2754168962593/);
+    assert.equal(deepArticleHtml.includes('?w=200'), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+    (globalThis as Record<string, unknown>).caches = originalCaches;
+  }
+});
+
 
 
