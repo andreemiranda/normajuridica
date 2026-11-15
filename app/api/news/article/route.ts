@@ -3,7 +3,7 @@ import { getNewsItemBySlugOrId } from '@/lib/news-fetcher';
 import { getNewsStore } from '@/lib/news-store';
 import { resolveSourceNewsSlugsWithApi } from '@/lib/news-sync';
 import { fetchFullArticleBody, ensureCompleteArticleText } from '@/lib/article-extractor';
-import { sanitizePublicData } from '@/lib/security';
+import { sanitizePublicData, checkRateLimit, assertSafeExternalUrl, sanitizeInput, getClientIp } from '@/lib/security';
 import { repairAndSanitizeArticleHtml, extractUnresolvedSourceNewsCandidates } from '@/lib/sanitizer';
 import { SITE_CONFIG } from '@/lib/site-config';
 
@@ -11,12 +11,22 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    const clientIp = getClientIp(req.headers);
+    const rateLimit = checkRateLimit(`article:${clientIp}`, 60, 60 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        sanitizePublicData({ error: 'Muitas requisições ao serviço de leitura. Tente novamente em instantes.' }),
+        { status: 429, headers: { 'Cache-Control': 'no-store, max-age=0' } }
+      );
+    }
+
     const searchParams = req.nextUrl.searchParams;
-    const slug = searchParams.get('slug') || searchParams.get('id') || '';
-    const url = searchParams.get('url') || searchParams.get('link') || '';
-    const title = searchParams.get('title') || '';
-    const category = searchParams.get('category') || 'Notícias';
-    const text = searchParams.get('text') || '';
+    const slug = sanitizeInput(searchParams.get('slug') || searchParams.get('id'), 220);
+    const rawUrl = searchParams.get('url') || searchParams.get('link') || '';
+    const safeExternalUrl = assertSafeExternalUrl(rawUrl);
+    const title = sanitizeInput(searchParams.get('title'), 300);
+    const category = sanitizeInput(searchParams.get('category'), 80) || 'Notícias';
+    const text = (searchParams.get('text') || '').slice(0, 8000);
 
     let contentHtml = '';
     let featuredImage = '';
@@ -32,9 +42,9 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 2. If url provided and contentHtml still empty/short, fetch full body
-    if (!contentHtml && url && url.startsWith('http')) {
-      const fetched = await fetchFullArticleBody(url, 4500);
+    // 2. If safe external url provided and contentHtml still empty/short, fetch full body (SSRF protected)
+    if (!contentHtml && safeExternalUrl) {
+      const fetched = await fetchFullArticleBody(safeExternalUrl.toString(), 4500);
       if (fetched && fetched.length > 250) {
         contentHtml = fetched;
       }
@@ -88,14 +98,13 @@ export async function GET(req: NextRequest) {
         },
       }
     );
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Falha ao recuperar artigo';
+  } catch {
     return NextResponse.json(
       sanitizePublicData({
         success: true,
         contentHtml: '<p>O conteúdo completo desta reportagem está em atualização pela redação do Norma Jurídica.</p>',
-        error: errorMsg,
-      })
+      }),
+      { headers: { 'Cache-Control': 'no-store, max-age=0' } }
     );
   }
 }

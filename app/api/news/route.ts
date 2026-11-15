@@ -1,18 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchNews } from '@/lib/news-fetcher';
-import { sanitizePublicData } from '@/lib/security';
+import { sanitizePublicData, checkRateLimit, sanitizeInput, getClientIp } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    const clientIp = getClientIp(req.headers);
+    const rateLimit = checkRateLimit(`news:${clientIp}`, 90, 60 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        sanitizePublicData({ error: 'Muitas requisições. Tente novamente em instantes.', items: [] }),
+        { status: 429, headers: { 'Cache-Control': 'no-store, max-age=0' } }
+      );
+    }
+
     const searchParams = req.nextUrl.searchParams;
-    const category = searchParams.get('category') || undefined;
-    const sourceId = searchParams.get('sourceId') || undefined;
-    const q = searchParams.get('q') || undefined;
+    const category = sanitizeInput(searchParams.get('category'), 80) || undefined;
+    const sourceId = sanitizeInput(searchParams.get('sourceId'), 64) || undefined;
+    const q = sanitizeInput(searchParams.get('q'), 120) || undefined;
     const refresh = searchParams.get('refresh') === 'true';
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-    const limit = Math.min(Math.max(1, parseInt(searchParams.get('limit') || '12', 10)), 100);
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
+    const limit = Math.min(Math.max(1, parseInt(searchParams.get('limit') || '12', 10) || 12), 100);
 
     const result = await fetchNews({
       category,
@@ -41,12 +50,10 @@ export async function GET(req: NextRequest) {
         'Cache-Control': 'no-store, max-age=0',
       },
     });
-  } catch (err: unknown) {
-    console.error('API /api/news error details:', err);
-    const errorMsg = err instanceof Error ? err.message : 'Erro ao processar notícias';
+  } catch {
     return NextResponse.json(
-      sanitizePublicData({ error: errorMsg, items: [] }),
-      { status: 500 }
+      sanitizePublicData({ error: 'Erro interno ao processar notícias.', items: [] }),
+      { status: 500, headers: { 'Cache-Control': 'no-store, max-age=0' } }
     );
   }
 }

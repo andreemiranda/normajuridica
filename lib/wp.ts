@@ -190,21 +190,40 @@ export const INSTITUTIONAL_PAGES: Record<string, WordPressPage> = {
   },
 };
 
+function sanitizeSlugLabel(raw: string): string {
+  return String(raw || '')
+    .replace(/[^a-zA-Z0-9-_\s]/g, '')
+    .trim()
+    .slice(0, 80);
+}
+
+function escapePageHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export function getGenericPage(slug: string): WordPressPage {
-  const formattedTitle = slug
+  const cleanSlug = sanitizeSlugLabel(slug) || 'institucional';
+  const formattedTitle = cleanSlug
     .split('-')
+    .filter(Boolean)
     .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
+    .join(' ') || 'Institucional';
+  const safeTitleHtml = escapePageHtml(formattedTitle);
 
   return {
-    id: slug,
-    slug,
+    id: cleanSlug,
+    slug: cleanSlug,
     title: `${formattedTitle} | Apresentação Institucional`,
     category: 'Institucional',
     lead: `Informações institucionais e diretrizes públicas do portal ${SITE_CONFIG.name}.`,
     contentHtml: `
       <h2>Apresentação Institucional</h2>
-      <p>Esta página reúne dados institucionais, relatórios públicos e diretrizes editoriais do <strong>${SITE_CONFIG.name}</strong> voltadas à cobertura temática de <strong>${formattedTitle}</strong>.</p>
+      <p>Esta página reúne dados institucionais, relatórios públicos e diretrizes editoriais do <strong>${SITE_CONFIG.name}</strong> voltadas à cobertura temática de <strong>${safeTitleHtml}</strong>.</p>
       <p>Para dúvidas, retificações ou mais informações, consulte nossa central de atendimento em Brasília-DF pelo telefone ${SITE_CONFIG.institutional.phone} ou pelo e-mail oficial ${SITE_CONFIG.institutional.email}.</p>
     `,
   };

@@ -29,10 +29,6 @@ const NEWS_API_KEY_ALIASES = [
   'NEWS_SOURCES_KEY',
   'AUTHORIZATION_TOKEN',
   'AUTH_TOKEN',
-  'NEXT_PUBLIC_API_KEY',
-  'NEXT_PUBLIC_NEWS_API_KEY',
-  'NEXT_PUBLIC_API_TOKEN',
-  'NEXT_PUBLIC_NEWS_API_TOKEN',
 ];
 
 function readEnvCaseInsensitive(env: Record<string, string | undefined>, keys: string[]): string {

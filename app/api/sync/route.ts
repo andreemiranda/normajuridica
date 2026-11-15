@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getNewsStore } from '@/lib/news-store';
 import { syncNewsSources } from '@/lib/news-sync';
 import { getNewsApiConfig, getNewsApiHeaders } from '@/lib/api-config';
-import { sanitizePublicData, checkRateLimit, verifySecret } from '@/lib/security';
+import { sanitizePublicData, checkRateLimit, verifySecret, escapeHtml, getClientIp } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,36 +16,44 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleSyncRequest(req: NextRequest) {
-  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip') || 'anonymous';
+  const clientIp = getClientIp(req.headers);
   const searchParams = req.nextUrl.searchParams;
   const action = searchParams.get('action') || 'status';
   const format = searchParams.get('format') || '';
   const acceptHeader = req.headers.get('accept') || '';
 
-  // Rate limiting: protect server CPU from repeated sync/status polling
   const rateLimit = checkRateLimit(`sync:${clientIp}`, 20, 60 * 1000);
   if (!rateLimit.allowed) {
     return NextResponse.json(
       sanitizePublicData({ error: 'Muitas requisições ao serviço de sincronização. Tente novamente em instantes.' }),
-      { status: 429 }
+      { status: 429, headers: { 'Cache-Control': 'no-store, max-age=0' } }
     );
   }
 
-  // Authorization check for resource-heavy / mutating actions (sync, prune, export)
-  const isMutating = action === 'sync' || action === 'prune' || action === 'export';
-  if (isMutating) {
-    const configuredSecret = process.env.REVALIDATE_SECRET || process.env.CRON_SECRET;
-    if (configuredSecret) {
-      const authHeader = req.headers.get('authorization') || '';
-      const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
-      const providedSecret = searchParams.get('secret') || searchParams.get('key') || bearer;
+  const configuredSecret = (process.env.REVALIDATE_SECRET || process.env.CRON_SECRET || '').trim();
+  const authHeader = req.headers.get('authorization') || '';
+  const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+  const providedSecret =
+    req.headers.get('x-admin-secret') ||
+    searchParams.get('secret') ||
+    searchParams.get('key') ||
+    bearer;
 
-      if (!verifySecret(providedSecret, configuredSecret)) {
-        return NextResponse.json(
-          sanitizePublicData({ error: 'Ação restrita. Segredo ou token de autorização não fornecido ou inválido.' }),
-          { status: 401 }
-        );
-      }
+  // Exportacao completa do banco exige segredo sempre; mutacoes exigem segredo se configurado ou em producao
+  const isExport = action === 'export';
+  const isMutating = action === 'sync' || action === 'prune';
+  if (isExport || (isMutating && (configuredSecret || process.env.NODE_ENV === 'production'))) {
+    if (!configuredSecret) {
+      return NextResponse.json(
+        sanitizePublicData({ error: 'Segredo administrativo não configurado no servidor.' }),
+        { status: 503, headers: { 'Cache-Control': 'no-store, max-age=0' } }
+      );
+    }
+    if (!verifySecret(providedSecret, configuredSecret)) {
+      return NextResponse.json(
+        sanitizePublicData({ error: 'Ação restrita. Segredo ou token de autorização não fornecido ou inválido.' }),
+        { status: 401, headers: { 'Cache-Control': 'no-store, max-age=0' } }
+      );
     }
   }
 
@@ -56,34 +64,32 @@ async function handleSyncRequest(req: NextRequest) {
   let syncResult = null;
   let pruneResult = null;
 
-  // 1. Action: Force synchronization
   if (action === 'sync') {
     syncResult = await syncNewsSources({ force: true });
   }
 
-  // 2. Action: Force prune (for testing FIFO rotation and retention)
   if (action === 'prune') {
     pruneResult = await store.prune();
   }
 
-  // 3. Action: Export JSON backup
   if (action === 'export') {
     const backupItems = await store.exportBackup();
-    return NextResponse.json({
-      exportedAt: new Date().toISOString(),
-      total: backupItems.length,
-      items: backupItems,
-    });
+    return NextResponse.json(
+      sanitizePublicData({
+        exportedAt: new Date().toISOString(),
+        total: backupItems.length,
+        items: backupItems,
+      }),
+      { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, private' } }
+    );
   }
 
-  // Query store state
   const totalInDb = await store.count();
   const syncMeta = await store.getSyncMetadata();
   const dbLoc = store.getDbLocation();
   const { items: latestList } = await store.getNews({ limit: 1, order: 'DESC' });
   const latestItem = latestList[0] || null;
 
-  // Upstream probe to check connectivity & latency
   const { baseUrl, apiKey } = getNewsApiConfig();
   let upstreamLatencyMs = 0;
   let upstreamHttpStatus = 0;
@@ -118,13 +124,15 @@ async function handleSyncRequest(req: NextRequest) {
   const retentionDays = Math.max(90, parseInt(process.env.NEWS_RETENTION_DAYS || '90', 10));
   const syncIntervalSec = parseInt(process.env.NEWS_SYNC_INTERVAL_SECONDS || '60', 10);
 
+  const safeDbLabel = dbLoc.isEphemeral ? 'sqlite-ephemeral' : 'sqlite-local';
+
   const payload = {
     status: 'conectado',
     connection: 'ativa',
     actionExecuted: action,
     storage: {
       engine: 'SQLite (better-sqlite3)',
-      databasePath: dbLoc.path,
+      databasePath: safeDbLabel,
       isEphemeral: dbLoc.isEphemeral,
       totalStored: totalInDb,
       capacity: {
@@ -167,7 +175,6 @@ async function handleSyncRequest(req: NextRequest) {
     queryDurationMs: durationMs,
   };
 
-  // Render HTML dashboard if requested
   if (format === 'html' || (!format && acceptHeader.includes('text/html'))) {
     return new NextResponse(
       `<!DOCTYPE html>
@@ -227,9 +234,9 @@ async function handleSyncRequest(req: NextRequest) {
 
           <div class="card">
             <div class="stat-label">Status do Banco de Dados</div>
-            <p style="margin: 6px 0;"><strong>Engine:</strong> ${payload.storage.engine}</p>
-            <p style="margin: 6px 0;"><strong>Arquivo:</strong> <code style="color: #38bdf8;">${payload.storage.databasePath}</code></p>
-            <p style="margin: 6px 0;"><strong>Última Sincronização:</strong> ${payload.sync.lastSyncAt} (${payload.sync.durationMs}ms)</p>
+            <p style="margin: 6px 0;"><strong>Engine:</strong> ${escapeHtml(payload.storage.engine)}</p>
+            <p style="margin: 6px 0;"><strong>Modo:</strong> <code style="color: #38bdf8;">${escapeHtml(safeDbLabel)}</code></p>
+            <p style="margin: 6px 0;"><strong>Última Sincronização:</strong> ${escapeHtml(String(payload.sync.lastSyncAt))} (${payload.sync.durationMs}ms)</p>
             <p style="margin: 6px 0;"><strong>Fontes Atendidas:</strong> ${payload.sync.sourcesSynced} de ${payload.sync.totalSources} fontes</p>
           </div>
 
@@ -237,28 +244,32 @@ async function handleSyncRequest(req: NextRequest) {
             latestItem
               ? `<div class="card">
                   <div class="stat-label">Publicação Mais Recente no SQLite</div>
-                  <div class="latest-title">${latestItem.title}</div>
-                  <div style="color: #60a5fa; margin-top: 6px;">${latestItem.category} • ${latestItem.timeAgo} • ID: ${latestItem.id}</div>
+                  <div class="latest-title">${escapeHtml(latestItem.title)}</div>
+                  <div style="color: #60a5fa; margin-top: 6px;">${escapeHtml(latestItem.category)} • ${escapeHtml(latestItem.timeAgo)} • ID: ${escapeHtml(latestItem.id)}</div>
                 </div>`
               : ''
           }
 
           <div style="text-align: center; margin-top: 24px;">
-            <a href="/api/sync?action=sync" class="btn">↻ Forçar Sincronização Agora</a>
-            <a href="/api/sync?action=prune" class="btn btn-secondary">✂ Testar Rodízio / Prune</a>
+            <a href="/" class="btn btn-secondary">← Voltar ao Portal</a>
           </div>
 
           <div class="footer">
-            Verificação executada em ${new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' })} (Horário de Brasília)
+            Verificação executada em ${escapeHtml(new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' }))} (Horário de Brasília)
           </div>
         </div>
       </body>
       </html>`,
       {
-        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+        },
       }
     );
   }
 
-  return NextResponse.json(sanitizePublicData(payload));
+  return NextResponse.json(sanitizePublicData(payload), {
+    headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, private' },
+  });
 }

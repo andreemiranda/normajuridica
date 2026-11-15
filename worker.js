@@ -401,7 +401,154 @@ const LEGAL_PAGES = {
   },
 };
 
-const SECRET_KEY_REGEX = /api[_-]?key|secret|token|password|credential|auth[_-]?header|bearer|authorization|private[_-]?key|client[_-]?secret|gemini[_-]?key|elevenlabs|weatherapi|env[_-]?var/i;
+const SECRET_KEY_REGEX = /api[_-]?key|apikey|secret|token|password|passwd|credential|auth[_-]?header|bearer|authorization|private[_-]?key|client[_-]?secret|gemini[_-]?key|elevenlabs|weatherapi|smtp[_-]?pass|env[_-]?var|session[_-]?id|cookie/i;
+
+const SENSITIVE_VALUE_PATTERNS = [
+  /eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g,
+  /Bearer\s+[A-Za-z0-9\-._~+/]+=*/gi,
+  /(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}/g,
+  /github_pat_[A-Za-z0-9_]{20,}/g,
+  /xox[baprs]-[A-Za-z0-9-]{10,}/g,
+  /AKIA[0-9A-Z]{16}/g,
+  /AIza[0-9A-Za-z_-]{35}/g,
+  /sk-(?:proj-|live-|test-)?[A-Za-z0-9_-]{20,}/g,
+  /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g,
+];
+
+function sanitizeStringSecrets(text) {
+  let out = String(text);
+  for (const pattern of SENSITIVE_VALUE_PATTERNS) {
+    out = out.replace(pattern, '[REDACTED]');
+  }
+  out = out.replace(/(https?:\/\/)([^:@/\s]+):([^@/\s]+)@/gi, '$1[REDACTED]:[REDACTED]@');
+  out = out.replace(/([?&](?:ref|key|api_key|apikey|token|secret|access_token|auth)=)([^&#]+)/gi, '$1[REDACTED]');
+  return out;
+}
+
+function isPrivateOrReservedHost(hostname = '') {
+  const host = String(hostname).toLowerCase().replace(/^\[|\]$/g, '').trim();
+  if (!host) return true;
+
+  if (
+    host === 'localhost' ||
+    host === 'localhost.localdomain' ||
+    host.endsWith('.localhost') ||
+    host.endsWith('.local') ||
+    host.endsWith('.internal') ||
+    host === 'metadata.google.internal' ||
+    host === 'metadata'
+  ) {
+    return true;
+  }
+
+  const ipv4Match = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4Match) {
+    const a = Number(ipv4Match[1]);
+    const b = Number(ipv4Match[2]);
+    const c = Number(ipv4Match[3]);
+    const d = Number(ipv4Match[4]);
+    if (a > 255 || b > 255 || c > 255 || d > 255) return true;
+    if (a === 0 || a === 10 || a === 127) return true;
+    if (a === 169 && b === 254) return true;
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 192 && b === 168) return true;
+    if (a === 100 && b >= 64 && b <= 127) return true;
+    if (a >= 224) return true;
+    return false;
+  }
+
+  if (host.includes(':')) {
+    if (host === '::' || host === '::1') return true;
+    if (host.startsWith('fe80:') || host.startsWith('fc') || host.startsWith('fd')) return true;
+    if (host.startsWith('::ffff:')) {
+      return isPrivateOrReservedHost(host.slice(7));
+    }
+  }
+
+  return false;
+}
+
+function assertSafeExternalUrl(rawUrl) {
+  let parsed;
+  try {
+    parsed = new URL(String(rawUrl || '').trim());
+  } catch {
+    throw new Error('URL externa inválida.');
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    throw new Error('Protocolo de URL não permitido.');
+  }
+  if (parsed.username || parsed.password) {
+    throw new Error('Credenciais embutidas em URL não são permitidas.');
+  }
+  if (isPrivateOrReservedHost(parsed.hostname)) {
+    throw new Error('Destino de rede interna ou reservada bloqueado por política de segurança.');
+  }
+  return parsed;
+}
+
+function safeJsonLdStringify(data) {
+  return JSON.stringify(data)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
+function sanitizeWorkerInput(input, maxLength = 2000) {
+  return String(input ?? '')
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    .trim()
+    .slice(0, maxLength);
+}
+
+const workerRateLimitMap = new Map();
+
+function checkWorkerRateLimit(key, maxRequests = 30, windowMs = 60000) {
+  const now = Date.now();
+  const entry = workerRateLimitMap.get(key);
+  if (workerRateLimitMap.size > 5000) {
+    workerRateLimitMap.clear();
+  }
+  if (!entry || now > entry.resetAt) {
+    workerRateLimitMap.set(key, { count: 1, resetAt: now + windowMs });
+    return { allowed: true, remaining: maxRequests - 1, resetAt: now + windowMs };
+  }
+  if (entry.count >= maxRequests) {
+    return { allowed: false, remaining: 0, resetAt: entry.resetAt };
+  }
+  entry.count += 1;
+  return { allowed: true, remaining: maxRequests - entry.count, resetAt: entry.resetAt };
+}
+
+function getWorkerClientIp(request) {
+  const cfIp = request.headers.get('cf-connecting-ip');
+  if (cfIp) return cfIp.trim();
+  const realIp = request.headers.get('x-real-ip');
+  if (realIp) return realIp.trim();
+  const xff = request.headers.get('x-forwarded-for');
+  if (xff) return xff.split(',')[0].trim() || 'unknown';
+  return 'unknown';
+}
+
+async function readSafeJsonBody(request, maxBytes = 32768) {
+  const contentLength = parseInt(request.headers.get('content-length') || '0', 10);
+  if (Number.isFinite(contentLength) && contentLength > maxBytes) {
+    return { error: 'Payload muito grande.', status: 413 };
+  }
+  try {
+    const raw = await request.text();
+    if (raw.length > maxBytes) {
+      return { error: 'Payload muito grande.', status: 413 };
+    }
+    if (!raw.trim()) return { data: {} };
+    const parsed = JSON.parse(raw);
+    return { data: parsed && typeof parsed === 'object' ? parsed : {} };
+  } catch {
+    return { error: 'Corpo JSON inválido.', status: 400 };
+  }
+}
 
 function stripWorkerWrappingQuotes(value) {
   if (value === undefined || value === null) return '';
@@ -556,10 +703,6 @@ export function resolveWorkerNewsApiConfig(env = {}) {
       'NEWS_SOURCES_KEY',
       'AUTHORIZATION_TOKEN',
       'AUTH_TOKEN',
-      'NEXT_PUBLIC_API_KEY',
-      'NEXT_PUBLIC_NEWS_API_KEY',
-      'NEXT_PUBLIC_API_TOKEN',
-      'NEXT_PUBLIC_NEWS_API_TOKEN',
     ]) || embeddedKey;
   if (/^bearer\s+/i.test(apiKey)) {
     apiKey = apiKey.replace(/^bearer\s+/i, '').trim();
@@ -652,8 +795,11 @@ export function resolveSafeOriginUrl(env, currentUrl, requestHeaders) {
   try {
     const parsed = new URL(rawOrigin);
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    if (parsed.username || parsed.password) return null;
 
     const originHost = parsed.hostname.toLowerCase();
+    if (isPrivateOrReservedHost(originHost)) return null;
+
     const currentHost = currentUrl.hostname.toLowerCase();
     const { domain: configuredDomain } = resolveWorkerSiteConfig(env);
 
@@ -675,6 +821,7 @@ export function resolveSafeOriginUrl(env, currentUrl, requestHeaders) {
 
 export function sanitizePublicData(data) {
   if (data === null || data === undefined) return data;
+  if (typeof data === 'string') return sanitizeStringSecrets(data);
   if (Array.isArray(data)) return data.map(sanitizePublicData);
   if (typeof data === 'object') {
     const out = {};
@@ -788,19 +935,45 @@ function timingSafeCompare(a, b) {
   return diff === 0;
 }
 
+const WORKER_CSP_POLICY = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'self'",
+  "object-src 'none'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://adservice.google.com https://fundingchoicesmessages.google.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "img-src 'self' data: blob: https: http:",
+  "media-src 'self' https: http: blob:",
+  "connect-src 'self' https: wss:",
+  "frame-src 'self' https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://fundingchoicesmessages.google.com",
+  'upgrade-insecure-requests',
+].join('; ');
+
 export function applySecurityHeaders(response, pathname = '') {
   const headers = new Headers(response.headers);
   headers.delete('X-Powered-By');
+  headers.delete('Server');
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('X-Frame-Options', 'SAMEORIGIN');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('X-DNS-Prefetch-Control', 'on');
   headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
-  headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), browsing-topics=()');
+  headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()');
   headers.set('X-Permitted-Cross-Domain-Policies', 'none');
+  headers.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  headers.set('X-XSS-Protection', '0');
+  headers.set('Content-Security-Policy', WORKER_CSP_POLICY);
   headers.set('X-Norma-Runtime', 'cloudflare-worker');
 
-  if (/\.(xml|txt)$/i.test(pathname) && !headers.has('Cache-Control')) {
+  if (pathname.startsWith('/api/')) {
+    headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    headers.set('Cross-Origin-Resource-Policy', 'same-origin');
+    if (!headers.has('Cache-Control')) {
+      headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    }
+  } else if (/\.(xml|txt)$/i.test(pathname) && !headers.has('Cache-Control')) {
     headers.set('Cache-Control', 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400');
   }
 
@@ -2397,6 +2570,7 @@ function renderFooterAndScripts(adsenseConfig = { clientId: '', slots: {} }) {
 
 async function handleApiRequest(request, env, url) {
   const pathname = url.pathname;
+  const clientIp = getWorkerClientIp(request);
 
   if (pathname === '/api/health') {
     const siteConfig = resolveWorkerSiteConfig(env);
@@ -2430,9 +2604,13 @@ async function handleApiRequest(request, env, url) {
   }
 
   if (pathname === '/api/news') {
-    const category = url.searchParams.get('category') || 'all';
-    const q = url.searchParams.get('q') || '';
-    const sourceId = url.searchParams.get('sourceId') || '';
+    const rl = checkWorkerRateLimit(`worker:news:${clientIp}`, 90, 60000);
+    if (!rl.allowed) {
+      return jsonResponse({ error: 'Limite de requisições excedido. Tente novamente em instantes.' }, 429, { 'Retry-After': '60' });
+    }
+    const category = sanitizeWorkerInput(url.searchParams.get('category') || 'all', 80);
+    const q = sanitizeWorkerInput(url.searchParams.get('q') || '', 120);
+    const sourceId = sanitizeWorkerInput(url.searchParams.get('sourceId') || '', 64);
     const refresh = url.searchParams.get('refresh') === 'true';
     const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10) || 1);
     const limit = Math.min(Math.max(1, parseInt(url.searchParams.get('limit') || '12', 10) || 12), 100);
@@ -2455,7 +2633,11 @@ async function handleApiRequest(request, env, url) {
   }
 
   if (pathname === '/api/news/article') {
-    const slug = url.searchParams.get('slug') || url.searchParams.get('id') || '';
+    const rl = checkWorkerRateLimit(`worker:article:${clientIp}`, 60, 60000);
+    if (!rl.allowed) {
+      return jsonResponse({ error: 'Limite de requisições excedido. Tente novamente em instantes.' }, 429, { 'Retry-After': '60' });
+    }
+    const slug = sanitizeWorkerInput(url.searchParams.get('slug') || url.searchParams.get('id') || '', 180);
     const article = await findArticleBySlug(env, slug);
     const contentHtml = article?.contentHtml || '<p>O conteúdo completo desta reportagem está em atualização pela redação do Norma Jurídica.</p>';
     return jsonResponse(
@@ -2466,12 +2648,19 @@ async function handleApiRequest(request, env, url) {
   }
 
   if (pathname === '/api/weather') {
-    const q = url.searchParams.get('q') || 'Brasilia';
-    const apiKey = String(env.WEATHER_API_KEY || env.api_key_clima || '').trim();
-    const baseUrl = String(env.WEATHER_API_BASE_URL || env.api_url_clima_base || 'https://api.weatherapi.com/v1').replace(/\/+$/, '');
+    const rl = checkWorkerRateLimit(`worker:weather:${clientIp}`, 60, 60000);
+    if (!rl.allowed) {
+      return jsonResponse({ error: 'Limite de requisições excedido.' }, 429, { 'Retry-After': '60' });
+    }
+    const q = sanitizeWorkerInput(url.searchParams.get('q') || 'Brasilia', 100) || 'Brasilia';
+    const apiKey = readEnvVar(env, ['WEATHER_API_KEY', 'api_key_clima']);
+    const baseUrl = (readEnvVar(env, ['WEATHER_API_BASE_URL', 'api_url_clima_base']) || 'https://api.weatherapi.com/v1').replace(/\/+$/, '');
     if (apiKey) {
       try {
-        const res = await fetch(`${baseUrl}/forecast.json?key=${encodeURIComponent(apiKey)}&q=${encodeURIComponent(q)}&days=1&lang=pt`);
+        assertSafeExternalUrl(baseUrl);
+        const res = await fetch(`${baseUrl}/forecast.json?key=${encodeURIComponent(apiKey)}&q=${encodeURIComponent(q)}&days=1&lang=pt`, {
+          signal: AbortSignal.timeout(4000),
+        });
         if (res.ok) {
           const json = await res.json();
           const current = json.current || {};
@@ -2516,33 +2705,67 @@ async function handleApiRequest(request, env, url) {
   }
 
   if (pathname === '/api/audio') {
-    const apiKey = String(env.ELEVENLABS_API_KEY || '').trim();
+    const apiKey = readEnvVar(env, ['ELEVENLABS_API_KEY']);
     if (request.method === 'GET') {
       return jsonResponse({ enabled: !!apiKey, provider: apiKey ? 'elevenlabs' : 'browser' });
     }
-    const body = await request.json().catch(() => ({}));
-    const text = String(body.text || '').slice(0, 4000).trim();
+    if (request.method !== 'POST') {
+      return jsonResponse({ error: 'Método não permitido.' }, 405, { Allow: 'GET, POST' });
+    }
+    const rl = checkWorkerRateLimit(`worker:audio:${clientIp}`, 20, 60000);
+    if (!rl.allowed) {
+      return jsonResponse({ error: 'Limite de requisições de áudio excedido.' }, 429, { 'Retry-After': '60' });
+    }
+    const parsedBody = await readSafeJsonBody(request, 20480);
+    if (parsedBody.error) {
+      return jsonResponse({ error: parsedBody.error }, parsedBody.status);
+    }
+    const text = sanitizeWorkerInput(parsedBody.data.text || '', 4000);
     if (!text) return jsonResponse({ error: 'Texto para síntese de áudio é obrigatório.' }, 400);
     if (!apiKey) {
-      return jsonResponse({ enabled: false, fallback: 'web-speech', message: 'ElevenLabs não configurado. Utilizando síntese nativa do navegador.' });
+      return jsonResponse(
+        { enabled: false, fallback: 'web-speech', message: 'ElevenLabs não configurado. Utilizando síntese nativa do navegador.' },
+        200,
+        { 'Cache-Control': 'no-store' }
+      );
     }
-    const voiceId = String(env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM');
-    const baseUrl = String(env.ELEVENLABS_API_URL || 'https://api.elevenlabs.io/v1').replace(/\/+$/, '');
-    const res = await fetch(`${baseUrl}/text-to-speech/${voiceId}`, {
-      method: 'POST',
-      headers: { Accept: 'audio/mpeg', 'Content-Type': 'application/json', 'xi-api-key': apiKey },
-      body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.5, similarity_boost: 0.75 } }),
-    });
-    if (!res.ok) return jsonResponse({ enabled: false, fallback: 'web-speech' });
-    return new Response(res.body, { headers: { 'Content-Type': 'audio/mpeg', 'Cache-Control': 'public, max-age=86400' } });
+    const voiceId = (readEnvVar(env, ['ELEVENLABS_VOICE_ID']) || '21m00Tcm4TlvDq8ikWAM').trim();
+    if (!/^[A-Za-z0-9_-]{5,64}$/.test(voiceId)) {
+      return jsonResponse({ enabled: false, fallback: 'web-speech' }, 200, { 'Cache-Control': 'no-store' });
+    }
+    const baseUrl = (readEnvVar(env, ['ELEVENLABS_API_URL']) || 'https://api.elevenlabs.io/v1').replace(/\/+$/, '');
+    try {
+      assertSafeExternalUrl(baseUrl);
+      const res = await fetch(`${baseUrl}/text-to-speech/${encodeURIComponent(voiceId)}`, {
+        method: 'POST',
+        headers: { Accept: 'audio/mpeg', 'Content-Type': 'application/json', 'xi-api-key': apiKey },
+        body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.5, similarity_boost: 0.75 } }),
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) return jsonResponse({ enabled: false, fallback: 'web-speech' }, 200, { 'Cache-Control': 'no-store' });
+      return new Response(res.body, { headers: { 'Content-Type': 'audio/mpeg', 'Cache-Control': 'public, max-age=86400' } });
+    } catch {
+      return jsonResponse({ enabled: false, fallback: 'web-speech' }, 200, { 'Cache-Control': 'no-store' });
+    }
   }
 
-  if (pathname === '/api/contact' && request.method === 'POST') {
-    const body = await request.json().catch(() => ({}));
-    const name = String(body.name || '').trim();
-    const email = String(body.email || '').trim();
-    const subject = String(body.subject || 'Contato Geral').trim();
-    const message = String(body.message || '').trim();
+  if (pathname === '/api/contact') {
+    if (request.method !== 'POST') {
+      return jsonResponse({ error: 'Método não permitido.' }, 405, { Allow: 'POST' });
+    }
+    const rl = checkWorkerRateLimit(`worker:contact:${clientIp}`, 5, 600000);
+    if (!rl.allowed) {
+      return jsonResponse({ error: 'Limite de envios excedido. Aguarde alguns minutos antes de tentar novamente.' }, 429, { 'Retry-After': '600' });
+    }
+    const parsedBody = await readSafeJsonBody(request, 24576);
+    if (parsedBody.error) {
+      return jsonResponse({ error: parsedBody.error }, parsedBody.status);
+    }
+    const body = parsedBody.data;
+    const name = sanitizeWorkerInput(body.name || '', 120);
+    const email = sanitizeWorkerInput(body.email || '', 150);
+    const subject = sanitizeWorkerInput(body.subject || 'Contato Geral', 150) || 'Contato Geral';
+    const message = sanitizeWorkerInput(body.message || '', 6000);
     if (name.length < 2) return jsonResponse({ error: 'O nome informado deve ter pelo menos 2 caracteres.' }, 400);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return jsonResponse({ error: 'Por favor, informe um endereço de e-mail válido.' }, 400);
     if (message.length < 10) return jsonResponse({ error: 'A mensagem deve conter pelo menos 10 caracteres detalhando a solicitação.' }, 400);
@@ -2552,45 +2775,70 @@ async function handleApiRequest(request, env, url) {
     const protocol = `NJ-${datePart}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
     let emailSent = false;
-    if (env.CONTACT_WEBHOOK_URL) {
+    const webhookUrl = readEnvVar(env, ['CONTACT_WEBHOOK_URL']);
+    if (webhookUrl) {
       try {
-        const hookRes = await fetch(String(env.CONTACT_WEBHOOK_URL), {
+        assertSafeExternalUrl(webhookUrl);
+        const hookRes = await fetch(webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ protocol, name, email, subject, message, timestamp: now.toISOString() }),
+          signal: AbortSignal.timeout(5000),
         });
         emailSent = hookRes.ok;
       } catch {}
     }
 
-    return jsonResponse({
-      success: true,
-      protocol,
-      emailSent,
-      message: 'Manifestação registrada com sucesso. Anote o número de protocolo para acompanhamento.',
-    });
+    return jsonResponse(
+      {
+        success: true,
+        protocol,
+        emailSent,
+        message: 'Manifestação registrada com sucesso. Anote o número de protocolo para acompanhamento.',
+      },
+      200,
+      { 'Cache-Control': 'no-store' }
+    );
   }
 
   if (pathname === '/api/sync') {
-    const action = url.searchParams.get('action') || 'status';
+    const rl = checkWorkerRateLimit(`worker:sync:${clientIp}`, 30, 60000);
+    if (!rl.allowed) {
+      return jsonResponse({ error: 'Muitas solicitações de sincronização.' }, 429, { 'Retry-After': '60' });
+    }
+    const action = sanitizeWorkerInput(url.searchParams.get('action') || 'status', 32) || 'status';
     const { baseUrl, apiKey } = resolveWorkerNewsApiConfig(env);
     const siteConfig = resolveWorkerSiteConfig(env);
     const configuredSecret = readEnvVar(env, ['REVALIDATE_SECRET', 'CRON_SECRET']);
-    if ((action === 'sync' || action === 'prune' || action === 'export') && configuredSecret) {
-      const authHeader = request.headers.get('authorization') || '';
-      const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
-      const provided = url.searchParams.get('secret') || url.searchParams.get('key') || bearer;
+
+    const authHeader = request.headers.get('authorization') || '';
+    const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+    const adminHeader = (request.headers.get('x-admin-secret') || request.headers.get('x-revalidate-secret') || '').trim();
+    const provided = adminHeader || bearer || url.searchParams.get('secret') || url.searchParams.get('key') || '';
+
+    if (action === 'export') {
+      if (!configuredSecret) {
+        return jsonResponse({ error: 'Segredo de administração não configurado no servidor.' }, 503);
+      }
       if (!timingSafeCompare(provided, configuredSecret)) {
         return jsonResponse({ error: 'Ação restrita. Segredo ou token de autorização não fornecido ou inválido.' }, 401);
       }
-    }
-    if (action === 'export') {
       const exported = await fetchAggregatedNews(env, { category: 'all', limit: 100, page: 1 });
-      return jsonResponse({
-        exportedAt: new Date().toISOString(),
-        total: exported.items.length,
-        items: exported.items,
-      });
+      return jsonResponse(
+        {
+          exportedAt: new Date().toISOString(),
+          total: exported.items.length,
+          items: exported.items,
+        },
+        200,
+        { 'Cache-Control': 'no-store' }
+      );
+    }
+
+    if ((action === 'sync' || action === 'prune') && configuredSecret) {
+      if (!timingSafeCompare(provided, configuredSecret)) {
+        return jsonResponse({ error: 'Ação restrita. Segredo ou token de autorização não fornecido ou inválido.' }, 401);
+      }
     }
     const probeStart = Date.now();
     let probeRes = await fetchUpstreamJsonDetailed(env, '/api/types', 3000);
@@ -2799,23 +3047,32 @@ async function handleApiRequest(request, env, url) {
   }
 </body>
 </html>`;
-      return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+      return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store, max-age=0' } });
     }
-    return jsonResponse(payload);
+    return jsonResponse(payload, 200, { 'Cache-Control': 'no-store, max-age=0' });
   }
 
   if (pathname === '/api/revalidate') {
-    const configuredSecret = String(env.REVALIDATE_SECRET || env.CRON_SECRET || '').trim();
+    const rl = checkWorkerRateLimit(`worker:revalidate:${clientIp}`, 10, 60000);
+    if (!rl.allowed) {
+      return jsonResponse({ error: 'Muitas tentativas de revalidação.' }, 429, { 'Retry-After': '60' });
+    }
+    const configuredSecret = readEnvVar(env, ['REVALIDATE_SECRET', 'CRON_SECRET']);
     if (!configuredSecret) {
       return jsonResponse({ error: 'REVALIDATE_SECRET não configurado no ambiente do servidor.' }, 503);
     }
     const authHeader = request.headers.get('authorization') || '';
     const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
-    const provided = url.searchParams.get('secret') || bearer;
+    const headerSecret = (request.headers.get('x-revalidate-secret') || '').trim();
+    const provided = headerSecret || bearer || url.searchParams.get('secret') || '';
     if (!timingSafeCompare(provided, configuredSecret)) {
       return jsonResponse({ error: 'Segredo de revalidação inválido.' }, 401);
     }
-    return jsonResponse({ revalidated: true, timestamp: new Date().toISOString(), message: 'Cache Edge revalidado com sucesso.' });
+    return jsonResponse(
+      { revalidated: true, timestamp: new Date().toISOString(), message: 'Cache Edge revalidado com sucesso.' },
+      200,
+      { 'Cache-Control': 'no-store, max-age=0' }
+    );
   }
 
   return null;
@@ -3655,7 +3912,7 @@ async function renderStandaloneHtmlPage(request, env, url) {
   const feed = isInitialHighlights && items.length > 10 ? items.slice(10) : isInitialHighlights ? items.slice(1) : items;
   const mostRead = items.slice(0, 5);
   const firstHero = heroSlides[0] || null;
-  const slidesJson = JSON.stringify(
+  const slidesJson = safeJsonLdStringify(
     heroSlides.map((s) => ({
       slug: s.slug,
       title: s.title,
@@ -3665,7 +3922,7 @@ async function renderStandaloneHtmlPage(request, env, url) {
       timeAgo: s.timeAgo,
       imageUrl: upgradeImageResolution(s.imageUrl || '') || '/cover.png',
     }))
-  ).replace(/</g, '\\u003c');
+  );
 
   const html = `${renderSharedHead({
     title: `${SITE_INFO.name} | ${SITE_INFO.tagline}`,
@@ -3903,7 +4160,7 @@ async function renderStandaloneHtmlPage(request, env, url) {
       !isFavorites && !q && page === 1
         ? `<script>
             (function(){
-              var knownSlug = ${JSON.stringify(items[0]?.slug || '')};
+              var knownSlug = ${safeJsonLdStringify(items[0]?.slug || '')};
               setInterval(function(){
                 if (document.visibilityState !== 'visible') return;
                 fetch('/api/news?limit=1', { cache: 'no-store' }).then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
@@ -3940,6 +4197,16 @@ async function renderStandaloneHtmlPage(request, env, url) {
 
 const workerHandler = {
   async fetch(request, env = {}) {
+    if (!['GET', 'HEAD', 'POST', 'OPTIONS'].includes(request.method)) {
+      return applySecurityHeaders(
+        new Response(JSON.stringify({ error: 'Método HTTP não permitido.' }), {
+          status: 405,
+          headers: { 'Content-Type': 'application/json; charset=utf-8', Allow: 'GET, HEAD, POST, OPTIONS' },
+        }),
+        new URL(request.url).pathname
+      );
+    }
+
     const url = new URL(request.url);
     const pathname = url.pathname;
 
@@ -4008,11 +4275,14 @@ const workerHandler = {
     const task = (async () => {
       await fetchAggregatedNews(env, { category: 'all', limit: 1, hydrate: true, refresh: true });
       const safeOrigin = resolveSafeOriginUrl(env, new URL(CANONICAL_ORIGIN), new Headers());
-      const cronSecret = String(env.REVALIDATE_SECRET || env.CRON_SECRET || '').trim();
+      const cronSecret = readEnvVar(env, ['REVALIDATE_SECRET', 'CRON_SECRET']);
       if (safeOrigin) {
         const syncUrl = new URL('/api/sync?action=sync', safeOrigin);
-        if (cronSecret) syncUrl.searchParams.set('secret', cronSecret);
-        await fetch(syncUrl.toString(), { method: 'GET' }).catch(() => {});
+        const headers = {};
+        if (cronSecret) {
+          headers.Authorization = `Bearer ${cronSecret}`;
+        }
+        await fetch(syncUrl.toString(), { method: 'GET', headers }).catch(() => {});
       }
     })();
 

@@ -3,20 +3,30 @@ import nodemailer from 'nodemailer';
 import { SITE_CONFIG } from '@/lib/site-config';
 import { getSmtpConfig } from '@/lib/server-config';
 import { generateProtocolNumber } from '@/lib/protocol';
-import { sanitizePublicData, checkRateLimit, sanitizeInput } from '@/lib/security';
+import { sanitizePublicData, checkRateLimit, sanitizeInput, escapeHtml, getClientIp } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 
+const MAX_CONTACT_BODY_BYTES = 24 * 1024;
+
 export async function POST(req: NextRequest) {
   try {
-    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip') || 'anonymous';
-    
+    const clientIp = getClientIp(req.headers);
+
+    const contentLength = parseInt(req.headers.get('content-length') || '0', 10);
+    if (contentLength > MAX_CONTACT_BODY_BYTES) {
+      return NextResponse.json(
+        sanitizePublicData({ error: 'Conteúdo da solicitação excede o limite permitido.' }),
+        { status: 413, headers: { 'Cache-Control': 'no-store, max-age=0' } }
+      );
+    }
+
     // Rate limit: max 5 contact submissions per 10 minutes per IP
     const rateLimit = checkRateLimit(`contact:${clientIp}`, 5, 10 * 60 * 1000);
     if (!rateLimit.allowed) {
       return NextResponse.json(
         sanitizePublicData({ error: 'Muitas tentativas de envio. Por segurança, aguarde alguns minutos antes de enviar uma nova mensagem.' }),
-        { status: 429 }
+        { status: 429, headers: { 'Cache-Control': 'no-store, max-age=0' } }
       );
     }
 
@@ -26,17 +36,15 @@ export async function POST(req: NextRequest) {
     const rawSubject = typeof body.subject === 'string' ? body.subject : '';
     const rawMessage = typeof body.message === 'string' ? body.message : '';
 
-    // Sanitize user inputs to prevent injection and header tampering
     const name = sanitizeInput(rawName, 120);
     const email = sanitizeInput(rawEmail, 150);
     const cleanSubject = sanitizeInput(rawSubject, 150) || 'Contato Geral';
     const message = sanitizeInput(rawMessage, 6000);
 
-    // Validations (pt-BR)
     if (!name || name.length < 2) {
       return NextResponse.json(
         sanitizePublicData({ error: 'O nome informado deve ter pelo menos 2 caracteres.' }),
-        { status: 400 }
+        { status: 400, headers: { 'Cache-Control': 'no-store, max-age=0' } }
       );
     }
 
@@ -44,23 +52,28 @@ export async function POST(req: NextRequest) {
     if (!email || !emailRegex.test(email)) {
       return NextResponse.json(
         sanitizePublicData({ error: 'Por favor, informe um endereço de e-mail válido.' }),
-        { status: 400 }
+        { status: 400, headers: { 'Cache-Control': 'no-store, max-age=0' } }
       );
     }
 
     if (!message || message.length < 10) {
       return NextResponse.json(
         sanitizePublicData({ error: 'A mensagem deve conter pelo menos 10 caracteres detalhando a solicitação.' }),
-        { status: 400 }
+        { status: 400, headers: { 'Cache-Control': 'no-store, max-age=0' } }
       );
     }
 
     const { formatted: protocolNumber } = generateProtocolNumber();
-
     const userAgent = sanitizeInput(req.headers.get('user-agent'), 200) || 'Não identificado';
     const dateFormatted = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
-    // Send email via nodemailer if SMTP configured
+    const safeNameHtml = escapeHtml(name.trim());
+    const safeEmailHtml = escapeHtml(email.trim());
+    const safeSubjectHtml = escapeHtml(cleanSubject);
+    const safeMessageHtml = escapeHtml(message.trim()).replace(/\n/g, '<br>');
+    const safeIpHtml = escapeHtml(clientIp);
+    const safeUaHtml = escapeHtml(userAgent);
+
     let emailSent = false;
     const smtpConfig = getSmtpConfig();
     if (smtpConfig.user && smtpConfig.pass) {
@@ -86,41 +99,41 @@ export async function POST(req: NextRequest) {
               <div style="padding: 24px;">
                 <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-left: 5px solid #1d4ed8; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
                   <span style="font-size: 12px; text-transform: uppercase; color: #1e40af; font-weight: bold; display: block;">Protocolo Oficial de Atendimento</span>
-                  <strong style="font-size: 22px; color: #1e3a8a; letter-spacing: 1px;">${protocolNumber}</strong>
+                  <strong style="font-size: 22px; color: #1e3a8a; letter-spacing: 1px;">${escapeHtml(protocolNumber)}</strong>
                   <p style="margin: 4px 0 0; font-size: 12px; color: #64748b;">Guarde este número para consultas futuras junto à redação.</p>
                 </div>
 
                 <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 20px;">
                   <tr>
                     <td style="padding: 8px 0; color: #64748b; width: 120px;"><strong>Remetente:</strong></td>
-                    <td style="padding: 8px 0; color: #0f172a;">${name.trim()}</td>
+                    <td style="padding: 8px 0; color: #0f172a;">${safeNameHtml}</td>
                   </tr>
                   <tr>
                     <td style="padding: 8px 0; color: #64748b;"><strong>E-mail:</strong></td>
-                    <td style="padding: 8px 0; color: #0f172a;"><a href="mailto:${email.trim()}" style="color: #1d4ed8;">${email.trim()}</a></td>
+                    <td style="padding: 8px 0; color: #0f172a;">${safeEmailHtml}</td>
                   </tr>
                   <tr>
                     <td style="padding: 8px 0; color: #64748b;"><strong>Assunto:</strong></td>
-                    <td style="padding: 8px 0; color: #0f172a;">${cleanSubject}</td>
+                    <td style="padding: 8px 0; color: #0f172a;">${safeSubjectHtml}</td>
                   </tr>
                   <tr>
                     <td style="padding: 8px 0; color: #64748b;"><strong>Data/Hora:</strong></td>
-                    <td style="padding: 8px 0; color: #0f172a;">${dateFormatted} (Horário de Brasília)</td>
+                    <td style="padding: 8px 0; color: #0f172a;">${escapeHtml(dateFormatted)} (Horário de Brasília)</td>
                   </tr>
                 </table>
 
                 <div style="background-color: #f1f5f9; padding: 16px; border-radius: 8px; font-size: 14px; line-height: 1.6; color: #334155; margin-bottom: 20px;">
                   <strong style="display: block; margin-bottom: 8px; color: #0f172a;">Mensagem Registrada:</strong>
-                  ${message.trim().replace(/\n/g, '<br>')}
+                  ${safeMessageHtml}
                 </div>
 
                 <div style="font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 12px;">
-                  IP de Origem: ${clientIp} • Dispositivo: ${userAgent}
+                  IP de Origem: ${safeIpHtml} • Dispositivo: ${safeUaHtml}
                 </div>
               </div>
 
               <div style="background-color: #f8fafc; padding: 16px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
-                ${SITE_CONFIG.name} • ${SITE_CONFIG.institutional.address} • Tel: ${SITE_CONFIG.institutional.phone}
+                ${escapeHtml(SITE_CONFIG.name)} • ${escapeHtml(SITE_CONFIG.institutional.address)} • Tel: ${escapeHtml(SITE_CONFIG.institutional.phone)}
               </div>
             </div>
           </div>
@@ -135,8 +148,8 @@ export async function POST(req: NextRequest) {
         });
 
         emailSent = true;
-      } catch (mailErr) {
-        console.error('Erro ao enviar e-mail via SMTP:', mailErr);
+      } catch {
+        // Silencia detalhes de erro SMTP em logs públicos
       }
     }
 
@@ -146,13 +159,13 @@ export async function POST(req: NextRequest) {
         protocol: protocolNumber,
         emailSent,
         message: 'Manifestação registrada com sucesso. Anote o número de protocolo para acompanhamento.',
-      })
+      }),
+      { headers: { 'Cache-Control': 'no-store, max-age=0' } }
     );
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Falha ao registrar contato.';
+  } catch {
     return NextResponse.json(
-      sanitizePublicData({ error: errorMsg }),
-      { status: 500 }
+      sanitizePublicData({ error: 'Falha interna ao registrar contato.' }),
+      { status: 500, headers: { 'Cache-Control': 'no-store, max-age=0' } }
     );
   }
 }

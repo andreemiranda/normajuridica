@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sanitizePublicData, checkRateLimit } from '@/lib/security';
+import { sanitizePublicData, checkRateLimit, sanitizeInput, assertSafeExternalUrl, getClientIp } from '@/lib/security';
 import { WeatherInfo } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 min
 const MAX_WEATHER_CACHE_SIZE = 100;
 
 export async function GET(req: NextRequest) {
-  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip') || 'anonymous';
+  const clientIp = getClientIp(req.headers);
   const rateLimit = checkRateLimit(`weather:${clientIp}`, 60, 60 * 1000);
   if (!rateLimit.allowed) {
     return NextResponse.json(
@@ -23,8 +23,9 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const query = req.nextUrl.searchParams.get('q') || 'Brasilia';
-  const cleanQuery = query.trim().toLowerCase().slice(0, 50);
+  const rawQuery = req.nextUrl.searchParams.get('q') || 'Brasilia';
+  const query = sanitizeInput(rawQuery, 50).replace(/[^\p{L}\p{N}\s,.-]/gu, '') || 'Brasilia';
+  const cleanQuery = query.toLowerCase();
 
   const cached = weatherCache.get(cleanQuery);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
@@ -40,17 +41,19 @@ export async function GET(req: NextRequest) {
     process.env.api_key_clima ||
     '';
 
-  const baseUrl =
+  const rawBaseUrl =
     process.env.WEATHER_API_BASE_URL ||
     process.env.api_url_clima_base ||
     'https://api.weatherapi.com/v1';
 
-  if (apiKey) {
+  const safeBaseUrl = assertSafeExternalUrl(rawBaseUrl, { requireHttps: true });
+
+  if (apiKey && safeBaseUrl) {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 4000);
 
-      const url = `${baseUrl.replace(/\/+$/, '')}/forecast.json?key=${apiKey}&q=${encodeURIComponent(query)}&days=1&lang=pt`;
+      const url = `${safeBaseUrl.toString().replace(/\/+$/, '')}/forecast.json?key=${encodeURIComponent(apiKey)}&q=${encodeURIComponent(query)}&days=1&lang=pt`;
       const res = await fetch(url, { signal: controller.signal, next: { revalidate: 300 } });
       clearTimeout(timeout);
 

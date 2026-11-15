@@ -8,6 +8,7 @@ import { CategoryTabs } from '@/components/CategoryTabs';
 import { Footer } from '@/components/Footer';
 import { SITE_CONFIG, getBaseUrl } from '@/lib/site-config';
 import { generateNewsArticleSchema } from '@/lib/seo';
+import { safeJsonLdStringify } from '@/lib/security';
 
 export const revalidate = 20; // ISR 20s
 
@@ -87,7 +88,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(articleSchema) }}
       />
 
       <Header />

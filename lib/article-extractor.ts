@@ -1,5 +1,6 @@
 // lib/article-extractor.ts
 import { cleanFullNewsText, decodeHtmlEntities } from './sanitizer';
+import { assertSafeExternalUrl } from './security';
 
 export function extractArticleFromHtml(html: string): string {
   if (!html) return '';
@@ -38,14 +39,16 @@ export function extractArticleFromHtml(html: string): string {
 }
 
 export async function fetchFullArticleBody(url: string, limit: number = 4500): Promise<string> {
-  if (!url || !url.startsWith('http')) return '';
+  const safeUrl = assertSafeExternalUrl(url);
+  if (!safeUrl) return '';
 
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 4000);
 
-    const res = await fetch(url, {
+    const res = await fetch(safeUrl.toString(), {
       signal: controller.signal,
+      redirect: 'manual',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 NormaJuridica/1.0',
         'Accept': 'text/html,application/xhtml+xml',

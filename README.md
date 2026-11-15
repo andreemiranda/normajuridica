@@ -28,76 +28,45 @@ O portal utiliza uma camada de persistência local baseada em **SQLite (`better-
 
 ---
 
-## ⚙️ Variáveis de Ambiente (`.env.local`)
+## ⚙️ Configuração de Ambiente e Segredos
 
-| Variável | Padrão | Descrição |
+Todas as credenciais e chaves de integração devem ser configuradas **exclusivamente** no gerenciador de segredos da plataforma (ou em `.env.local` / `.dev.vars` não versionados) — **nunca** em arquivos `.md`, código-fonte ou variáveis `NEXT_PUBLIC_*`.
+
+| Categoria | Variáveis Públicas | Segredos (Somente Servidor / Runtime) |
 | :--- | :--- | :--- |
-| `NEWS_SQLITE_PATH` | `./data/news.db` | Caminho do arquivo SQLite (auto-detecta `/tmp/` em Serverless) |
-| `NEWS_STORE_MAX_ITEMS` | `15000` | Capacidade máxima global de notícias no banco |
-| `NEWS_STORE_MAX_PER_SOURCE` | `350` | Limite de matérias mantidas por fonte upstream |
-| `NEWS_RETENTION_DAYS` | `90` | Dias para retenção e expiração de publicações |
-| `NEWS_SYNC_INTERVAL_SECONDS`| `60` | Intervalo em segundos entre sincronizações de fundo |
-| `NEWS_API_BASE_URL` | `https://news-sources-api.legislativemunicipal.workers.dev` | URL base da API de notícias |
-| `API_KEY` | `""` | Chave de autenticação da API no ambiente do servidor (`NEWS_API_KEY` também aceita) |
+| **Portal / SEO** | `APP_URL`, `SITE_DOMAIN`, `NEXT_PUBLIC_SITE_URL` | — |
+| **Banco Local (SQLite)** | `NEWS_SQLITE_PATH`, `NEWS_STORE_MAX_ITEMS`, `NEWS_STORE_MAX_PER_SOURCE`, `NEWS_RETENTION_DAYS`, `NEWS_SYNC_INTERVAL_SECONDS` | — |
+| **Integração Upstream** | `NEWS_API_BASE_URL` | Chaves de autenticação configuradas exclusivamente no cofre de segredos |
+| **Segurança & Cron** | — | Segredo administrativo (`REVALIDATE_SECRET` / `CRON_SECRET`) obrigatório para ações restritas |
+| **Serviços Opcionais** | IDs públicos de exibição | Chaves de IA, Áudio, Clima, SMTP e Webhooks configuradas apenas no servidor |
 
 ---
 
-## 🌐 Recomendações por Ambiente de Hospedagem
+## 🌐 Ambientes de Hospedagem
 
 ### 1. Docker / VPS / PM2 (Modo Recomendado)
-- **Persistência total:** O arquivo SQLite reside no disco da máquina ou em volume montado (ex.: `./data`).
-- **Performance máxima:** Consultas em milissegundos direto no arquivo local com WAL (*Write-Ahead Logging*).
+- **Persistência total:** O arquivo SQLite reside em volume montado (ex.: `./data`).
 - **Execução:**
 ```bash
-docker run -p 3000:3000 -v $(pwd)/data:/app/data norma-juridica
+docker run -p 3000:3000 --env-file .env.local -v $(pwd)/data:/app/data norma-juridica
 ```
 
 ### 2. Ambientes Serverless (Vercel, Netlify, AWS Lambda)
-- O app detecta automaticamente o filesystem efêmero e direciona o SQLite para `/tmp/norma-juridica-news.db`.
-- Para acervo distribuído permanente compartilhado entre múltiplas instâncias sem estado, recomenda-se plugar uma implementação Postgres na interface `INewsStore` (ex.: Supabase, Neon ou Cloud SQL).
+- O app detecta automaticamente o filesystem efêmero e direciona o SQLite para armazenamento temporário compatível.
 
 ### 3. Cloudflare Workers (`worker.js`, `wrangler.jsonc` e `wrangler.toml`)
-- O portal suporta execução nativa na borda (Edge) com paridade de interface e rotas (`/`, `/categoria/[slug]`, `/noticia/[slug]`, `/contato`, `/pagina/[slug]`, `/api/*`, `sitemap*.xml`, `robots.txt` e Cron Trigger `scheduled`).
-- **Deploy padrão no Workers (`name = "news"`):** o projeto publica automaticamente em `https://news.mirandinhacontabilidade.workers.dev`, sem `routes` ou `custom_domain` fixos (evitando erro `[code: 10082]`).
-- **Modo Standalone Edge vs. Híbrido:** sem `ORIGIN_URL`, o Worker responde diretamente da borda consumindo `NEWS_API_BASE_URL` com Edge Cache e fallback automático. Se `ORIGIN_URL` apontar para um servidor Node.js externo (ex.: `https://origin-node.seudominio.com`), o Worker atua como proxy com proteção anti-loop (`x-nj-worker-hop`) e fallback para Edge Standalone em caso de erro `5xx`.
-- **Segredos exclusivos no ambiente do Worker (nunca no repositório):**
-```bash
-npx wrangler secret put API_KEY
-npx wrangler secret put NEWS_API_KEY
-npx wrangler secret put WEATHER_API_KEY
-npx wrangler secret put ELEVENLABS_API_KEY
-npx wrangler secret put REVALIDATE_SECRET
-npx wrangler deploy
-```
+- O portal suporta execução nativa na borda (Edge) com paridade de interface e rotas.
+- **Segredos no Cloudflare:** cadastre todas as chaves sensíveis exclusivamente via CLI (`npx wrangler secret put <NOME_DO_SEGREDO>`) ou no painel criptografado de *Variables and Secrets* (nunca em `wrangler.jsonc`, `wrangler.toml` ou arquivos Markdown).
 
 ---
 
-## 🧪 Como Testar o Rodízio e a Sincronização
+## 🔐 Práticas de Segurança Implementadas
 
-### 1. Verificar Status do Armazenamento e Conexão
-Acesse via navegador ou terminal:
-```bash
-curl -s "http://localhost:3000/api/sync"
-```
-Ou abra no navegador para ver o painel visual formatado:
-`http://localhost:3000/api/sync?format=html`
-
-### 2. Forçar Sincronização Imediata
-Dispara a consulta às 77 fontes em segundo plano, faz upsert no SQLite e aciona revalidação:
-```bash
-curl -s "http://localhost:3000/api/sync?action=sync"
-```
-
-### 3. Testar Rodízio FIFO e Retenção (*Prune*)
-Para testar a poda automática e rotação de capacidade configurada:
-```bash
-curl -s "http://localhost:3000/api/sync?action=prune"
-```
-
-### 4. Exportar Backup das Notícias em JSON
-```bash
-curl -s "http://localhost:3000/api/sync?action=export" > backup-noticias.json
-```
+- **Zero segredos no repositório:** `.gitignore` bloqueia `.env*`, `.dev.vars*`, chaves privadas, certificados e backups locais.
+- **Autenticação obrigatória em rotas administrativas:** ações de sincronização forçada, poda (`prune`), exportação e revalidação exigem segredo válido via cabeçalho `Authorization: Bearer <TOKEN>` com comparação em tempo constante.
+- **Sanitização e proteção contra vazamentos:** todas as respostas públicas passam por `sanitizePublicData`, bloqueando chaves, tokens e parâmetros sensíveis em URLs.
+- **Cabeçalhos de segurança máxima:** `Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`, `Cross-Origin-Opener-Policy` e `X-Robots-Tag: noindex, nofollow, noarchive` em `/api/*`.
+- **Proteção contra SSRF e XSS:** validação estrita de URLs externas (bloqueio de IPs privados, loopback e metadados em nuvem), rate limiting deslizante e sanitização completa de HTML.
 
 ---
 
@@ -108,7 +77,7 @@ curl -s "http://localhost:3000/api/sync?action=export" > backup-noticias.json
 npm install
 ```
 
-2. Configure as variáveis de ambiente baseadas no `.env.example`:
+2. Crie seu arquivo local a partir do modelo (não versionado):
 ```bash
 cp .env.example .env.local
 ```
@@ -125,4 +94,3 @@ Acesse em: `http://localhost:3000`
 
 Todos os direitos reservados a **Norma Jurídica**.
 Sede e foro: Brasília - DF.
-Telefone: (61) 9 9242-8022

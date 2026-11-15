@@ -5,6 +5,7 @@ import './globals.css';
 import { SITE_CONFIG, getBaseUrl } from '@/lib/site-config';
 import { getNewsApiConfig } from '@/lib/api-config';
 import { generatePortalOrganizationSchema, generateWebSiteSchema } from '@/lib/seo';
+import { safeJsonLdStringify } from '@/lib/security';
 import { CookieConsentBanner } from '@/components/CookieConsentBanner';
 
 const inter = localFont({
@@ -162,11 +163,11 @@ export default function RootLayout({
         {/* Structured Data: Organization & WebSite */}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(orgSchema) }}
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteSchema) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(webSiteSchema) }}
         />
 
         {/* Client-side Theme & Font initializer prior to hydration */}

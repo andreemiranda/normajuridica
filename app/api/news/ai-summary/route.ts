@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { getAiSummaryConfig } from '@/lib/server-config';
-import { sanitizePublicData, checkRateLimit } from '@/lib/security';
+import { sanitizePublicData, checkRateLimit, sanitizeInput, assertSafeExternalUrl, getClientIp } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,26 +34,37 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip') || 'anonymous';
+    const clientIp = getClientIp(req.headers);
     const rateLimit = checkRateLimit(`ai-summary:${clientIp}`, 30, 5 * 60 * 1000);
     if (!rateLimit.allowed) {
       return NextResponse.json(
         sanitizePublicData({ error: 'Limite de requisições excedido. Tente novamente em instantes.' }),
-        { status: 429 }
+        { status: 429, headers: { 'Cache-Control': 'no-store, max-age=0' } }
+      );
+    }
+
+    const contentLength = parseInt(req.headers.get('content-length') || '0', 10);
+    if (contentLength > 64 * 1024) {
+      return NextResponse.json(
+        sanitizePublicData({ error: 'Dados enviados excedem o tamanho máximo permitido.' }),
+        { status: 413, headers: { 'Cache-Control': 'no-store, max-age=0' } }
       );
     }
 
     const body = await req.json().catch(() => ({}));
-    const { title, summary, link, content } = body;
+    const rawTitle = typeof body.title === 'string' ? body.title : '';
+    const cleanTitle = sanitizeInput(rawTitle, 300);
+    const summary = typeof body.summary === 'string' ? sanitizeInput(body.summary, 2000) : '';
+    const link = typeof body.link === 'string' ? sanitizeInput(body.link, 500) : '';
+    const content = typeof body.content === 'string' ? body.content.slice(0, 8000) : '';
 
-    if (!title || typeof title !== 'string' || title.trim().length < 5) {
+    if (!cleanTitle || cleanTitle.length < 5) {
       return NextResponse.json(
         sanitizePublicData({ error: 'Título inválido para geração de síntese.' }),
-        { status: 400 }
+        { status: 400, headers: { 'Cache-Control': 'no-store, max-age=0' } }
       );
     }
 
-    const cleanTitle = title.trim();
     const cacheKey = cleanTitle.toLowerCase();
 
     // Determine article size: large news (>800 chars or >3 paragraphs) requires at least 6 points, small news requires 3
@@ -92,10 +103,12 @@ ${Array.from({ length: minPoints }, (_, i) => `PONTO ${i + 1}: <ponto ${i + 1}>`
 
     // 1. Try Custom OpenAI-compatible endpoint
     const aiConfig = getAiSummaryConfig();
-    if (aiConfig.endpoint && aiConfig.apiKey) {
+    const safeAiEndpoint = assertSafeExternalUrl(aiConfig.endpoint, { requireHttps: true });
+    if (safeAiEndpoint && aiConfig.apiKey) {
       try {
-        const customRes = await fetch(`${aiConfig.endpoint.replace(/\/+$/, '')}/chat/completions`, {
+        const customRes = await fetch(`${safeAiEndpoint.toString().replace(/\/+$/, '')}/chat/completions`, {
           method: 'POST',
+          signal: AbortSignal.timeout(8000),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${aiConfig.apiKey}`,
@@ -218,11 +231,10 @@ ${Array.from({ length: minPoints }, (_, i) => `PONTO ${i + 1}: <ponto ${i + 1}>`
     summaryCache.set(cacheKey, payload);
 
     return NextResponse.json(sanitizePublicData(payload));
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Erro ao gerar resumo';
+  } catch {
     return NextResponse.json(
-      sanitizePublicData({ error: errorMsg }),
-      { status: 500 }
+      sanitizePublicData({ error: 'Erro interno ao gerar resumo.' }),
+      { status: 500, headers: { 'Cache-Control': 'no-store, max-age=0' } }
     );
   }
 }
