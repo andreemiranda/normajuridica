@@ -12,7 +12,7 @@ preview_urls = true
 enabled = true
 
 # Custom domain (normajuridica.com.br) removido para evitar erro de deploy [code: 10082]
-# e publicar automaticamente em https://normajuridica.com.br
+# e publicar automaticamente em https://news.mirandinhacontabilidade.workers.dev
 
 [assets]
 directory = "./public"
@@ -29,8 +29,8 @@ crons = ["* * * * *"]
 [vars]
 NODE_ENV = "production"
 CLOUDFLARE_WORKER = "true"
-APP_URL = "https://normajuridica.com.br"
-SITE_DOMAIN = "normajuridica.com.br"
-NEXT_PUBLIC_SITE_URL = "https://normajuridica.com.br"
-NEWS_API_BASE_URL = "https://news.normajuridica.com.br/api"
+APP_URL = "https://news.mirandinhacontabilidade.workers.dev"
+SITE_DOMAIN = "news.mirandinhacontabilidade.workers.dev"
+NEXT_PUBLIC_SITE_URL = "https://news.mirandinhacontabilidade.workers.dev"
+NEWS_API_BASE_URL = "https://news-sources-api.legislativemunicipal.workers.dev"
 NEXT_PUBLIC_ADSENSE_ID = "ca-pub-7059730627018047"
