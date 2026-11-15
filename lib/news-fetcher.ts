@@ -12,7 +12,7 @@ import {
   resolveSourceNewsSlugsWithApi,
 } from './news-sync';
 import { extractUnresolvedSourceNewsCandidates, repairAndSanitizeArticleHtml } from './sanitizer';
-import { SITE_CONFIG } from './site-config';
+import { SITE_CONFIG, getBaseUrl } from './site-config';
 
 export { formatTimeAgo };
 
@@ -197,11 +197,7 @@ export async function getNewsItemBySlugOrId(
         ? await resolveSourceNewsSlugsWithApi(unresolved, item.category)
         : new Map<string, string>();
 
-    const rawAppUrl = (process.env.APP_URL || '').trim();
-    const appUrl =
-      rawAppUrl && !rawAppUrl.includes('MY_APP_URL')
-        ? rawAppUrl.replace(/\/+$/, '')
-        : '';
+    const appUrl = getBaseUrl();
 
     const finalHtml = repairAndSanitizeArticleHtml(
       item.contentHtml,

@@ -421,7 +421,11 @@ export function ArticlePageClient({
 
   // Social share URLs (stable canonical URL on both server and client)
   const shareBaseUrl = (
-    process.env.NEXT_PUBLIC_SITE_URL || 'https://news.mirandinhacontabilidade.workers.dev'
+    appUrl ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.NEXT_PUBLIC_SITE_DOMAIN ? `https://${process.env.NEXT_PUBLIC_SITE_DOMAIN}` : '') ||
+    'https://news.mirandinhacontabilidade.workers.dev'
   ).replace(/\/+$/, '');
   const pageUrl = `${shareBaseUrl}/noticia/${article.slug}`;
   const shareTitle = encodeURIComponent(article.title);

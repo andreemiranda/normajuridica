@@ -1,8 +1,19 @@
+function stripWrappingQuotes(input?: string): string {
+  if (!input) return '';
+  let s = input.trim();
+  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+    s = s.slice(1, -1).trim();
+  }
+  return s;
+}
+
 function cleanDomain(input?: string): string {
-  if (!input) return 'news.mirandinhacontabilidade.workers.dev';
-  let d = input.trim();
+  const raw = stripWrappingQuotes(input);
+  if (!raw || raw.includes('MY_APP_URL')) return 'news.mirandinhacontabilidade.workers.dev';
+  let d = raw;
   d = d.replace(/^https?:\/\//i, '');
   d = d.replace(/\/.*$/, '');
+  d = d.replace(/:\d+$/, '');
   d = d.replace(/[^a-zA-Z0-9.-]/g, '');
   if (!d || d.length < 4 || !d.includes('.') || d.includes('localhost')) {
     return 'news.mirandinhacontabilidade.workers.dev';
@@ -12,7 +23,12 @@ function cleanDomain(input?: string): string {
 
 const domain = cleanDomain(
   process.env.NEXT_PUBLIC_SITE_DOMAIN ||
-  process.env.SITE_DOMAIN
+  process.env.SITE_DOMAIN ||
+  process.env.NEXT_PUBLIC_DOMAIN ||
+  process.env.DOMAIN ||
+  process.env.APP_URL ||
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  process.env.NEXT_PUBLIC_APP_URL
 );
 
 export const SITE_CONFIG = {
@@ -59,19 +75,22 @@ export const SITE_CONFIG = {
 };
 
 export function getBaseUrl(req?: Request | { headers?: Headers | Record<string, string> }): string {
-  // 1. APP_URL
-  if (process.env.APP_URL && process.env.APP_URL.trim() && !process.env.APP_URL.includes('MY_APP_URL')) {
-    return cleanUrl(process.env.APP_URL);
-  }
-
-  // 2. SITE_DOMAIN
-  if (process.env.SITE_DOMAIN && process.env.SITE_DOMAIN.trim()) {
-    return cleanUrl(process.env.SITE_DOMAIN);
-  }
-
-  // 3. NEXT_PUBLIC_SITE_URL
-  if (process.env.NEXT_PUBLIC_SITE_URL && process.env.NEXT_PUBLIC_SITE_URL.trim()) {
-    return cleanUrl(process.env.NEXT_PUBLIC_SITE_URL);
+  const urlCandidates = [
+    process.env.APP_URL,
+    process.env.NEXT_PUBLIC_SITE_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.NEXT_URL,
+    process.env.SITE_URL,
+    process.env.SITE_DOMAIN,
+    process.env.NEXT_PUBLIC_SITE_DOMAIN,
+    process.env.NEXT_PUBLIC_DOMAIN,
+    process.env.NEXT_DOMAIN,
+  ];
+  for (const cand of urlCandidates) {
+    const cleaned = stripWrappingQuotes(cand);
+    if (cleaned && !cleaned.includes('MY_APP_URL')) {
+      return cleanUrl(cleaned);
+    }
   }
 
   // 4. Request headers (Cloudflare / Proxy x-forwarded-host / host)
@@ -113,7 +132,7 @@ export function getBaseUrl(req?: Request | { headers?: Headers | Record<string, 
 }
 
 function cleanUrl(url: string): string {
-  let cleaned = url.trim();
+  let cleaned = stripWrappingQuotes(url);
   if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
     cleaned = 'https://' + cleaned;
   }

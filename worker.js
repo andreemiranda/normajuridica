@@ -51,11 +51,13 @@ const ALL_CATEGORIES = [
 ];
 
 const DEFAULT_SOURCE_IDS = [
-  '8281449136684', '3386542816798', '4524183818294', '2429537983919',
-  '9124882157745', '5183624795316', '9482399189391', '8132269214748',
-  '6424291362274', '5498139197391', '4415826156744', '9329418888697',
-  '6571187291942', '8346116142997', '1492834928862', '2431124818641',
-  '8833539123215', '1144428532544', '9886348421411', '3347141892497',
+  '8742125891673', '8193975452621', '2754168962593', '6571187291942',
+  '6424291362274', '5183624795316', '9482399189391', '1216294345584',
+  '4334469414432', '1144428532544', '7727428425279', '3386542816798',
+  '2429537983919', '6242412692949', '3422817479195', '8281449136684',
+  '4524183818294', '9124882157745', '8132269214748', '5498139197391',
+  '4415826156744', '9329418888697', '8346116142997', '1492834928862',
+  '2431124818641', '8833539123215', '9886348421411', '3347141892497',
 ];
 
 const SOURCE_CATEGORY_MAP = {
@@ -67,21 +69,30 @@ const SOURCE_CATEGORY_MAP = {
   '5183624795316': 'Esporte',
   '9482399189391': 'Justiça',
   '8132269214748': 'Justiça',
+  '3429813199232': 'Justiça',
+  '5432383432343': 'Justiça',
   '6424291362274': 'Educação',
   '5498139197391': 'Educação',
   '4415826156744': 'Tecnologia & Games',
   '9329418888697': 'Pará',
   '6571187291942': 'Tocantins',
+  '1216294345584': 'Tocantins',
+  '4334469414432': 'Tocantins',
+  '7727428425279': 'Tocantins',
   '8346116142997': 'Goiás',
   '1492834928862': 'Santa Catarina',
   '2431124818641': 'Mundo',
   '8833539123215': 'Cultura',
   '1144428532544': 'Brasil',
+  '6242412692949': 'Brasil',
   '9886348421411': 'Saúde',
   '3347141892497': 'Paraná',
   '6389841444633': 'Esporte',
   '3815913481419': 'Esporte',
   '3422817479195': 'Economia',
+  '8742125891673': 'Brasil',
+  '8193975452621': 'Brasil',
+  '2754168962593': 'Brasil',
 };
 
 const INSTITUTIONAL_PAGES = {
@@ -143,17 +154,159 @@ const INSTITUTIONAL_PAGES = {
 
 const SECRET_KEY_REGEX = /api[_-]?key|secret|token|password|credential|auth[_-]?header|bearer|authorization|private[_-]?key|client[_-]?secret|gemini[_-]?key|elevenlabs|weatherapi|env[_-]?var/i;
 
+function stripWorkerWrappingQuotes(value) {
+  if (value === undefined || value === null) return '';
+  let s = String(value).trim();
+  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+    s = s.slice(1, -1).trim();
+  }
+  return s;
+}
+
+function readEnvVar(env, keys) {
+  if (env && typeof env === 'object') {
+    for (const key of keys) {
+      if (env[key] !== undefined && env[key] !== null) {
+        const cleaned = stripWorkerWrappingQuotes(env[key]);
+        if (cleaned) return cleaned;
+      }
+    }
+    const lowerMap = new Map();
+    for (const [k, v] of Object.entries(env)) {
+      if (v !== undefined && v !== null) {
+        lowerMap.set(String(k).trim().toLowerCase(), v);
+      }
+    }
+    for (const key of keys) {
+      const val = lowerMap.get(key.toLowerCase());
+      if (val !== undefined && val !== null) {
+        const cleaned = stripWorkerWrappingQuotes(val);
+        if (cleaned) return cleaned;
+      }
+    }
+  }
+  const isWorkersRuntime =
+    (typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers') ||
+    Boolean(env && (env.CLOUDFLARE_WORKER === 'true' || env.CLOUDFLARE_WORKER === true));
+  const procEnv =
+    isWorkersRuntime && typeof globalThis !== 'undefined' && globalThis.process && globalThis.process.env
+      ? globalThis.process.env
+      : null;
+  if (procEnv) {
+    for (const key of keys) {
+      if (procEnv[key] !== undefined && procEnv[key] !== null) {
+        const cleaned = stripWorkerWrappingQuotes(procEnv[key]);
+        if (cleaned) return cleaned;
+      }
+    }
+  }
+  return '';
+}
+
+function cleanDomainHost(input) {
+  const raw = stripWorkerWrappingQuotes(input);
+  if (!raw || raw.includes('MY_APP_URL')) return '';
+  const noProto = raw.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').replace(/:\d+$/, '').toLowerCase();
+  if (!noProto || noProto.length < 4 || !noProto.includes('.') || noProto === 'localhost') return '';
+  return noProto;
+}
+
+function normalizeSiteOriginUrl(input) {
+  let raw = stripWorkerWrappingQuotes(input);
+  if (!raw || raw.includes('MY_APP_URL')) return '';
+  if (!/^https?:\/\//i.test(raw)) raw = `https://${raw}`;
+  try {
+    const parsed = new URL(raw);
+    return parsed.origin;
+  } catch {
+    return '';
+  }
+}
+
+export function resolveWorkerSiteConfig(env = {}) {
+  const rawAppUrl = readEnvVar(env, [
+    'APP_URL',
+    'NEXT_PUBLIC_SITE_URL',
+    'NEXT_PUBLIC_APP_URL',
+    'NEXT_URL',
+    'SITE_URL',
+    'URL',
+  ]);
+  const rawDomain = readEnvVar(env, [
+    'SITE_DOMAIN',
+    'NEXT_PUBLIC_SITE_DOMAIN',
+    'NEXT_DOMAIN',
+    'NEXT_PUBLIC_DOMAIN',
+    'DOMAIN',
+  ]);
+
+  const parsedAppUrl = normalizeSiteOriginUrl(rawAppUrl);
+  const cleanedDomain = cleanDomainHost(rawDomain) || cleanDomainHost(parsedAppUrl) || CANONICAL_DOMAIN;
+  const appUrl = parsedAppUrl || `https://${cleanedDomain}`;
+
+  return {
+    domain: cleanedDomain,
+    appUrl,
+    hasAppUrlVar: Boolean(rawAppUrl && !rawAppUrl.includes('MY_APP_URL')),
+    hasSiteDomainVar: Boolean(rawDomain),
+  };
+}
+
 export function resolveWorkerNewsApiConfig(env = {}) {
-  const rawBaseUrl = String(env.NEWS_API_BASE_URL || '').trim();
-  const baseUrl = (rawBaseUrl || DEFAULT_NEWS_API_BASE_URL).replace(/\/+$/, '');
-  const apiKey = String(env.API_KEY || env.NEWS_API_KEY || '').trim();
+  const rawBaseUrl = readEnvVar(env, [
+    'NEWS_API_BASE_URL',
+    'API_URL_BASE',
+    'API_BASE_URL',
+    'NEWS_API_URL',
+    'NEXT_PUBLIC_NEWS_API_BASE_URL',
+    'NEXT_PUBLIC_API_BASE_URL',
+    'api_url_base',
+    'news_api_base_url',
+  ]);
+
+  let normalizedBase = rawBaseUrl.replace(/\/+$/, '').replace(/\/api$/i, '').replace(/\/+$/, '');
+  if (normalizedBase && !/^https?:\/\//i.test(normalizedBase)) {
+    normalizedBase = `https://${normalizedBase}`;
+  }
+  let baseUrl = DEFAULT_NEWS_API_BASE_URL;
+  if (normalizedBase) {
+    try {
+      const parsed = new URL(normalizedBase);
+      if (parsed.hostname.toLowerCase() !== 'workers.dev') {
+        baseUrl = (parsed.origin + parsed.pathname).replace(/\/+$/, '');
+      }
+    } catch {}
+  }
+
+  let apiKey = readEnvVar(env, [
+    'API_KEY',
+    'NEWS_API_KEY',
+    'APIKEY',
+    'NEWS_SOURCES_API_KEY',
+    'X_API_KEY',
+    'API_SECRET_KEY',
+    'NEXT_PUBLIC_API_KEY',
+    'NEXT_PUBLIC_NEWS_API_KEY',
+    'api_key',
+    'news_api_key',
+    'apikey',
+    'x_api_key',
+  ]);
+  if (/^bearer\s+/i.test(apiKey)) {
+    apiKey = apiKey.replace(/^bearer\s+/i, '').trim();
+  }
+
   return { baseUrl, apiKey };
 }
 
-export function buildWorkerNewsApiHeaders(apiKey) {
+export function buildWorkerNewsApiHeaders(apiKey, env = {}) {
+  const site = resolveWorkerSiteConfig(env);
   const headers = {
     Accept: 'application/json',
-    'User-Agent': 'NormaJuridica/1.0 (+https://news.mirandinhacontabilidade.workers.dev)',
+    'User-Agent': `NormaJuridica/1.0 (+${site.appUrl})`,
+    Origin: site.appUrl,
+    Referer: `${site.appUrl}/`,
+    'X-Site-Domain': site.domain,
   };
   if (apiKey) {
     headers.Authorization = `Bearer ${apiKey}`;
@@ -163,14 +316,14 @@ export function buildWorkerNewsApiHeaders(apiKey) {
 }
 
 /**
- * Resolve redirecionamentos canônicos e correções de protocolo/DNS para news.mirandinhacontabilidade.workers.dev.
+ * Resolve redirecionamentos canônicos e correções de protocolo/DNS para o domínio configurado no env.
  * Não redireciona localhost, 127.0.0.1 ou ambientes de preview temporários.
  */
-export function resolveDnsAndCanonical(request) {
+export function resolveDnsAndCanonical(request, env = {}) {
   const url = new URL(request.url);
   const host = url.hostname.toLowerCase();
+  const { domain: canonicalDomain } = resolveWorkerSiteConfig(env);
 
-  // Detecta esquema original no Cloudflare Edge via CF-Visitor ou X-Forwarded-Proto
   let effectiveProto = url.protocol.replace(':', '').toLowerCase();
   const cfVisitor = request.headers.get('cf-visitor');
   if (cfVisitor) {
@@ -187,13 +340,13 @@ export function resolveDnsAndCanonical(request) {
     }
   }
 
-  const isProductionApex = host === CANONICAL_DOMAIN;
-  const isProductionWww = host === `www.${CANONICAL_DOMAIN}`;
+  const isProductionApex = host === canonicalDomain;
+  const isProductionWww = host === `www.${canonicalDomain}`;
 
   if (isProductionWww || (isProductionApex && effectiveProto === 'http')) {
     const canonical = new URL(url.toString());
     canonical.protocol = 'https:';
-    canonical.hostname = CANONICAL_DOMAIN;
+    canonical.hostname = canonicalDomain;
     canonical.port = '';
     return Response.redirect(canonical.toString(), 301);
   }
@@ -206,10 +359,9 @@ export function resolveDnsAndCanonical(request) {
  * bloqueando loops de DNS/Cloudflare (Error 1000 / Error 508 Loop Detected).
  */
 export function resolveSafeOriginUrl(env, currentUrl, requestHeaders) {
-  const rawOrigin = String((env && env.ORIGIN_URL) || '').trim();
+  const rawOrigin = readEnvVar(env, ['ORIGIN_URL']);
   if (!rawOrigin) return null;
 
-  // Evita loop recursivo se a requisição já passou pelo Worker
   const hop = parseInt(requestHeaders.get('x-nj-worker-hop') || '0', 10);
   if (hop >= 1) return null;
 
@@ -219,11 +371,13 @@ export function resolveSafeOriginUrl(env, currentUrl, requestHeaders) {
 
     const originHost = parsed.hostname.toLowerCase();
     const currentHost = currentUrl.hostname.toLowerCase();
+    const { domain: configuredDomain } = resolveWorkerSiteConfig(env);
 
-    // Nunca encaminha de volta para o próprio domínio gerenciado pelo Worker (previne loop infinito DNS/Cloudflare)
     if (
       originHost === CANONICAL_DOMAIN ||
       originHost === `www.${CANONICAL_DOMAIN}` ||
+      originHost === configuredDomain ||
+      originHost === `www.${configuredDomain}` ||
       originHost === currentHost
     ) {
       return null;
@@ -384,15 +538,21 @@ function jsonResponse(payload, status = 200, extraHeaders = {}) {
 }
 
 function getEffectiveBaseUrl(request, env) {
-  const configured = String(env.APP_URL || env.NEXT_PUBLIC_SITE_URL || '').trim();
+  const site = resolveWorkerSiteConfig(env);
   const url = new URL(request.url);
-  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname.endsWith('.workers.dev')) {
+  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
     return url.origin;
   }
-  if (configured && !configured.includes('MY_APP_URL')) {
-    return configured.replace(/\/+$/, '');
+  if (site.hasAppUrlVar) {
+    return site.appUrl;
   }
-  return CANONICAL_ORIGIN;
+  if (url.hostname.endsWith('.workers.dev')) {
+    return url.origin;
+  }
+  if (site.hasSiteDomainVar) {
+    return `https://${site.domain}`;
+  }
+  return site.appUrl || CANONICAL_ORIGIN;
 }
 
 function extractImageFromItem(item) {
@@ -422,7 +582,7 @@ function normalizeUpstreamItem(raw, fallbackCategory = 'Brasil') {
   const categoryId = normalizeCategoryText(category) || 'brasil';
   const itemIdStr = String(raw.id || raw.slug || title);
   const slug = raw.slug ? normalizeCategoryText(raw.slug) : slugify(title, itemIdStr);
-  const pubDate = raw.pubDate || raw.date || new Date().toISOString();
+  const pubDate = raw.pubDate || raw.publishedAt || raw.createdAt || raw.date || new Date().toISOString();
   const imageUrl = extractImageFromItem(raw);
 
   let summary = stripHtmlTags(raw.description || raw.summary || raw.content || '');
@@ -525,95 +685,119 @@ export function sanitizeArticleHtmlForWorker(html = '', featuredImage = '') {
   return out;
 }
 
-async function fetchUpstreamJson(env, endpoint, timeoutMs = 5500) {
+async function fetchUpstreamJsonDetailed(env, endpoint, timeoutMs = 5500) {
   const { baseUrl, apiKey } = resolveWorkerNewsApiConfig(env);
-  const headers = buildWorkerNewsApiHeaders(apiKey);
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(`${baseUrl}${endpoint}`, {
-      headers,
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    clearTimeout(timer);
-    return null;
+  const headers = buildWorkerNewsApiHeaders(apiKey, env);
+  const attemptFetch = async (targetUrl) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(targetUrl, {
+        headers,
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      return res;
+    } catch {
+      clearTimeout(timer);
+      return null;
+    }
+  };
+
+  let res = await attemptFetch(`${baseUrl}${endpoint}`);
+  if (res && res.status === 401 && apiKey) {
+    const sep = endpoint.includes('?') ? '&' : '?';
+    res = await attemptFetch(`${baseUrl}${endpoint}${sep}ref=${encodeURIComponent(apiKey)}`);
   }
+  if (!res) return { data: null, status: 0 };
+  if (!res.ok) return { data: null, status: res.status };
+  try {
+    return { data: await res.json(), status: res.status };
+  } catch {
+    return { data: null, status: res.status };
+  }
+}
+
+async function fetchUpstreamJson(env, endpoint, timeoutMs = 5500) {
+  const { data } = await fetchUpstreamJsonDetailed(env, endpoint, timeoutMs);
+  return data;
+}
+
+function isSourceDescriptor(raw) {
+  return Boolean(raw && !raw.title && raw.id && (raw.endpoint || raw.type || raw.category));
 }
 
 async function fetchAggregatedNews(env, { category = 'all', q = '', page = 1, limit = 24, sourceId = '', refresh = false } = {}) {
   const normCat = normalizeCategoryText(category);
-  const cacheKeyUrl = `https://edge-cache.news.mirandinhacontabilidade.workers.dev/news?cat=${encodeURIComponent(normCat || 'all')}&sid=${encodeURIComponent(sourceId)}`;
+  const { domain: siteDomain } = resolveWorkerSiteConfig(env);
+  const cacheKeyUrl = `https://edge-cache.${siteDomain}/news?cat=${encodeURIComponent(normCat || 'all')}&sid=${encodeURIComponent(sourceId)}`;
 
   let pool = null;
   const cache = typeof caches !== 'undefined' ? caches.default : null;
 
   if (cache && !refresh) {
-    const hit = await cache.match(cacheKeyUrl);
-    if (hit) {
-      try {
+    try {
+      const hit = await cache.match(cacheKeyUrl);
+      if (hit) {
         pool = await hit.json();
-      } catch {}
-    }
+      }
+    } catch {}
   }
 
   if (!pool) {
     const collected = [];
     const seenSlugs = new Set();
-
-    if (sourceId) {
-      const data = await fetchUpstreamJson(env, `/api/news/${encodeURIComponent(sourceId)}?limit=100`);
-      const arr = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
+    const ingestPayload = (res, fallbackCat) => {
+      const arr = Array.isArray(res?.items) ? res.items : Array.isArray(res) ? res : [];
+      const discoveredSources = [];
       for (const raw of arr) {
-        const item = normalizeUpstreamItem(raw, SOURCE_CATEGORY_MAP[sourceId] || 'Brasil');
+        if (isSourceDescriptor(raw)) {
+          discoveredSources.push({ id: String(raw.id), category: raw.category || fallbackCat || 'Brasil' });
+          continue;
+        }
+        const item = normalizeUpstreamItem(raw, fallbackCat);
         if (item && !seenSlugs.has(item.slug)) {
           seenSlugs.add(item.slug);
           collected.push(item);
         }
       }
+      return discoveredSources;
+    };
+
+    if (sourceId) {
+      const data = await fetchUpstreamJson(env, `/api/news/${encodeURIComponent(sourceId)}?limit=100`);
+      ingestPayload(data, SOURCE_CATEGORY_MAP[sourceId] || 'Brasil');
     } else if (normCat && normCat !== 'all' && normCat !== 'todas') {
       const displayCat = resolveCategoryDisplayName(normCat);
       const matchingSources = Object.entries(SOURCE_CATEGORY_MAP)
         .filter(([, cat]) => normalizeCategoryText(cat) === normCat)
         .map(([id]) => id);
 
-      const endpoints = [
-        `/api/news/category/${encodeURIComponent(normCat)}?limit=120`,
-        ...matchingSources.map((id) => `/api/news/${id}?limit=80`),
-      ];
+      const catCatalog = await fetchUpstreamJson(env, `/api/news?category=${encodeURIComponent(displayCat)}&active=true&limit=50`);
+      const discovered = ingestPayload(catCatalog, displayCat);
+      const sourceIds = Array.from(new Set([...discovered.map((d) => d.id), ...matchingSources])).slice(0, 10);
 
-      const results = await Promise.all(endpoints.map((ep) => fetchUpstreamJson(env, ep)));
+      const results = await Promise.all([
+        fetchUpstreamJson(env, `/api/news/category/${encodeURIComponent(normCat)}?limit=120`),
+        ...sourceIds.map((id) => fetchUpstreamJson(env, `/api/news/${id}?limit=80`)),
+      ]);
       for (const res of results) {
-        const arr = Array.isArray(res?.items) ? res.items : Array.isArray(res) ? res : [];
-        for (const raw of arr) {
-          const item = normalizeUpstreamItem(raw, displayCat);
-          if (item && !seenSlugs.has(item.slug)) {
-            seenSlugs.add(item.slug);
-            collected.push(item);
-          }
-        }
+        ingestPayload(res, displayCat);
       }
     } else {
-      // Feed principal: busca /api/news e principais fontes em paralelo para manter riqueza de categorias
-      const batchSources = DEFAULT_SOURCE_IDS.slice(0, 12);
-      const results = await Promise.all([
-        fetchUpstreamJson(env, '/api/news?limit=150'),
-        ...batchSources.map((id) => fetchUpstreamJson(env, `/api/news/${id}?limit=40`)),
-      ]);
+      // Feed principal: descobre fontes ativas via /api/news e consulta principais fontes em paralelo
+      const rootFeed = await fetchUpstreamJson(env, '/api/news?active=true&limit=150');
+      const discovered = ingestPayload(rootFeed, 'Brasil');
+      const discoveredMap = new Map(discovered.map((d) => [d.id, d.category]));
+      const batchSources = Array.from(new Set([...discovered.map((d) => d.id), ...DEFAULT_SOURCE_IDS])).slice(0, 16);
+
+      const results = await Promise.all(
+        batchSources.map((id) => fetchUpstreamJson(env, `/api/news/${id}?limit=40`))
+      );
       results.forEach((res, idx) => {
-        const sid = idx === 0 ? '' : batchSources[idx - 1];
-        const fallbackCat = sid ? SOURCE_CATEGORY_MAP[sid] : 'Brasil';
-        const arr = Array.isArray(res?.items) ? res.items : Array.isArray(res) ? res : [];
-        for (const raw of arr) {
-          const item = normalizeUpstreamItem(raw, fallbackCat);
-          if (item && !seenSlugs.has(item.slug)) {
-            seenSlugs.add(item.slug);
-            collected.push(item);
-          }
-        }
+        const sid = batchSources[idx];
+        const fallbackCat = discoveredMap.get(sid) || SOURCE_CATEGORY_MAP[sid] || 'Brasil';
+        ingestPayload(res, fallbackCat);
       });
     }
 
@@ -621,15 +805,17 @@ async function fetchAggregatedNews(env, { category = 'all', q = '', page = 1, li
     pool = collected;
 
     if (cache && pool.length > 0) {
-      await cache.put(
-        cacheKeyUrl,
-        new Response(JSON.stringify(pool), {
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'public, max-age=60',
-          },
-        })
-      );
+      try {
+        await cache.put(
+          cacheKeyUrl,
+          new Response(JSON.stringify(pool), {
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'public, max-age=60',
+            },
+          })
+        );
+      } catch {}
     }
   }
 
@@ -1390,15 +1576,17 @@ async function handleApiRequest(request, env, url) {
   const pathname = url.pathname;
 
   if (pathname === '/api/health') {
+    const siteConfig = resolveWorkerSiteConfig(env);
     return jsonResponse(
       {
         status: 'healthy',
         app: SITE_INFO.name,
-        domain: SITE_INFO.domain,
+        domain: siteConfig.domain,
+        appUrl: siteConfig.appUrl,
         timestamp: new Date().toISOString(),
         uptimeSeconds: 0,
         memoryRssMb: 0,
-        environment: env.NODE_ENV || 'production',
+        environment: readEnvVar(env, ['NODE_ENV']) || 'production',
         platform: 'cloudflare-worker',
       },
       200,
@@ -1562,8 +1750,9 @@ async function handleApiRequest(request, env, url) {
 
   if (pathname === '/api/sync') {
     const action = url.searchParams.get('action') || 'status';
-    const { baseUrl } = resolveWorkerNewsApiConfig(env);
-    const configuredSecret = String(env.REVALIDATE_SECRET || env.CRON_SECRET || '').trim();
+    const { baseUrl, apiKey } = resolveWorkerNewsApiConfig(env);
+    const siteConfig = resolveWorkerSiteConfig(env);
+    const configuredSecret = readEnvVar(env, ['REVALIDATE_SECRET', 'CRON_SECRET']);
     if ((action === 'sync' || action === 'prune' || action === 'export') && configuredSecret) {
       const authHeader = request.headers.get('authorization') || '';
       const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
@@ -1581,7 +1770,10 @@ async function handleApiRequest(request, env, url) {
       });
     }
     const probeStart = Date.now();
-    const probe = await fetchUpstreamJson(env, '/api/types', 3000);
+    let probeRes = await fetchUpstreamJsonDetailed(env, '/api/types', 3000);
+    if (!probeRes.data && probeRes.status !== 401) {
+      probeRes = await fetchUpstreamJsonDetailed(env, '/api/news?limit=1', 3000);
+    }
     const latencyMs = Date.now() - probeStart;
     if (action === 'sync') {
       await fetchAggregatedNews(env, { category: 'all', limit: 100, refresh: true });
@@ -1591,13 +1783,28 @@ async function handleApiRequest(request, env, url) {
       connection: 'ativa',
       actionExecuted: action,
       storage: { engine: 'Cloudflare Worker Edge Cache', databasePath: 'edge-cache', isEphemeral: false, totalStored: 15000 },
-      upstream: { status: probe ? 'conectado' : 'alerta', latencyMs, endpoint: baseUrl },
+      site: {
+        domain: siteConfig.domain,
+        appUrl: siteConfig.appUrl,
+        hasAppUrlVar: siteConfig.hasAppUrlVar,
+        hasSiteDomainVar: siteConfig.hasSiteDomainVar,
+      },
+      upstream: {
+        status: probeRes.data ? 'conectado' : 'alerta',
+        httpStatus: probeRes.status,
+        authConfigured: Boolean(apiKey),
+        latencyMs,
+        endpoint: baseUrl,
+      },
       timestamp: new Date().toISOString(),
     };
     const format = url.searchParams.get('format') || '';
     const accept = request.headers.get('accept') || '';
     if (format === 'html' || (!format && accept.includes('text/html'))) {
-      const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Status da Sincronização • Norma Jurídica</title><style>body{font-family:system-ui,sans-serif;background:#090d16;color:#f1f5f9;padding:24px}.box{max-width:680px;margin:24px auto;background:#131c2e;border:1px solid #1e293b;border-radius:16px;padding:28px}h1{margin:0 0 12px;font-size:20px}.tag{display:inline-block;padding:4px 12px;border-radius:999px;background:#065f46;color:#6ee7b7;font-size:12px;font-weight:700}p{font-size:14px;color:#cbd5e1}</style></head><body><div class="box"><span class="tag">● Cloudflare Worker Edge Ativo</span><h1>Sincronização &amp; Saúde do Portal</h1><p><strong>Upstream:</strong> ${escapeHtml(baseUrl)} (${escapeHtml(payload.upstream.status)}, ${latencyMs}ms)</p><p><strong>Engine:</strong> ${escapeHtml(payload.storage.engine)}</p><p><strong>Atualizado em:</strong> ${escapeHtml(payload.timestamp)}</p></div></body></html>`;
+      const statusBadge = probeRes.data
+        ? '<span class="tag">● Cloudflare Worker Edge Ativo</span>'
+        : '<span class="tag" style="background:#7c2d12;color:#fdba74;">● Cloudflare Worker Edge (Upstream em Alerta)</span>';
+      const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Status da Sincronização • Norma Jurídica</title><style>body{font-family:system-ui,sans-serif;background:#090d16;color:#f1f5f9;padding:24px}.box{max-width:680px;margin:24px auto;background:#131c2e;border:1px solid #1e293b;border-radius:16px;padding:28px}h1{margin:0 0 12px;font-size:20px}.tag{display:inline-block;padding:4px 12px;border-radius:999px;background:#065f46;color:#6ee7b7;font-size:12px;font-weight:700}p{font-size:14px;color:#cbd5e1}</style></head><body><div class="box">${statusBadge}<h1>Sincronização &amp; Saúde do Portal</h1><p><strong>Domínio / App URL:</strong> ${escapeHtml(siteConfig.domain)} • ${escapeHtml(siteConfig.appUrl)}</p><p><strong>Upstream:</strong> ${escapeHtml(baseUrl)} (${escapeHtml(payload.upstream.status)}, HTTP ${payload.upstream.httpStatus}, ${latencyMs}ms)</p><p><strong>Autenticação API:</strong> ${apiKey ? 'Configurada' : 'Ausente'}</p><p><strong>Engine:</strong> ${escapeHtml(payload.storage.engine)}</p><p><strong>Atualizado em:</strong> ${escapeHtml(payload.timestamp)}</p></div></body></html>`;
       return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
     }
     return jsonResponse(payload);
@@ -2445,8 +2652,8 @@ const workerHandler = {
     const url = new URL(request.url);
     const pathname = url.pathname;
 
-    // 1. Canonicalização HTTPS e redirecionamento www -> news.mirandinhacontabilidade.workers.dev
-    const canonicalRedirect = resolveDnsAndCanonical(request);
+    // 1. Canonicalização HTTPS e redirecionamento www -> domínio canônico configurado no env
+    const canonicalRedirect = resolveDnsAndCanonical(request, env);
     if (canonicalRedirect) {
       return applySecurityHeaders(canonicalRedirect, pathname);
     }

@@ -5,6 +5,7 @@ import {
   resolveNewsApiConfig,
   buildNewsApiHeaders,
 } from './api-config-pure';
+import { getBaseUrl } from './site-config';
 
 export { DEFAULT_NEWS_API_BASE_URL, resolveNewsApiConfig, buildNewsApiHeaders };
 
@@ -14,5 +15,5 @@ export function getNewsApiConfig() {
 
 export function getNewsApiHeaders(): Record<string, string> {
   const { apiKey } = getNewsApiConfig();
-  return buildNewsApiHeaders(apiKey);
+  return buildNewsApiHeaders(apiKey, getBaseUrl());
 }

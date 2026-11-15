@@ -80,11 +80,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
   const baseUrl = getBaseUrl();
   const articleSchema = generateNewsArticleSchema(article, baseUrl);
-  const rawAppUrl = (process.env.APP_URL || '').trim();
-  const appUrl =
-    rawAppUrl && !rawAppUrl.includes('MY_APP_URL')
-      ? rawAppUrl.replace(/\/+$/, '')
-      : '';
+  const appUrl = baseUrl;
 
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-zinc-950">

@@ -120,7 +120,7 @@ async function asyncPool<T, R>(
 
 // Resilient fetch with retry and exponential backoff exclusively against NEWS_API_BASE_URL
 async function fetchWithRetryAndFallback<T>(endpoint: string, timeoutMs = 6000): Promise<T | null> {
-  const { baseUrl } = getNewsApiConfig();
+  const { baseUrl, apiKey } = getNewsApiConfig();
   const headers = getNewsApiHeaders();
 
   const retryCount = 1;
@@ -129,11 +129,19 @@ async function fetchWithRetryAndFallback<T>(endpoint: string, timeoutMs = 6000):
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const url = `${baseUrl}${endpoint}`;
-      const res = await fetch(url, {
+      let res = await fetch(url, {
         headers,
         signal: controller.signal,
         cache: 'no-store',
       });
+      if (res.status === 401 && apiKey) {
+        const sep = endpoint.includes('?') ? '&' : '?';
+        res = await fetch(`${url}${sep}ref=${encodeURIComponent(apiKey)}`, {
+          headers,
+          signal: controller.signal,
+          cache: 'no-store',
+        });
+      }
       clearTimeout(timeout);
       if (res.ok) {
         return (await res.json()) as T;

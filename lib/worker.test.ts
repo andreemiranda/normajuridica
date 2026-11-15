@@ -5,6 +5,7 @@ import path from 'node:path';
 import worker, {
   resolveDnsAndCanonical,
   resolveSafeOriginUrl,
+  resolveWorkerSiteConfig,
   resolveWorkerNewsApiConfig,
   buildWorkerNewsApiHeaders,
   sanitizePublicData,
@@ -388,6 +389,173 @@ test('worker.fetch entrega sitemaps estilizados para navegadores, XML para robô
     assert.match(artHtml, /Compartilhar no Instagram/);
     assert.match(artHtml, /id="nj-share-copied"/);
     assert.doesNotMatch(artHtml, /style="text-align:left"/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('resolveWorkerSiteConfig e resolveWorkerNewsApiConfig lêem todas as variações de variáveis e process.env', () => {
+  const site = resolveWorkerSiteConfig({
+    APP_URL: '"https://custom-portal.example.com/"',
+    SITE_DOMAIN: "'custom-portal.example.com'",
+  });
+  assert.equal(site.domain, 'custom-portal.example.com');
+  assert.equal(site.appUrl, 'https://custom-portal.example.com');
+  assert.equal(site.hasAppUrlVar, true);
+  assert.equal(site.hasSiteDomainVar, true);
+
+  const siteNext = resolveWorkerSiteConfig({
+    NEXT_PUBLIC_SITE_URL: 'https://next-portal.example.com/noticias',
+    NEXT_PUBLIC_SITE_DOMAIN: 'next-portal.example.com',
+  });
+  assert.equal(siteNext.domain, 'next-portal.example.com');
+  assert.equal(siteNext.appUrl, 'https://next-portal.example.com');
+
+  // Fallback para process.env quando env não é passado e leitura case-insensitive no env
+  const caseInsensitive = resolveWorkerSiteConfig({
+    app_url: 'https://case-portal.example.com/',
+    site_domain: 'case-portal.example.com',
+  });
+  assert.equal(caseInsensitive.domain, 'case-portal.example.com');
+  assert.equal(caseInsensitive.appUrl, 'https://case-portal.example.com');
+
+  const prevAppUrl = process.env.APP_URL;
+  const prevNextAppUrl = process.env.NEXT_PUBLIC_APP_URL;
+  delete process.env.APP_URL;
+  process.env.NEXT_PUBLIC_APP_URL = 'https://proc-portal.example.com';
+  try {
+    const fromProc = resolveWorkerSiteConfig({ CLOUDFLARE_WORKER: 'true' });
+    assert.equal(fromProc.domain, 'proc-portal.example.com');
+    assert.equal(fromProc.appUrl, 'https://proc-portal.example.com');
+  } finally {
+    if (prevAppUrl === undefined) delete process.env.APP_URL;
+    else process.env.APP_URL = prevAppUrl;
+    if (prevNextAppUrl === undefined) delete process.env.NEXT_PUBLIC_APP_URL;
+    else process.env.NEXT_PUBLIC_APP_URL = prevNextAppUrl;
+  }
+
+  const cfg = resolveWorkerNewsApiConfig({
+    API_URL_BASE: ' "https://news-sources-api.legislativemunicipal.workers.dev/api" ',
+    APIKEY: ' "Bearer my-worker-key" ',
+  });
+  assert.equal(cfg.baseUrl, 'https://news-sources-api.legislativemunicipal.workers.dev');
+  assert.equal(cfg.apiKey, 'my-worker-key');
+
+  const bareWorkers = resolveWorkerNewsApiConfig({
+    NEWS_API_BASE_URL: 'https://workers.dev',
+    NEWS_API_KEY: 'alt-key',
+  });
+  assert.equal(bareWorkers.baseUrl, 'https://news-sources-api.legislativemunicipal.workers.dev');
+  assert.equal(bareWorkers.apiKey, 'alt-key');
+
+  const headers = buildWorkerNewsApiHeaders(cfg.apiKey, {
+    APP_URL: 'https://custom-portal.example.com',
+    SITE_DOMAIN: 'custom-portal.example.com',
+  }) as Record<string, string>;
+  assert.equal(headers.Origin, 'https://custom-portal.example.com');
+  assert.equal(headers.Referer, 'https://custom-portal.example.com/');
+  assert.equal(headers['X-Site-Domain'], 'custom-portal.example.com');
+  assert.match(headers['User-Agent'], /custom-portal\.example\.com/);
+
+  const wwwCustom = resolveDnsAndCanonical(
+    new Request('https://www.custom-portal.example.com/categoria/politica'),
+    { SITE_DOMAIN: 'custom-portal.example.com' }
+  );
+  assert.ok(wwwCustom);
+  assert.equal(wwwCustom.status, 301);
+  assert.equal(wwwCustom.headers.get('location'), 'https://custom-portal.example.com/categoria/politica');
+});
+
+test('worker.fetch descobre fontes via catálogo /api/news, aplica retry ?ref= em 401 e expõe diagnóstico seguro no /api/sync', async () => {
+  const originalFetch = globalThis.fetch;
+  const seenUrls: string[] = [];
+
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const urlStr = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    seenUrls.push(urlStr);
+
+    // Simula API exigindo ?ref= quando headers são ignorados pelo proxy
+    const parsed = new URL(urlStr);
+    if (!parsed.searchParams.get('ref')) {
+      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (parsed.pathname === '/api/types') {
+      return new Response(JSON.stringify({ types: ['rss', 'api'] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (parsed.pathname === '/api/news') {
+      return new Response(
+        JSON.stringify({
+          items: [
+            { id: '999001', category: 'Justiça', endpoint: '/api/news/999001', active: true },
+          ],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (parsed.pathname === '/api/news/999001') {
+      return new Response(
+        JSON.stringify({
+          items: [
+            {
+              id: 'art-999001-1',
+              title: 'Descoberta dinâmica de fontes carrega notícias em tempo real no Worker',
+              slug: 'descoberta-dinamica-de-fontes-999001',
+              description: 'Reportagem carregada após retry automático com parâmetro ref.',
+              content: '<p>Conteúdo completo da notícia obtida via endpoint da fonte ativa.</p>',
+              publishedAt: new Date().toISOString(),
+              imageUrl: 'https://cdn.example.com/dinamica.jpg',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    return new Response(JSON.stringify({ items: [] }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }) as typeof fetch;
+
+  try {
+    const env = {
+      API_URL_BASE: 'https://news-sources-api.legislativemunicipal.workers.dev/api',
+      APIKEY: 'Bearer secret-ref-token',
+      APP_URL: 'https://news.mirandinhacontabilidade.workers.dev',
+      SITE_DOMAIN: 'news.mirandinhacontabilidade.workers.dev',
+    };
+
+    const syncRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/api/sync'), env);
+    assert.equal(syncRes.status, 200);
+    const syncJson = await syncRes.json();
+    assert.equal(syncJson.upstream.status, 'conectado');
+    assert.equal(syncJson.upstream.httpStatus, 200);
+    assert.equal(syncJson.upstream.authConfigured, true);
+    assert.equal(syncJson.upstream.endpoint, 'https://news-sources-api.legislativemunicipal.workers.dev');
+    assert.equal(syncJson.site.domain, 'news.mirandinhacontabilidade.workers.dev');
+    assert.equal(syncJson.site.appUrl, 'https://news.mirandinhacontabilidade.workers.dev');
+    // Garante que nenhuma chave secreta vaza no JSON público
+    assert.equal('apiKey' in syncJson.upstream, false);
+
+    const newsRes = await worker.fetch(
+      new Request('https://news.mirandinhacontabilidade.workers.dev/api/news?refresh=true&limit=10'),
+      env
+    );
+    assert.equal(newsRes.status, 200);
+    const newsJson = await newsRes.json();
+    assert.equal(newsJson.items.length, 1);
+    assert.equal(newsJson.items[0].slug, 'descoberta-dinamica-de-fontes-999001');
+    assert.equal(newsJson.items[0].category, 'Justiça');
+    assert.ok(seenUrls.some((u) => u.includes('ref=secret-ref-token')));
   } finally {
     globalThis.fetch = originalFetch;
   }

@@ -84,18 +84,27 @@ async function handleSyncRequest(req: NextRequest) {
   const latestItem = latestList[0] || null;
 
   // Upstream probe to check connectivity & latency
-  const { baseUrl } = getNewsApiConfig();
+  const { baseUrl, apiKey } = getNewsApiConfig();
   let upstreamLatencyMs = 0;
+  let upstreamHttpStatus = 0;
   let upstreamStatus = 'conectado';
 
   try {
     const probeStart = Date.now();
-    const probeRes = await fetch(`${baseUrl}/api/types`, {
+    let probeRes = await fetch(`${baseUrl}/api/types`, {
       headers: getNewsApiHeaders(),
       cache: 'no-store',
       signal: AbortSignal.timeout(3000),
     });
+    if (probeRes.status === 401 && apiKey) {
+      probeRes = await fetch(`${baseUrl}/api/types?ref=${encodeURIComponent(apiKey)}`, {
+        headers: getNewsApiHeaders(),
+        cache: 'no-store',
+        signal: AbortSignal.timeout(3000),
+      });
+    }
     upstreamLatencyMs = Date.now() - probeStart;
+    upstreamHttpStatus = probeRes.status;
     if (!probeRes.ok) upstreamStatus = `alerta (HTTP ${probeRes.status})`;
   } catch {
     upstreamStatus = 'offline / instável (servindo do SQLite)';
@@ -137,6 +146,8 @@ async function handleSyncRequest(req: NextRequest) {
     },
     upstream: {
       status: upstreamStatus,
+      httpStatus: upstreamHttpStatus,
+      authConfigured: Boolean(apiKey),
       latencyMs: upstreamLatencyMs,
       endpoint: baseUrl,
     },

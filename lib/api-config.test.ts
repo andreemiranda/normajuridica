@@ -42,7 +42,26 @@ test('buildNewsApiHeaders anexa Bearer e x-api-key somente quando apiKey existe'
   assert.equal('Authorization' in withoutKey, false);
   assert.equal('x-api-key' in withoutKey, false);
 
-  const withKey = buildNewsApiHeaders('token-123');
+  const withKey = buildNewsApiHeaders('token-123', 'https://custom-portal.example.com');
   assert.equal(withKey['Authorization'], 'Bearer token-123');
   assert.equal(withKey['x-api-key'], 'token-123');
+  assert.match(withKey['User-Agent'], /custom-portal\.example\.com/);
+});
+
+test('resolveNewsApiConfig normaliza aspas, sufixo /api, prefixo Bearer, aliases e workers.dev genérico', () => {
+  const withQuotesAndApiSuffix = resolveNewsApiConfig({
+    API_URL_BASE: ' "https://news-sources-api.legislativemunicipal.workers.dev/api/" ',
+    APIKEY: ' "Bearer abc-xyz-123" ',
+  } as unknown as NodeJS.ProcessEnv);
+
+  assert.equal(withQuotesAndApiSuffix.baseUrl, 'https://news-sources-api.legislativemunicipal.workers.dev');
+  assert.equal(withQuotesAndApiSuffix.apiKey, 'abc-xyz-123');
+
+  const withBareWorkersDev = resolveNewsApiConfig({
+    NEWS_API_BASE_URL: 'https://workers.dev',
+    api_key: "'single-quoted-key'",
+  } as unknown as NodeJS.ProcessEnv);
+
+  assert.equal(withBareWorkersDev.baseUrl, DEFAULT_NEWS_API_BASE_URL);
+  assert.equal(withBareWorkersDev.apiKey, 'single-quoted-key');
 });
