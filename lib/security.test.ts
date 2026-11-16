@@ -116,7 +116,8 @@ test('isEnvironmentSecure e resolveNewsApiConfig proíbem segredos em variáveis
   assert.equal(
     isEnvironmentSecure({
       NEXT_PUBLIC_ADSENSE_ID: 'ca-pub-7059730627018047',
-      NEXT_PUBLIC_SITE_URL: 'https://news.mirandinhacontabilidade.workers.dev',
+      NEXT_PUBLIC_SITE_URL: 'https://normajuridica.com.br',
+      NEXT_PUBLIC_WEATHER_API_BASE_URL: 'https://radarmeteorologico.com.br',
     }),
     true
   );
@@ -151,7 +152,7 @@ test('checkRateLimit limita requisições excedentes dentro da janela', () => {
 });
 
 test('worker aplica CSP, headers de segurança em /api/* e bloqueia SSRF e export sem segredo', async () => {
-  const currentUrl = new URL('https://news.mirandinhacontabilidade.workers.dev/');
+  const currentUrl = new URL('https://normajuridica.com.br/');
   assert.equal(
     resolveSafeOriginUrl({ ORIGIN_URL: 'http://127.0.0.1:3000' }, currentUrl, new Headers()),
     null
@@ -166,26 +167,30 @@ test('worker aplica CSP, headers de segurança em /api/* e bloqueia SSRF e expor
   );
 
   const apiSecured = applySecurityHeaders(new Response('{}', { status: 200 }), '/api/health');
-  assert.ok(apiSecured.headers.get('Content-Security-Policy'));
+  const csp = apiSecured.headers.get('Content-Security-Policy') || '';
+  assert.ok(csp);
+  assert.equal(csp.includes('unsafe-eval'), false);
+  assert.equal(csp.includes('cdn.tailwindcss.com'), false);
+  assert.equal(apiSecured.headers.get('Permissions-Policy'), 'camera=(), microphone=(), geolocation=(self), payment=(), usb=(), browsing-topics=()');
   assert.equal(apiSecured.headers.get('X-Robots-Tag'), 'noindex, nofollow, noarchive');
   assert.equal(apiSecured.headers.get('Cross-Origin-Resource-Policy'), 'same-origin');
   assert.equal(apiSecured.headers.get('X-XSS-Protection'), '0');
   assert.match(apiSecured.headers.get('Cache-Control') || '', /no-store/);
 
   const methodBlocked = await worker.fetch(
-    new Request('https://news.mirandinhacontabilidade.workers.dev/api/health', { method: 'DELETE' }),
+    new Request('https://normajuridica.com.br/api/health', { method: 'DELETE' }),
     {}
   );
   assert.equal(methodBlocked.status, 405);
 
   const exportNoSecret = await worker.fetch(
-    new Request('https://news.mirandinhacontabilidade.workers.dev/api/sync?action=export'),
+    new Request('https://normajuridica.com.br/api/sync?action=export'),
     {}
   );
   assert.equal(exportNoSecret.status, 503);
 
   const exportBadSecret = await worker.fetch(
-    new Request('https://news.mirandinhacontabilidade.workers.dev/api/sync?action=export&secret=wrong'),
+    new Request('https://normajuridica.com.br/api/sync?action=export&secret=wrong'),
     { REVALIDATE_SECRET: 'real-secret' }
   );
   assert.equal(exportBadSecret.status, 401);

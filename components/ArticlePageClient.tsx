@@ -425,7 +425,7 @@ export function ArticlePageClient({
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXT_PUBLIC_APP_URL ||
     (process.env.NEXT_PUBLIC_SITE_DOMAIN ? `https://${process.env.NEXT_PUBLIC_SITE_DOMAIN}` : '') ||
-    'https://news.mirandinhacontabilidade.workers.dev'
+    'https://normajuridica.com.br'
   ).replace(/\/+$/, '');
   const pageUrl = `${shareBaseUrl}/noticia/${article.slug}`;
   const shareTitle = encodeURIComponent(article.title);

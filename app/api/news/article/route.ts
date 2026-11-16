@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getNewsItemBySlugOrId } from '@/lib/news-fetcher';
 import { getNewsStore } from '@/lib/news-store';
 import { resolveSourceNewsSlugsWithApi } from '@/lib/news-sync';
-import { fetchFullArticleBody, ensureCompleteArticleText } from '@/lib/article-extractor';
+import { fetchFullArticleBody, ensureCompleteArticleText, formatArticleParagraphsHtml } from '@/lib/article-extractor';
 import { sanitizePublicData, checkRateLimit, assertSafeExternalUrl, sanitizeInput, getClientIp } from '@/lib/security';
-import { repairAndSanitizeArticleHtml, extractUnresolvedSourceNewsCandidates } from '@/lib/sanitizer';
+import { repairAndSanitizeArticleHtml, extractUnresolvedSourceNewsCandidates, stripHtmlTags } from '@/lib/sanitizer';
 import { SITE_CONFIG } from '@/lib/site-config';
 
 export const dynamic = 'force-dynamic';
@@ -26,34 +26,38 @@ export async function GET(req: NextRequest) {
     const safeExternalUrl = assertSafeExternalUrl(rawUrl);
     const title = sanitizeInput(searchParams.get('title'), 300);
     const category = sanitizeInput(searchParams.get('category'), 80) || 'Notícias';
-    const text = (searchParams.get('text') || '').slice(0, 8000);
+    const text = (searchParams.get('text') || '').slice(0, 16000);
 
     let contentHtml = '';
     let featuredImage = '';
+    let fallbackExternalUrl = safeExternalUrl ? safeExternalUrl.toString() : '';
 
     // 1. Try finding in news cache / DB / upstream API (with embedded link resolution)
     if (slug) {
       const item = await getNewsItemBySlugOrId(slug, { resolveApiLinks: true });
       if (item) {
         if (item.imageUrl) featuredImage = item.imageUrl;
-        if (item.contentHtml && item.contentHtml.length > 250) {
-          contentHtml = item.contentHtml;
+        if (!fallbackExternalUrl && item.sourceUrl) {
+          fallbackExternalUrl = item.sourceUrl;
+        }
+        if (item.contentHtml) {
+          contentHtml = formatArticleParagraphsHtml(item.contentHtml);
         }
       }
     }
 
-    // 2. If safe external url provided and contentHtml still empty/short, fetch full body (SSRF protected)
-    if (!contentHtml && safeExternalUrl) {
-      const fetched = await fetchFullArticleBody(safeExternalUrl.toString(), 4500);
-      if (fetched && fetched.length > 250) {
+    // 2. If safe external url available and contentHtml still short/single-paragraph, fetch full body (SSRF protected)
+    const plainLen = stripHtmlTags(contentHtml).length;
+    const pCount = (contentHtml.match(/<p\b/gi) || []).length;
+    if ((plainLen < 450 || pCount <= 1) && fallbackExternalUrl) {
+      const fetched = await fetchFullArticleBody(fallbackExternalUrl, 50000);
+      if (fetched && stripHtmlTags(fetched).length > plainLen + 80) {
         contentHtml = fetched;
       }
     }
 
-    // 3. Fallback or enrich with provided text or title
-    if (!contentHtml || contentHtml.length < 300) {
-      contentHtml = ensureCompleteArticleText(text || contentHtml, title, category);
-    }
+    // 3. Format and enrich if empty or very brief
+    contentHtml = ensureCompleteArticleText(contentHtml || text, title, category);
 
     // 4. Sanitize and resolve links (APP_URL + DB + API check + target="_blank" for external/file links)
     const store = getNewsStore();

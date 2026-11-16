@@ -9,14 +9,14 @@ function stripWrappingQuotes(input?: string): string {
 
 function cleanDomain(input?: string): string {
   const raw = stripWrappingQuotes(input);
-  if (!raw || raw.includes('MY_APP_URL')) return 'news.mirandinhacontabilidade.workers.dev';
+  if (!raw || raw.includes('MY_APP_URL')) return 'normajuridica.com.br';
   let d = raw;
   d = d.replace(/^https?:\/\//i, '');
   d = d.replace(/\/.*$/, '');
   d = d.replace(/:\d+$/, '');
   d = d.replace(/[^a-zA-Z0-9.-]/g, '');
   if (!d || d.length < 4 || !d.includes('.') || d.includes('localhost')) {
-    return 'news.mirandinhacontabilidade.workers.dev';
+    return 'normajuridica.com.br';
   }
   return d;
 }
@@ -128,7 +128,7 @@ export function getBaseUrl(req?: Request | { headers?: Headers | Record<string, 
   }
 
   // 7. Canonical fallback
-  return 'https://news.mirandinhacontabilidade.workers.dev';
+  return 'https://normajuridica.com.br';
 }
 
 function cleanUrl(url: string): string {

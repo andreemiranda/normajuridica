@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sanitizePublicData, checkRateLimit, sanitizeInput, assertSafeExternalUrl, getClientIp } from '@/lib/security';
+import { sanitizePublicData, checkRateLimit, sanitizeInput, getClientIp } from '@/lib/security';
+import { getWeatherRadarData } from '@/lib/weather-radar';
 import { WeatherInfo } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -10,8 +11,8 @@ interface WeatherCacheEntry {
 }
 
 const weatherCache = new Map<string, WeatherCacheEntry>();
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 min
-const MAX_WEATHER_CACHE_SIZE = 100;
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 min (respeita janela mínima de alertas INMET)
+const MAX_WEATHER_CACHE_SIZE = 150;
 
 export async function GET(req: NextRequest) {
   const clientIp = getClientIp(req.headers);
@@ -23,98 +24,50 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const rawQuery = req.nextUrl.searchParams.get('q') || 'Brasilia';
-  const query = sanitizeInput(rawQuery, 50).replace(/[^\p{L}\p{N}\s,.-]/gu, '') || 'Brasilia';
+  const latParam = req.nextUrl.searchParams.get('lat');
+  const lonParam = req.nextUrl.searchParams.get('lon');
+  let rawQuery = req.nextUrl.searchParams.get('q') || '';
+
+  if (!rawQuery && latParam && lonParam) {
+    rawQuery = `${latParam},${lonParam}`;
+  }
+
+  // Fallback automático por cabeçalhos de borda (Cloudflare / Vercel / Netlify) quando não há GPS do dispositivo
+  if (!rawQuery) {
+    const edgeLat = req.headers.get('x-vercel-ip-latitude') || req.headers.get('cf-iplatitude');
+    const edgeLon = req.headers.get('x-vercel-ip-longitude') || req.headers.get('cf-iplongitude');
+    const edgeCity = req.headers.get('x-vercel-ip-city') || req.headers.get('cf-ipcity');
+    if (edgeLat && edgeLon) {
+      rawQuery = `${edgeLat},${edgeLon}`;
+    } else if (edgeCity) {
+      try {
+        rawQuery = decodeURIComponent(edgeCity);
+      } catch {
+        rawQuery = edgeCity;
+      }
+    } else {
+      rawQuery = 'Brasília';
+    }
+  }
+
+  const query = sanitizeInput(rawQuery, 60).replace(/[^\p{L}\p{N}\s,.-]/gu, '') || 'Brasília';
   const cleanQuery = query.toLowerCase();
 
   const cached = weatherCache.get(cleanQuery);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-    return NextResponse.json(sanitizePublicData(cached.data));
+    return NextResponse.json(sanitizePublicData(cached.data), {
+      headers: { 'Cache-Control': 'public, max-age=600, s-maxage=600' },
+    });
   }
 
   if (weatherCache.size > MAX_WEATHER_CACHE_SIZE) {
     weatherCache.clear();
   }
 
-  const apiKey =
-    process.env.WEATHER_API_KEY ||
-    process.env.api_key_clima ||
-    '';
+  const data = await getWeatherRadarData({ query });
+  weatherCache.set(cleanQuery, { data, timestamp: Date.now() });
 
-  const rawBaseUrl =
-    process.env.WEATHER_API_BASE_URL ||
-    process.env.api_url_clima_base ||
-    'https://api.weatherapi.com/v1';
-
-  const safeBaseUrl = assertSafeExternalUrl(rawBaseUrl, { requireHttps: true });
-
-  if (apiKey && safeBaseUrl) {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 4000);
-
-      const url = `${safeBaseUrl.toString().replace(/\/+$/, '')}/forecast.json?key=${encodeURIComponent(apiKey)}&q=${encodeURIComponent(query)}&days=1&lang=pt`;
-      const res = await fetch(url, { signal: controller.signal, next: { revalidate: 300 } });
-      clearTimeout(timeout);
-
-      if (res.ok) {
-        const json = await res.json();
-        const current = json.current;
-        const location = json.location;
-        const dayForecast = json.forecast?.forecastday?.[0]?.day;
-
-        const uv = current.uv || 0;
-        let uvDesc = 'Baixo';
-        if (uv >= 8) uvDesc = 'Muito Alto';
-        else if (uv >= 6) uvDesc = 'Alto';
-        else if (uv >= 3) uvDesc = 'Moderado';
-
-        const data: WeatherInfo = {
-          city: location.name || query,
-          temperature: Math.round(current.temp_c),
-          feelsLike: Math.round(current.feelslike_c),
-          humidity: current.humidity,
-          condition: current.condition?.text || 'Parcialmente Nublado',
-          conditionCode: String(current.condition?.code || '1000'),
-          uvIndex: uv,
-          uvDescription: uvDesc,
-          forecast: [
-            {
-              date: 'Hoje',
-              maxTemp: Math.round(dayForecast?.maxtemp_c ?? current.temp_c + 3),
-              minTemp: Math.round(dayForecast?.mintemp_c ?? current.temp_c - 4),
-              condition: dayForecast?.condition?.text || current.condition?.text || 'Estável',
-            },
-          ],
-          isFallback: false,
-        };
-
-        weatherCache.set(cleanQuery, { data, timestamp: Date.now() });
-        return NextResponse.json(sanitizePublicData(data));
-      }
-    } catch {}
-  }
-
-  // Fallback payload (standard Brasília weather)
-  const defaultWeather: WeatherInfo = {
-    city: 'Brasília',
-    temperature: 26,
-    feelsLike: 27,
-    humidity: 58,
-    condition: 'Ensolarado',
-    conditionCode: '1000',
-    uvIndex: 7,
-    uvDescription: 'Alto',
-    forecast: [
-      {
-        date: 'Hoje',
-        maxTemp: 29,
-        minTemp: 18,
-        condition: 'Sol com poucas nuvens',
-      },
-    ],
-    isFallback: true,
-  };
-
-  return NextResponse.json(sanitizePublicData(defaultWeather));
+  return NextResponse.json(sanitizePublicData(data), {
+    headers: { 'Cache-Control': 'public, max-age=600, s-maxage=600' },
+  });
 }

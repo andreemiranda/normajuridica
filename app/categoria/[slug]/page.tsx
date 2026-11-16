@@ -102,8 +102,8 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {items.map(news => (
-                <NewsCard key={news.slug} news={news} variant="grid" />
+              {items.map((news, idx) => (
+                <NewsCard key={news.slug} news={news} variant="grid" priority={idx === 0} />
               ))}
             </div>
 

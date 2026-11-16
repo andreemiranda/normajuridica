@@ -111,7 +111,7 @@ export function resolveNewsApiConfig(env: NodeJS.ProcessEnv = process.env) {
 }
 
 export function buildNewsApiHeaders(apiKey: string, siteUrl?: string): Record<string, string> {
-  const effectiveSite = cleanEnvString(siteUrl) || 'https://news.mirandinhacontabilidade.workers.dev';
+  const effectiveSite = cleanEnvString(siteUrl) || 'https://normajuridica.com.br';
   const headers: Record<string, string> = {
     Accept: 'application/json',
     'User-Agent': `NormaJuridica/1.0 (+${effectiveSite})`,

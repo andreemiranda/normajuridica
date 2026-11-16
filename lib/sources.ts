@@ -217,6 +217,42 @@ export function getSourcesByCategory(category: string): NewsApiSourceItem[] {
     );
   }
 
+  if (norm === 'sao-paulo') {
+    return ALL_NEWS_SOURCES.filter(
+      s => s.active !== false && [
+        'campinas-e-regiao', 'bauru-e-marilia', 'santos-e-regiao',
+        'sao-carlos-e-araraquara', 'ribeirao-preto-e-franca',
+        'mogi-das-cruzes-e-suzano', 'vale-do-paraiba-e-regiao', 'sao-paulo',
+      ].includes(normalizeCategoryText(s.category))
+    );
+  }
+
+  if (norm === 'rio-de-janeiro') {
+    return ALL_NEWS_SOURCES.filter(
+      s => s.active !== false && [
+        'norte-fluminense', 'regiao-dos-lagos-fluminense',
+        'regiao-serrana-fluminense', 'sul-e-costa-verde-fluminense', 'rio-de-janeiro',
+      ].includes(normalizeCategoryText(s.category))
+    );
+  }
+
+  if (norm === 'pernambuco') {
+    return ALL_NEWS_SOURCES.filter(
+      s => s.active !== false && [
+        'caruaru-e-regiao', 'petrolina-e-regiao', 'pernambuco',
+      ].includes(normalizeCategoryText(s.category))
+    );
+  }
+
+  if (norm === 'minas-gerais' || norm === 'grande-minas') {
+    return ALL_NEWS_SOURCES.filter(
+      s => s.active !== false && [
+        'grande-minas', 'sul-de-minas', 'centro-oeste-de-minas',
+        'vales-de-minas-gerais', 'zona-da-mata-mineira',
+      ].includes(normalizeCategoryText(s.category))
+    );
+  }
+
   // 3. Substring match for compound categories
   const subMatched = ALL_NEWS_SOURCES.filter(
     s => s.active !== false && (
@@ -273,6 +309,35 @@ export function getCategoryAliases(categoryOrSlug: string): string[] {
     terms.add('Palmeiras');
     terms.add('autoesporte');
     terms.add('Autoesporte');
+  } else if (norm === 'sao-paulo') {
+    terms.add('sao-paulo');
+    terms.add('São Paulo');
+    terms.add('campinas-e-regiao');
+    terms.add('bauru-e-marilia');
+    terms.add('santos-e-regiao');
+    terms.add('sao-carlos-e-araraquara');
+    terms.add('ribeirao-preto-e-franca');
+    terms.add('mogi-das-cruzes-e-suzano');
+    terms.add('vale-do-paraiba-e-regiao');
+  } else if (norm === 'rio-de-janeiro') {
+    terms.add('rio-de-janeiro');
+    terms.add('Rio de Janeiro');
+    terms.add('norte-fluminense');
+    terms.add('regiao-dos-lagos-fluminense');
+    terms.add('regiao-serrana-fluminense');
+    terms.add('sul-e-costa-verde-fluminense');
+  } else if (norm === 'pernambuco') {
+    terms.add('pernambuco');
+    terms.add('Pernambuco');
+    terms.add('caruaru-e-regiao');
+    terms.add('petrolina-e-regiao');
+  } else if (norm === 'grande-minas' || norm === 'minas-gerais') {
+    terms.add('grande-minas');
+    terms.add('Grande Minas');
+    terms.add('sul-de-minas');
+    terms.add('centro-oeste-de-minas');
+    terms.add('vales-de-minas-gerais');
+    terms.add('zona-da-mata-mineira');
   } else if (norm === 'tecnologia-e-games') {
     terms.add('tecnologia-e-games');
     terms.add('Tecnologia e Games');
@@ -322,6 +387,50 @@ export function getCategoryAliases(categoryOrSlug: string): string[] {
   }
 
   return Array.from(terms);
+}
+
+const CATEGORY_KEYWORD_MAP: Record<string, string[]> = {
+  bahia: ['bahia', 'salvador', 'feira de santana', 'ilhéus', 'vitória da conquista', 'porto seguro', 'baiano'],
+  ceara: ['ceará', 'ceara', 'fortaleza', 'cariri', 'juazeiro do norte', 'sobral', 'cearense'],
+  'distrito-federal': ['distrito federal', 'brasília', 'brasilia', 'df', 'esplanada', 'stf', 'congresso', 'gdf'],
+  'sao-paulo': ['são paulo', 'sao paulo', 'campinas', 'santos', 'ribeirão preto', 'paulista'],
+  'rio-de-janeiro': ['rio de janeiro', 'fluminense', 'niterói', 'petrópolis', 'cabo frio', 'macaé'],
+  pernambuco: ['pernambuco', 'recife', 'caruaru', 'petrolina', 'olinda', 'pernambucano'],
+  acre: ['acre', 'rio branco', 'acriano'],
+  alagoas: ['alagoas', 'maceió', 'alagoano'],
+  amapa: ['amapá', 'amapa', 'macapá'],
+  amazonas: ['amazonas', 'manaus', 'amazonense'],
+  maranhao: ['maranhão', 'maranhao', 'são luís'],
+  para: ['pará', 'para ', 'belém', 'santarém', 'marabá', 'paraense'],
+  paraiba: ['paraíba', 'paraiba', 'joão pessoa', 'campina grande'],
+  parana: ['paraná', 'parana', 'curitiba', 'londrina', 'maringá', 'cascavel'],
+  'rio-grande-do-norte': ['rio grande do norte', 'natal', 'mossoró', 'potiguar'],
+  'rio-grande-do-sul': ['rio grande do sul', 'porto alegre', 'caxias do sul', 'gaúcho'],
+  rondonia: ['rondônia', 'rondonia', 'porto velho'],
+  roraima: ['roraima', 'boa vista'],
+  sergipe: ['sergipe', 'aracaju', 'sergipano'],
+  tocantins: ['tocantins', 'palmas', 'araguaína', 'gurupi'],
+  goias: ['goiás', 'goias', 'goiânia', 'anápolis'],
+  'santa-catarina': ['santa catarina', 'florianópolis', 'joinville', 'blumenau', 'chapecó'],
+  loterias: ['mega-sena', 'lotofácil', 'loteria', 'quina', 'timemania', 'caixa'],
+  palmeiras: ['palmeiras', 'verdão', 'allianz parque', 'abel ferreira'],
+  autoesporte: ['carro', 'veículo', 'automóvel', 'detran', 'ipva', 'motorista', 'trânsito'],
+  financas: ['banco central', 'selic', 'dólar', 'ibovespa', 'inflação', 'receita federal', 'imposto', 'juros'],
+  cultura: ['cultura', 'cinema', 'teatro', 'música', 'festival', 'livro', 'exposição', 'museu'],
+  justica: ['stf', 'stj', 'tribunal', 'lei', 'juiz', 'direito', 'ministério público', 'processo', 'oab'],
+  politica: ['governo', 'congresso', 'senado', 'câmara', 'ministro', 'presidente', 'eleição', 'projeto de lei'],
+  saude: ['saúde', 'sus', 'hospital', 'vacina', 'anvisa', 'médico', 'doença'],
+  educacao: ['educação', 'enem', 'universidade', 'mec', 'escola', 'professor', 'vestibular'],
+  'tecnologia-e-games': ['tecnologia', 'inteligência artificial', 'aplicativo', 'digital', 'cibersegurança', 'game'],
+  'turismo-e-viagem': ['turismo', 'viagem', 'aeroporto', 'passagem', 'hotel', 'destino'],
+};
+
+export function getCategoryKeywords(categoryOrSlug: string): string[] {
+  const norm = normalizeCategoryText(categoryOrSlug);
+  const mapped = CATEGORY_KEYWORD_MAP[norm];
+  if (mapped && mapped.length > 0) return mapped;
+  const parts = norm.split('-').filter((w) => w.length >= 3 && !['regiao', 'sul', 'norte', 'oeste'].includes(w));
+  return parts.length > 0 ? parts : [resolveCategoryDisplayName(norm).toLowerCase()];
 }
 
 export function getCategorySourceIds(categoryOrSlug: string): string[] {

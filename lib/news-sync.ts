@@ -7,7 +7,7 @@ import { ALL_NEWS_SOURCES, ALL_CATEGORIES, mergeDynamicCategories } from './sour
 import { NewsItem, NewsApiSourceItem } from './types';
 import { slugify, categorySlugify } from './slug';
 import { cleanTitle, cleanFullNewsText, isForbiddenVideoPost, removeTruncationMarkers, fixEncoding, repairAndSanitizeArticleHtml, extractAllImagesFromHtml, stripHtmlTags, normalizeImageKey, extractSourceNewsSlug, matchSlugCandidate, upgradeImageResolution, pickBestImgSrcFromAttrs, isLowResThumbnailUrl } from './sanitizer';
-import { ensureCompleteArticleText } from './article-extractor';
+import { formatArticleParagraphsHtml, ensureCompleteArticleText, fetchFullArticleBody } from './article-extractor';
 
 interface UpstreamArticleItem {
   id?: string | number;
@@ -15,6 +15,12 @@ interface UpstreamArticleItem {
   title?: string;
   description?: string;
   content?: string;
+  contentHtml?: string;
+  content_encoded?: string;
+  contentEncoded?: string;
+  fullContent?: string;
+  body?: string;
+  text?: string;
   pubDate?: string;
   date?: string;
   category?: string;
@@ -24,6 +30,7 @@ interface UpstreamArticleItem {
   image?: string;
   author?: string;
   link?: string;
+  url?: string;
   alt?: string;
 }
 
@@ -170,7 +177,16 @@ function buildNewsItemFromUpstream(
   const rawTitle = cleanTitle(item.title);
   if (rawTitle.length < 5) return null;
 
-  const rawContent = item.content || item.description || '';
+  const rawBody =
+    item.contentHtml ||
+    item.content_encoded ||
+    item.contentEncoded ||
+    item.fullContent ||
+    item.content ||
+    item.body ||
+    item.text ||
+    '';
+  const rawContent = rawBody || item.description || '';
   if (isForbiddenVideoPost(rawTitle, rawContent)) return null;
 
   // Category mapping - prioritize live category from API item
@@ -244,15 +260,16 @@ function buildNewsItemFromUpstream(
     if (found) found.forEach(addImg);
   }
 
-  extractAllImagesFromHtml(item.content || '').forEach(addImg);
+  extractAllImagesFromHtml(rawBody || '').forEach(addImg);
   if (item.thumbnail) addImg(item.thumbnail);
 
   // Prefer first non-low-res image if the initial image was a small filename thumbnail (-200x133.jpg)
   const highResFirst = images.find((img) => !isLowResThumbnailUrl(img));
   const finalImageUrl = highResFirst || images[0] || '';
 
+  const formattedInput = formatArticleParagraphsHtml(rawBody || summary);
   const rawContentHtml = ensureCompleteArticleText(
-    item.content ? item.content.split(/\n\n+/).map(p => `<p>${cleanFullNewsText(p)}</p>`).join('') : summary,
+    formattedInput || summary,
     rawTitle,
     effectiveCategory
   );
@@ -270,6 +287,9 @@ function buildNewsItemFromUpstream(
   const itemIdStr = String(item.id || item.slug || rawTitle);
   const slug = slugify(rawTitle, itemIdStr);
   const pubDate = item.pubDate || item.date || new Date().toISOString();
+  const externalOriginUrl = [item.link, item.url].find(
+    (u) => typeof u === 'string' && /^https?:\/\//i.test(u.trim())
+  );
 
   return {
     id: slug,
@@ -290,6 +310,7 @@ function buildNewsItemFromUpstream(
     imageCaption: fixEncoding(item.alt || `Registro jornalístico editorial • ${effectiveCategory}`),
     author,
     originalCategory: source.category,
+    sourceUrl: externalOriginUrl,
   };
 }
 
@@ -401,7 +422,29 @@ export async function findAndImportNewsItemFromApi(
       };
 
       const saveAndReturn = async (rawItem: UpstreamArticleItem, src: NewsApiSourceItem): Promise<NewsItem | null> => {
-        const built = buildNewsItemFromUpstream(rawItem, src, new Map());
+        const candidateRawBody =
+          rawItem.contentHtml ||
+          rawItem.content_encoded ||
+          rawItem.contentEncoded ||
+          rawItem.fullContent ||
+          rawItem.content ||
+          rawItem.body ||
+          rawItem.text ||
+          rawItem.description ||
+          '';
+        const plainLen = stripHtmlTags(candidateRawBody).length;
+        const originHref = rawItem.link || rawItem.url || options.originalHref || '';
+        let enrichedRawItem = rawItem;
+        if (plainLen < 450 && originHref && /^https?:\/\//i.test(originHref)) {
+          try {
+            const extractedFull = await fetchFullArticleBody(originHref, 50000);
+            if (stripHtmlTags(extractedFull).length > plainLen + 120) {
+              enrichedRawItem = { ...rawItem, contentHtml: extractedFull, content: extractedFull };
+            }
+          } catch {}
+        }
+
+        const built = buildNewsItemFromUpstream(enrichedRawItem, src, new Map());
         if (!built) return null;
         await store.upsertNews([built as unknown as NewsItem]);
         const fresh = await store.getNewsBySlugOrId(built.slug);

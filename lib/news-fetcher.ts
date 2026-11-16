@@ -11,7 +11,8 @@ import {
   findAndImportNewsItemFromApi,
   resolveSourceNewsSlugsWithApi,
 } from './news-sync';
-import { extractUnresolvedSourceNewsCandidates, repairAndSanitizeArticleHtml } from './sanitizer';
+import { extractUnresolvedSourceNewsCandidates, repairAndSanitizeArticleHtml, stripHtmlTags } from './sanitizer';
+import { formatArticleParagraphsHtml, fetchFullArticleBody } from './article-extractor';
 import { SITE_CONFIG, getBaseUrl } from './site-config';
 
 export { formatTimeAgo };
@@ -185,9 +186,25 @@ export async function getNewsItemBySlugOrId(
     return null;
   }
 
+  // If stored content is truncated/short (< 450 plain chars or <= 1 paragraph) and sourceUrl is known, extract full article body
+  if (shouldResolveApiLinks) {
+    const plainLen = stripHtmlTags(item.contentHtml || '').length;
+    const pCount = ((item.contentHtml || '').match(/<p\b/gi) || []).length;
+    if ((plainLen < 450 || pCount <= 1) && item.sourceUrl) {
+      try {
+        const fetchedFull = await fetchFullArticleBody(item.sourceUrl, 50000);
+        if (stripHtmlTags(fetchedFull).length > plainLen + 100) {
+          item = { ...item, contentHtml: formatArticleParagraphsHtml(fetchedFull) };
+          store.upsertNews([item]).catch(() => {});
+        }
+      } catch {}
+    }
+  }
+
   // If requested (article page / API endpoint), resolve any embedded source-news links via API + DB
   if (shouldResolveApiLinks && item.contentHtml) {
-    const unresolved = extractUnresolvedSourceNewsCandidates(item.contentHtml, {
+    const formatted = formatArticleParagraphsHtml(item.contentHtml);
+    const unresolved = extractUnresolvedSourceNewsCandidates(formatted, {
       currentArticleSlug: item.slug,
       resolveSlugInDb: (c) => store.resolveSourceArticleSlug(c),
     });
@@ -200,7 +217,7 @@ export async function getNewsItemBySlugOrId(
     const appUrl = getBaseUrl();
 
     const finalHtml = repairAndSanitizeArticleHtml(
-      item.contentHtml,
+      formatted,
       item.imageUrl ? [item.imageUrl] : [],
       {
         appUrl,

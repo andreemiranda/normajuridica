@@ -16,6 +16,7 @@ export interface NewsItem {
   imageCaption?: string;
   author?: string;
   originalCategory?: string;
+  sourceUrl?: string;
   isBookmarked?: boolean;
 }
 
@@ -47,8 +48,21 @@ export interface NewsApiSourceItem {
   active?: boolean;
 }
 
+export interface WeatherAlertInfo {
+  event: string;
+  severity: string;
+  level: number;
+  start: string;
+  end: string;
+  cityAffected: boolean;
+  affectedCount?: number;
+}
+
 export interface WeatherInfo {
   city: string;
+  uf?: string;
+  ibge?: number;
+  stationCity?: string;
   temperature: number;
   feelsLike: number;
   humidity: number;
@@ -56,6 +70,12 @@ export interface WeatherInfo {
   conditionCode?: string;
   uvIndex: number;
   uvDescription: string;
+  maxTemp?: number;
+  minTemp?: number;
+  rainMm?: number;
+  alert?: WeatherAlertInfo | null;
+  attributionName?: string;
+  attributionUrl?: string;
   forecast?: {
     date: string;
     maxTemp: number;

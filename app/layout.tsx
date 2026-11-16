@@ -144,6 +144,7 @@ export default function RootLayout({
 
         {/* DNS-prefetch & preconnect para Fontes de Notícias e CDNs de Imagens */}
         <link rel="dns-prefetch" href={newsApiOrigin} />
+        <link rel="dns-prefetch" href="https://radarmeteorologico.com.br" />
         <link rel="dns-prefetch" href="https://s2-g1.glbimg.com" />
         <link rel="dns-prefetch" href="https://i.s3.glbimg.com" />
         <link rel="dns-prefetch" href="https://gazetaesportiva.com" />
@@ -152,6 +153,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href={baseUrl} />
 
         <link rel="preconnect" href={newsApiOrigin} crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://radarmeteorologico.com.br" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://s2-g1.glbimg.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://i.s3.glbimg.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://gazetaesportiva.com" crossOrigin="anonymous" />
@@ -212,14 +214,6 @@ export default function RootLayout({
           }}
         />
 
-        {/* Google AdSense Script (only rendered if clientId is configured) */}
-        {adsenseClientId && (
-          <Script
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClientId}`}
-            strategy="afterInteractive"
-            crossOrigin="anonymous"
-          />
-        )}
       </head>
 
       <body className="bg-white dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 min-h-screen flex flex-col font-sans transition-colors duration-200">
@@ -235,6 +229,16 @@ export default function RootLayout({
 
         {/* LGPD Cookie Consent Banner */}
         <CookieConsentBanner />
+
+        {/* Google AdSense Script (non-blocking at end of body to prevent hydration shift) */}
+        {adsenseClientId && (
+          <Script
+            id="nj-adsense-script"
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClientId}`}
+            strategy="lazyOnload"
+            crossOrigin="anonymous"
+          />
+        )}
       </body>
     </html>
   );

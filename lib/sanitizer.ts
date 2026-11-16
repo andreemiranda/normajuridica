@@ -462,7 +462,7 @@ export function processArticleLinksHtml(html: string, options: ArticleLinkOption
   if (!html) return '';
   const appUrlPrefix = (options.appUrl || '').trim().replace(/\/+$/, '');
   const appUrlHost = appUrlPrefix ? getHostnameSafe(appUrlPrefix) : '';
-  const appDomainHost = (options.appDomain || 'news.mirandinhacontabilidade.workers.dev').toLowerCase().replace(/^www\./, '');
+  const appDomainHost = (options.appDomain || 'normajuridica.com.br').toLowerCase().replace(/^www\./, '');
 
   return html.replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (fullTag, rawAttrs: string, innerHtml: string) => {
     const hrefMatch = rawAttrs.match(/\bhref=["']([^"']*)["']/i);
@@ -686,7 +686,7 @@ export function extractUnresolvedSourceNewsCandidates(
         if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
           const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
           const nm = parsed.pathname.match(/^\/noticia\/([^/?#]+)\/?$/i);
-          if (nm && (/\bdata-app-link=["']true["']/i.test(attrs) || host.includes('news.mirandinhacontabilidade.workers.dev') || host.includes('normajuridica.com.br') || host.endsWith('.run.app'))) {
+          if (nm && (/\bdata-app-link=["']true["']/i.test(attrs) || host.includes('normajuridica.com.br') || host.endsWith('.run.app'))) {
             candidateSlug = decodeURIComponent(nm[1]).toLowerCase().trim();
           } else if (isApiSourceDomain(host, options.extraSourceDomains) && !isFileOrAssetUrl(rawHref)) {
             candidateSlug = extractSourceNewsSlug(rawHref);

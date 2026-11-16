@@ -17,22 +17,39 @@ import { SITE_CONFIG } from '@/lib/site-config';
 import { resolveCategoryDisplayName } from '@/lib/sources';
 import { useAllBookmarks } from '@/lib/accessibility';
 
-export function HomePageClient() {
+interface HomePageClientProps {
+  initialNews?: NewsItem[];
+  initialTotal?: number;
+  initialTotalPages?: number;
+  initialCategory?: string;
+  initialQuery?: string;
+  initialPage?: number;
+}
+
+export function HomePageClient({
+  initialNews = [],
+  initialTotal = 0,
+  initialTotalPages = 1,
+  initialCategory = 'all',
+  initialQuery = '',
+  initialPage = 1,
+}: HomePageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [news, setNews] = useState<NewsItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [news, setNews] = useState<NewsItem[]>(initialNews);
+  const [isLoading, setIsLoading] = useState(initialNews.length === 0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('');
 
-  const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>(() => searchParams.get('q') || '');
+  const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
+  const [searchQuery, setSearchQuery] = useState<string>(() => searchParams.get('q') || initialQuery);
   const [viewMode, setViewMode] = useState<'grid' | 'compact'>('grid');
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
-  const [totalCount, setTotalCount] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(initialPage);
+  const [totalPages, setTotalPages] = useState<number>(initialTotalPages);
+  const [totalCount, setTotalCount] = useState<number>(initialTotal);
+  const hasSkippedInitialFetchRef = React.useRef(initialNews.length > 0);
 
   const bookmarkedIds = useAllBookmarks();
 
@@ -44,12 +61,14 @@ export function HomePageClient() {
     }
   }, [searchParams, router]);
 
-  // Fetch news on mount or when category/search/page changes
+  // Fetch news when category/search/page changes (or on mount if SSR had 0 items)
   useEffect(() => {
     let isMounted = true;
 
-    async function executeLoad() {
-      setIsLoading(true);
+    async function executeLoad(silent = false) {
+      if (!silent) {
+        setIsLoading(true);
+      }
       setError(null);
       try {
         const params = new URLSearchParams();
@@ -79,19 +98,27 @@ export function HomePageClient() {
       }
     }
 
-    executeLoad();
+    const isInitialSsrState =
+      activeCategory === initialCategory &&
+      searchQuery === initialQuery &&
+      currentPage === initialPage;
+
+    if (hasSkippedInitialFetchRef.current && isInitialSsrState) {
+      hasSkippedInitialFetchRef.current = false;
+    } else {
+      executeLoad();
+    }
 
     // Sincronização automática minuto a minuto (60 segundos) na página inicial
     const interval = setInterval(() => {
-      // Somente atualiza automaticamente na página 1 e se a aba estiver visível
       if (typeof document !== 'undefined' && document.visibilityState === 'visible' && currentPage === 1) {
-        executeLoad();
+        executeLoad(true);
       }
     }, 60000);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && currentPage === 1) {
-        executeLoad();
+        executeLoad(true);
       }
     };
 
@@ -106,7 +133,7 @@ export function HomePageClient() {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
       }
     };
-  }, [activeCategory, searchQuery, currentPage]);
+  }, [activeCategory, searchQuery, currentPage, initialCategory, initialQuery, initialPage]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -340,11 +367,12 @@ export function HomePageClient() {
               {/* Feed of news */}
               <section id="feed-section" aria-label="Notícias">
                 <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 gap-6' : 'space-y-4'}>
-                  {feedNews.map(item => (
+                  {feedNews.map((item, idx) => (
                     <NewsCard
                       key={item.slug}
                       news={item}
                       variant={viewMode}
+                      priority={!isInitialHighlightsView && idx === 0}
                       isBookmarked={bookmarkedIds.includes(item.id || item.slug)}
                     />
                   ))}

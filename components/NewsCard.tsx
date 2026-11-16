@@ -12,6 +12,7 @@ interface NewsCardProps {
   news: NewsItem;
   variant?: 'grid' | 'compact';
   isBookmarked?: boolean;
+  priority?: boolean;
   onBookmarkChange?: (id: string, saved: boolean) => void;
   onPlayAudio?: (item: NewsItem) => void;
 }
@@ -20,6 +21,7 @@ export function NewsCard({
   news,
   variant = 'grid',
   isBookmarked: propIsBookmarked = false,
+  priority = false,
   onBookmarkChange,
   onPlayAudio,
 }: NewsCardProps) {
@@ -82,6 +84,7 @@ export function NewsCard({
             src={news.imageUrl || (news.images && news.images[0]) || ''}
             alt={news.title}
             fill
+            priority={priority}
             sizes="150px"
             className="object-cover group-hover:scale-105 transition-transform duration-300"
           />
@@ -154,6 +157,7 @@ export function NewsCard({
           src={news.imageUrl || (news.images && news.images[0]) || ''}
           alt={news.title}
           fill
+          priority={priority}
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="object-cover group-hover:scale-110 hover:scale-110 transition-transform duration-500 ease-out"
         />

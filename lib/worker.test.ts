@@ -7,10 +7,13 @@ import worker, {
   resolveSafeOriginUrl,
   resolveWorkerSiteConfig,
   resolveWorkerNewsApiConfig,
+  resolveWorkerWeatherConfig,
   buildWorkerNewsApiHeaders,
   sanitizePublicData,
   stripForcedAlignmentStyles,
   sanitizeArticleHtmlForWorker,
+  formatArticleParagraphsHtml,
+  getWeatherRadarDataForWorker,
   renderWorkerSitemapHtml,
   splitTextForTts,
   upgradeImageResolution,
@@ -34,17 +37,19 @@ test('wrangler.jsonc e wrangler.toml são válidos, sincronizados e sem segredos
   const tomlRaw = fs.readFileSync(path.join(rootDir, 'wrangler.toml'), 'utf8');
 
   const jsonc = JSON.parse(stripJsonComments(jsoncRaw));
-  assert.equal(jsonc.name, 'news');
+  assert.equal(jsonc.name, 'normajuridica');
   assert.equal(jsonc.main, 'worker.js');
   assert.equal(jsonc.assets?.binding, 'ASSETS');
   assert.equal(jsonc.assets?.directory, './public');
   assert.equal(jsonc.assets?.run_worker_first, true);
   assert.equal(jsonc.vars?.NEWS_API_BASE_URL, 'https://news-sources-api.legislativemunicipal.workers.dev');
-  assert.equal(jsonc.vars?.APP_URL, 'https://news.mirandinhacontabilidade.workers.dev');
-  assert.equal(jsonc.vars?.SITE_DOMAIN, 'news.mirandinhacontabilidade.workers.dev');
-  assert.equal(jsonc.vars?.NEXT_PUBLIC_SITE_URL, 'https://news.mirandinhacontabilidade.workers.dev');
+  assert.equal(jsonc.vars?.APP_URL, 'https://normajuridica.com.br');
+  assert.equal(jsonc.vars?.SITE_DOMAIN, 'normajuridica.com.br');
+  assert.equal(jsonc.vars?.NEXT_PUBLIC_SITE_URL, 'https://normajuridica.com.br');
+  assert.equal(jsonc.vars?.WEATHER_API_BASE_URL, 'https://radarmeteorologico.com.br');
+  assert.equal(jsonc.vars?.WEATHER_BASE_URL, 'https://radarmeteorologico.com.br');
+  assert.equal(jsonc.vars?.NEXT_PUBLIC_WEATHER_API_BASE_URL, 'https://radarmeteorologico.com.br');
 
-  // Custom domains removidos para evitar erro [code: 10082] e usar https://news.mirandinhacontabilidade.workers.dev
   assert.equal(jsonc.routes, undefined);
 
   // Garante que nenhum segredo sensível está exposto nas vars públicas
@@ -54,15 +59,16 @@ test('wrangler.jsonc e wrangler.toml são válidos, sincronizados e sem segredos
   }
 
   // Valida paridade com wrangler.toml
-  assert.match(tomlRaw, /name\s*=\s*"news"/);
+  assert.match(tomlRaw, /name\s*=\s*"normajuridica"/);
   assert.match(tomlRaw, /main\s*=\s*"worker\.js"/);
   assert.doesNotMatch(tomlRaw, /^\s*routes\s*=/m);
   assert.doesNotMatch(tomlRaw, /custom_domain\s*=\s*true/);
-  assert.match(tomlRaw, /APP_URL\s*=\s*"https:\/\/news\.mirandinhacontabilidade\.workers\.dev"/);
-  assert.match(tomlRaw, /SITE_DOMAIN\s*=\s*"news\.mirandinhacontabilidade\.workers\.dev"/);
-  assert.match(tomlRaw, /NEXT_PUBLIC_SITE_URL\s*=\s*"https:\/\/news\.mirandinhacontabilidade\.workers\.dev"/);
+  assert.match(tomlRaw, /APP_URL\s*=\s*"https:\/\/normajuridica\.com\.br"/);
+  assert.match(tomlRaw, /SITE_DOMAIN\s*=\s*"normajuridica\.com\.br"/);
+  assert.match(tomlRaw, /NEXT_PUBLIC_SITE_URL\s*=\s*"https:\/\/normajuridica\.com\.br"/);
   assert.match(tomlRaw, /NEWS_API_BASE_URL\s*=\s*"https:\/\/news-sources-api\.legislativemunicipal\.workers\.dev"/);
-  assert.doesNotMatch(tomlRaw, /^\s*(API_KEY|NEWS_API_KEY|REVALIDATE_SECRET|SMTP_PASS)\s*=/m);
+  assert.match(tomlRaw, /WEATHER_API_BASE_URL\s*=\s*"https:\/\/radarmeteorologico\.com\.br"/);
+  assert.doesNotMatch(tomlRaw, /^\s*(API_KEY|NEWS_API_KEY|REVALIDATE_SECRET|SMTP_PASS|WEATHER_API_KEY)\s*=/m);
 
   // Garante que bun.lock/bun.lockb estão no .gitignore (lockfileVersion 2 incompatível com bun@1.2.15 no Cloudflare Builds) e valida package-lock.json
   const gitignoreRaw = fs.readFileSync(path.join(rootDir, '.gitignore'), 'utf8');
@@ -91,36 +97,36 @@ test('wrangler.jsonc e wrangler.toml são válidos, sincronizados e sem segredos
 });
 
 test('resolveDnsAndCanonical redireciona www e http de produção sem redirecionar workers de preview ou localhost', () => {
-  const wwwReq = new Request('https://www.news.mirandinhacontabilidade.workers.dev/categoria/justica?page=2');
+  const wwwReq = new Request('https://www.normajuridica.com.br/categoria/justica?page=2');
   const wwwRes = resolveDnsAndCanonical(wwwReq);
   assert.ok(wwwRes);
   assert.equal(wwwRes.status, 301);
-  assert.equal(wwwRes.headers.get('location'), 'https://news.mirandinhacontabilidade.workers.dev/categoria/justica?page=2');
+  assert.equal(wwwRes.headers.get('location'), 'https://normajuridica.com.br/categoria/justica?page=2');
 
-  const httpApexReq = new Request('http://news.mirandinhacontabilidade.workers.dev/contato', {
+  const httpApexReq = new Request('http://normajuridica.com.br/contato', {
     headers: { 'cf-visitor': JSON.stringify({ scheme: 'http' }) },
   });
   const httpApexRes = resolveDnsAndCanonical(httpApexReq);
   assert.ok(httpApexRes);
   assert.equal(httpApexRes.status, 301);
-  assert.equal(httpApexRes.headers.get('location'), 'https://news.mirandinhacontabilidade.workers.dev/contato');
+  assert.equal(httpApexRes.headers.get('location'), 'https://normajuridica.com.br/contato');
 
-  const workersDevReq = new Request('https://news.mirandinhacontabilidade.workers.dev/');
+  const workersDevReq = new Request('https://normajuridica.normajuridica.workers.dev/');
   assert.equal(resolveDnsAndCanonical(workersDevReq), null);
 
   const localReq = new Request('http://localhost:3000/');
   assert.equal(resolveDnsAndCanonical(localReq), null);
 });
 
-test('resolveSafeOriginUrl bloqueia loops DNS (news.mirandinhacontabilidade.workers.dev / hop >= 1) e aceita origin externo válido', () => {
-  const currentUrl = new URL('https://news.mirandinhacontabilidade.workers.dev/');
+test('resolveSafeOriginUrl bloqueia loops DNS (normajuridica.com.br / hop >= 1) e aceita origin externo válido', () => {
+  const currentUrl = new URL('https://normajuridica.com.br/');
 
   assert.equal(
-    resolveSafeOriginUrl({ ORIGIN_URL: 'https://news.mirandinhacontabilidade.workers.dev' }, currentUrl, new Headers()),
+    resolveSafeOriginUrl({ ORIGIN_URL: 'https://normajuridica.com.br' }, currentUrl, new Headers()),
     null
   );
   assert.equal(
-    resolveSafeOriginUrl({ ORIGIN_URL: 'https://www.news.mirandinhacontabilidade.workers.dev' }, currentUrl, new Headers()),
+    resolveSafeOriginUrl({ ORIGIN_URL: 'https://www.normajuridica.com.br' }, currentUrl, new Headers()),
     null
   );
   assert.equal(
@@ -192,7 +198,7 @@ test('worker.fetch atende endpoints /api/*, SEO XML, páginas SSR e cron schedul
     };
 
     // /api/health
-    const healthRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/api/health'), env);
+    const healthRes = await worker.fetch(new Request('https://normajuridica.com.br/api/health'), env);
     assert.equal(healthRes.status, 200);
     assert.equal(healthRes.headers.get('X-Content-Type-Options'), 'nosniff');
     const healthJson = await healthRes.json();
@@ -200,26 +206,26 @@ test('worker.fetch atende endpoints /api/*, SEO XML, páginas SSR e cron schedul
     assert.equal(healthJson.platform, 'cloudflare-worker');
 
     // /api/revalidate sem segredo e com segredo
-    const unauthReval = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/api/revalidate?secret=wrong'), env);
+    const unauthReval = await worker.fetch(new Request('https://normajuridica.com.br/api/revalidate?secret=wrong'), env);
     assert.equal(unauthReval.status, 401);
-    const okReval = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/api/revalidate?secret=super-secret-token'), env);
+    const okReval = await worker.fetch(new Request('https://normajuridica.com.br/api/revalidate?secret=super-secret-token'), env);
     assert.equal(okReval.status, 200);
 
     // /api/news
-    const newsRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/api/news?limit=5'), env);
+    const newsRes = await worker.fetch(new Request('https://normajuridica.com.br/api/news?limit=5'), env);
     assert.equal(newsRes.status, 200);
     const newsJson = await newsRes.json();
     assert.equal(newsJson.items.length, 1);
     assert.equal(newsJson.items[0].slug, 'stf-analisa-marco-regulatorio-digital-101');
 
     // /api/sync?format=html
-    const syncHtmlRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/api/sync?format=html'), env);
+    const syncHtmlRes = await worker.fetch(new Request('https://normajuridica.com.br/api/sync?format=html'), env);
     assert.equal(syncHtmlRes.status, 200);
     assert.match(await syncHtmlRes.text(), /Cloudflare Worker Edge Ativo/);
 
     // /api/contact validação e geração de protocolo
     const contactRes = await worker.fetch(
-      new Request('https://news.mirandinhacontabilidade.workers.dev/api/contact', {
+      new Request('https://normajuridica.com.br/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -237,22 +243,22 @@ test('worker.fetch atende endpoints /api/*, SEO XML, páginas SSR e cron schedul
     assert.match(contactJson.protocol, /^NJ-\d{8}-[A-Z0-9]{4}$/);
 
     // SEO: /robots.txt & /sitemap.xml
-    const robotsRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/robots.txt'), env);
+    const robotsRes = await worker.fetch(new Request('https://normajuridica.com.br/robots.txt'), env);
     assert.equal(robotsRes.status, 200);
-    assert.match(await robotsRes.text(), /Sitemap: https:\/\/news\.mirandinhacontabilidade\.workers\.dev\/sitemap\.xml/);
+    assert.match(await robotsRes.text(), /Sitemap: https:\/\/normajuridica\.com\.br\/sitemap\.xml/);
 
-    const sitemapRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/sitemap.xml'), env);
+    const sitemapRes = await worker.fetch(new Request('https://normajuridica.com.br/sitemap.xml'), env);
     assert.equal(sitemapRes.status, 200);
     assert.match(await sitemapRes.text(), /sitemap-posts\.xml/);
 
     // SSR Home (/) & Matéria (/noticia/[slug]) & Redirecionamento de slug ausente (307)
-    const homeRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/'), env);
+    const homeRes = await worker.fetch(new Request('https://normajuridica.com.br/'), env);
     assert.equal(homeRes.status, 200);
     const homeHtml = await homeRes.text();
     assert.match(homeHtml, /STF analisa marco regulatório digital/);
 
     const articleRes = await worker.fetch(
-      new Request('https://news.mirandinhacontabilidade.workers.dev/noticia/stf-analisa-marco-regulatorio-digital-101'),
+      new Request('https://normajuridica.com.br/noticia/stf-analisa-marco-regulatorio-digital-101'),
       env
     );
     assert.equal(articleRes.status, 200);
@@ -261,13 +267,13 @@ test('worker.fetch atende endpoints /api/*, SEO XML, páginas SSR e cron schedul
     assert.match(articleHtml, /Compartilhe esta informação/);
 
     const missingArticleRes = await worker.fetch(
-      new Request('https://news.mirandinhacontabilidade.workers.dev/noticia/noticia-inexistente-999'),
+      new Request('https://normajuridica.com.br/noticia/noticia-inexistente-999'),
       env
     );
     assert.equal(missingArticleRes.status, 307);
 
     // 404 para rota desconhecida
-    const notFoundRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/rota-que-nao-existe'), env);
+    const notFoundRes = await worker.fetch(new Request('https://normajuridica.com.br/rota-que-nao-existe'), env);
     assert.equal(notFoundRes.status, 404);
 
     // Cron scheduled
@@ -334,14 +340,14 @@ test('worker.fetch entrega sitemaps estilizados para navegadores, XML para robô
 
     // 1. Sitemaps HTML estilizados para navegadores vs XML bruto
     for (const smPath of ['/sitemap.xml', '/sitemap-posts.xml', '/sitemap-categories.xml', '/sitemap-pages.xml', '/sitemap-images.xml']) {
-      const htmlRes = await worker.fetch(new Request(`https://news.mirandinhacontabilidade.workers.dev${smPath}`, { headers: browserHeaders }), env);
+      const htmlRes = await worker.fetch(new Request(`https://normajuridica.com.br${smPath}`, { headers: browserHeaders }), env);
       assert.equal(htmlRes.status, 200);
       assert.match(htmlRes.headers.get('content-type') || '', /text\/html/);
       const htmlBody = await htmlRes.text();
       assert.match(htmlBody, /#1d4ed8/);
       assert.match(htmlBody, /Total de URLs listadas:/);
 
-      const xmlRes = await worker.fetch(new Request(`https://news.mirandinhacontabilidade.workers.dev${smPath}?format=xml`, { headers: browserHeaders }), env);
+      const xmlRes = await worker.fetch(new Request(`https://normajuridica.com.br${smPath}?format=xml`, { headers: browserHeaders }), env);
       assert.equal(xmlRes.status, 200);
       assert.match(xmlRes.headers.get('content-type') || '', /application\/xml/);
       assert.match(await xmlRes.text(), /^<\?xml version="1\.0"/);
@@ -350,12 +356,12 @@ test('worker.fetch entrega sitemaps estilizados para navegadores, XML para robô
     const customSitemap = renderWorkerSitemapHtml({
       title: 'Teste Sitemap',
       description: 'Descrição teste',
-      entries: [{ url: 'https://news.mirandinhacontabilidade.workers.dev/', title: 'Home', changefreq: 'hourly', priority: '1.0' }],
+      entries: [{ url: 'https://normajuridica.com.br/', title: 'Home', changefreq: 'hourly', priority: '1.0' }],
     });
     assert.match(customSitemap, /Norma Jurídica/);
 
     // 2. Home SSR: Carrossel 10 slides, WeatherCard, Grade/Compacto, Minha Lista Drawer, CSS Animado e Justificação
-    const homeRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/'), env);
+    const homeRes = await worker.fetch(new Request('https://normajuridica.com.br/'), env);
     assert.equal(homeRes.status, 200);
     const homeHtml = await homeRes.text();
     assert.match(homeHtml, /id="nj-featured-carousel"/);
@@ -369,18 +375,18 @@ test('worker.fetch entrega sitemaps estilizados para navegadores, XML para robô
     assert.match(homeHtml, /hyphens:\s*none\s*!important/);
 
     // 3. Favoritos (?cat=favoritos) & ?article= redirect
-    const favRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/?cat=favoritos'), env);
+    const favRes = await worker.fetch(new Request('https://normajuridica.com.br/?cat=favoritos'), env);
     assert.equal(favRes.status, 200);
     const favHtml = await favRes.text();
     assert.match(favHtml, /Minha Lista/);
     assert.match(favHtml, /data-active-cat', 'favoritos'/);
 
-    const artRedirectRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/?article=decisao-institucional-1-regulacao'), env);
+    const artRedirectRes = await worker.fetch(new Request('https://normajuridica.com.br/?article=decisao-institucional-1-regulacao'), env);
     assert.equal(artRedirectRes.status, 307);
-    assert.equal(artRedirectRes.headers.get('location'), 'https://news.mirandinhacontabilidade.workers.dev/noticia/decisao-institucional-1-regulacao');
+    assert.equal(artRedirectRes.headers.get('location'), 'https://normajuridica.com.br/noticia/decisao-institucional-1-regulacao');
 
     // 4. Artigo SSR: Resumo da Notícia, Share SVGs, Chunked Web Speech API, zoom-frame
-    const artRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/noticia/decisao-institucional-1-regulacao'), env);
+    const artRes = await worker.fetch(new Request('https://normajuridica.com.br/noticia/decisao-institucional-1-regulacao'), env);
     assert.equal(artRes.status, 200);
     const artHtml = await artRes.text();
     assert.match(artHtml, /Resumo da Notícia/);
@@ -532,24 +538,24 @@ test('worker.fetch descobre fontes via catálogo /api/news, aplica retry ?ref= e
     const env = {
       API_URL_BASE: 'https://news-sources-api.legislativemunicipal.workers.dev/api',
       APIKEY: 'Bearer secret-ref-token',
-      APP_URL: 'https://news.mirandinhacontabilidade.workers.dev',
-      SITE_DOMAIN: 'news.mirandinhacontabilidade.workers.dev',
+      APP_URL: 'https://normajuridica.com.br',
+      SITE_DOMAIN: 'normajuridica.com.br',
     };
 
-    const syncRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/api/sync'), env);
+    const syncRes = await worker.fetch(new Request('https://normajuridica.com.br/api/sync'), env);
     assert.equal(syncRes.status, 200);
     const syncJson = await syncRes.json();
     assert.equal(syncJson.upstream.status, 'conectado');
     assert.equal(syncJson.upstream.httpStatus, 200);
     assert.equal(syncJson.upstream.authConfigured, true);
     assert.equal(syncJson.upstream.endpoint, 'https://news-sources-api.legislativemunicipal.workers.dev');
-    assert.equal(syncJson.site.domain, 'news.mirandinhacontabilidade.workers.dev');
-    assert.equal(syncJson.site.appUrl, 'https://news.mirandinhacontabilidade.workers.dev');
+    assert.equal(syncJson.site.domain, 'normajuridica.com.br');
+    assert.equal(syncJson.site.appUrl, 'https://normajuridica.com.br');
     // Garante que nenhuma chave secreta vaza no JSON público
     assert.equal('apiKey' in syncJson.upstream, false);
 
     const newsRes = await worker.fetch(
-      new Request('https://news.mirandinhacontabilidade.workers.dev/api/news?refresh=true&limit=10'),
+      new Request('https://normajuridica.com.br/api/news?refresh=true&limit=10'),
       env
     );
     assert.equal(newsRes.status, 200);
@@ -587,7 +593,7 @@ test('worker suporta novos aliases de token, ?ref= embutido, /api/sync estilo de
   try {
     // 1. /api/sync?format=html sem chave exibe painel completo e orientação Cloudflare Runtime
     const syncAlertRes = await worker.fetch(
-      new Request('https://news.mirandinhacontabilidade.workers.dev/api/sync?format=html'),
+      new Request('https://normajuridica.com.br/api/sync?format=html'),
       {}
     );
     assert.equal(syncAlertRes.status, 200);
@@ -599,21 +605,21 @@ test('worker suporta novos aliases de token, ?ref= embutido, /api/sync estilo de
     assert.match(syncAlertHtml, /Voltar ao Portal/);
 
     // 2. Home vazia exibe estado de apuração (sem quebrar)
-    const emptyHomeRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/'), {});
+    const emptyHomeRes = await worker.fetch(new Request('https://normajuridica.com.br/'), {});
     assert.equal(emptyHomeRes.status, 200);
     const emptyHomeHtml = await emptyHomeRes.text();
     assert.match(emptyHomeHtml, /Edição em apuração • Destaques/);
     assert.match(emptyHomeHtml, /Ver todas as notícias/);
 
     // 3. Categoria (/categoria/justica) exibe subtítulo e empty state completo
-    const catRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/categoria/justica'), {});
+    const catRes = await worker.fetch(new Request('https://normajuridica.com.br/categoria/justica'), {});
     assert.equal(catRes.status, 200);
     const catHtml = await catRes.text();
     assert.match(catHtml, /Cobertura analítica e factual sobre justiça/);
     assert.match(catHtml, /Edição em apuração • Justiça/);
 
     // 4. Contato (/contato) com 2 colunas, horários e <select>
-    const contactPageRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/contato'), {});
+    const contactPageRes = await worker.fetch(new Request('https://normajuridica.com.br/contato'), {});
     assert.equal(contactPageRes.status, 200);
     const contactPageHtml = await contactPageRes.text();
     assert.match(contactPageHtml, /Informações Institucionais/);
@@ -622,26 +628,26 @@ test('worker suporta novos aliases de token, ?ref= embutido, /api/sync estilo de
     assert.match(contactPageHtml, /Copiar Protocolo/);
 
     // 5. Páginas legais (/privacidade, /termos, /cookies) e institucionais (/pagina/sobre)
-    const privRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/privacidade'), {});
+    const privRes = await worker.fetch(new Request('https://normajuridica.com.br/privacidade'), {});
     assert.equal(privRes.status, 200);
     assert.match(await privRes.text(), /Encarregado pelo Tratamento de Dados \(DPO\)/);
 
-    const termosRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/termos'), {});
+    const termosRes = await worker.fetch(new Request('https://normajuridica.com.br/termos'), {});
     assert.equal(termosRes.status, 200);
     assert.match(await termosRes.text(), /Lei nº 9\.610\/1998/);
 
-    const cookiesRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/cookies'), {});
+    const cookiesRes = await worker.fetch(new Request('https://normajuridica.com.br/cookies'), {});
     assert.equal(cookiesRes.status, 200);
     assert.match(await cookiesRes.text(), /Cookies Essenciais:/);
 
-    const sobreRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/pagina/sobre'), {});
+    const sobreRes = await worker.fetch(new Request('https://normajuridica.com.br/pagina/sobre'), {});
     assert.equal(sobreRes.status, 200);
     const sobreHtml = await sobreRes.text();
     assert.match(sobreHtml, /Nossa Missão/);
     assert.match(sobreHtml, /Voltar ao índice institucional/);
 
     // 6. Página 404 com barra de busca e atalhos das editorias
-    const notFoundRes = await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/pagina-inexistente'), {});
+    const notFoundRes = await worker.fetch(new Request('https://normajuridica.com.br/pagina-inexistente'), {});
     assert.equal(notFoundRes.status, 404);
     const notFoundHtml = await notFoundRes.text();
     assert.match(notFoundHtml, /Navegue pelas Principais Editorias/);
@@ -727,14 +733,14 @@ test('worker elimina ?w=200, resize= e srcset para resolução natural da fonte 
       NEWS_API_KEY: 'key-test',
     };
     const apiRes = await worker.fetch(
-      new Request('https://news.mirandinhacontabilidade.workers.dev/api/news?refresh=true&limit=5'),
+      new Request('https://normajuridica.com.br/api/news?refresh=true&limit=5'),
       env
     );
     const apiJson = await apiRes.json();
     assert.equal(apiJson.items[0].imageUrl, 'https://i0.wp.com/cdn.example.com/capa.jpg?ssl=1');
 
     const homeRes = await worker.fetch(
-      new Request('https://news.mirandinhacontabilidade.workers.dev/?refresh=true'),
+      new Request('https://normajuridica.com.br/?refresh=true'),
       env
     );
     const homeHtml = await homeRes.text();
@@ -743,7 +749,7 @@ test('worker elimina ?w=200, resize= e srcset para resolução natural da fonte 
     assert.equal(homeHtml.includes('?w=1200'), false);
 
     const artRes = await worker.fetch(
-      new Request('https://news.mirandinhacontabilidade.workers.dev/noticia/materia-com-imagem-w200'),
+      new Request('https://normajuridica.com.br/noticia/materia-com-imagem-w200'),
       env
     );
     const artHtml = await artRes.text();
@@ -808,7 +814,7 @@ test('worker hidrata todas as 77+ fontes em lotes no Edge Cache e resolve matér
 
     // Hidrata todos os lotes sequencialmente via /api/sync?action=hydrate
     const firstSyncRes = await worker.fetch(
-      new Request('https://news.mirandinhacontabilidade.workers.dev/api/sync?action=hydrate'),
+      new Request('https://normajuridica.com.br/api/sync?action=hydrate'),
       env
     );
     const firstSync = await firstSyncRes.json();
@@ -816,11 +822,11 @@ test('worker hidrata todas as 77+ fontes em lotes no Edge Cache e resolve matér
     assert.ok(firstSync.storage.hydration.totalShards >= 4);
 
     for (let i = 1; i < firstSync.storage.hydration.totalShards; i++) {
-      await worker.fetch(new Request('https://news.mirandinhacontabilidade.workers.dev/api/sync?action=hydrate'), env);
+      await worker.fetch(new Request('https://normajuridica.com.br/api/sync?action=hydrate'), env);
     }
 
     const finalSyncRes = await worker.fetch(
-      new Request('https://news.mirandinhacontabilidade.workers.dev/api/sync'),
+      new Request('https://normajuridica.com.br/api/sync'),
       env
     );
     const finalSync = await finalSyncRes.json();
@@ -830,7 +836,7 @@ test('worker hidrata todas as 77+ fontes em lotes no Edge Cache e resolve matér
 
     // Verifica que todas as URLs no /api/news estão em resolução natural sem ?w=200
     const apiRes = await worker.fetch(
-      new Request('https://news.mirandinhacontabilidade.workers.dev/api/news?limit=24&page=10'),
+      new Request('https://normajuridica.com.br/api/news?limit=24&page=10'),
       env
     );
     const apiJson = await apiRes.json();
@@ -840,7 +846,7 @@ test('worker hidrata todas as 77+ fontes em lotes no Edge Cache e resolve matér
 
     // Verifica abertura de matéria do último lote (fonte 2754168962593) com hidratação de corpo completo
     const deepArticleRes = await worker.fetch(
-      new Request('https://news.mirandinhacontabilidade.workers.dev/noticia/noticia-fonte-2754168962593-item-5'),
+      new Request('https://normajuridica.com.br/noticia/noticia-fonte-2754168962593-item-5'),
       env
     );
     assert.equal(deepArticleRes.status, 200);
@@ -852,6 +858,167 @@ test('worker hidrata todas as 77+ fontes em lotes no Edge Cache e resolve matér
     (globalThis as Record<string, unknown>).caches = originalCaches;
   }
 });
+
+test('worker /api/weather integra Radar Meteorológico sem API key, envia crédito, alertas INMET e aceita geolocalização', async () => {
+  const weatherCfg = resolveWorkerWeatherConfig({
+    WEATHER_API_BASE_URL: 'https://radarmeteorologico.com.br/',
+  });
+  assert.equal(weatherCfg.baseUrl, 'https://radarmeteorologico.com.br');
+  assert.equal(weatherCfg.requiresAuth, false);
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const urlStr = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    const headers = new Headers(init?.headers || {});
+    assert.equal(headers.has('Authorization'), false);
+
+    const u = new URL(urlStr);
+    if (u.hostname === 'radarmeteorologico.com.br' && u.pathname === '/api/v1/cidades' && !u.search) {
+      return new Response(
+        JSON.stringify({
+          cidades: [
+            { nome: 'Palmas', uf: 'TO', ibge: 1721000, slug: 'palmas', latitude: -10.184, longitude: -48.3336, capital: true },
+            { nome: 'Brasília', uf: 'DF', ibge: 5300108, slug: 'brasilia', latitude: -15.7795, longitude: -47.9297, capital: true },
+          ],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    if (u.hostname === 'radarmeteorologico.com.br' && u.pathname === '/api/v1/cidades' && u.searchParams.get('uf') === 'TO') {
+      return new Response(
+        JSON.stringify({
+          cidades: [
+            { nome: 'Palmas', uf: 'TO', ibge: 1721000, slug: 'palmas', latitude: -10.184, longitude: -48.3336, capital: true },
+          ],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    if (u.hostname === 'radarmeteorologico.com.br' && u.pathname === '/api/v1/temperaturas') {
+      return new Response(
+        JSON.stringify({
+          mais_quentes: [
+            { cidade: 'Palmas', uf: 'TO', ibge: 1721000, temperatura: 34.2, maxima: 36.1, minima: 23.8, condicao: 'Ensolarado', codigo_wmo: 0, chuva_mm: 0 },
+          ],
+          mais_frias: [],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    if (u.hostname === 'radarmeteorologico.com.br' && u.pathname === '/api/v1/alertas') {
+      return new Response(
+        JSON.stringify({
+          alertas: [
+            { id: 10, evento: 'Baixa Umidade', severidade: 'Perigo Potencial', nivel: 2, inicio: '', fim: '', futuro: false, municipios_afetados: 22, geocodes: [1721000] },
+          ],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    return new Response(JSON.stringify({ items: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }) as typeof fetch;
+
+  try {
+    const req = new Request('https://normajuridica.com.br/api/weather?q=-10.184,-48.3336');
+    const res = await worker.fetch(req, { WEATHER_API_BASE_URL: 'https://radarmeteorologico.com.br' });
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get('Permissions-Policy'), 'camera=(), microphone=(), geolocation=(self), payment=(), usb=(), browsing-topics=()');
+    const weatherJson = await res.json();
+    assert.equal(weatherJson.city, 'Palmas');
+    assert.equal(weatherJson.uf, 'TO');
+    assert.equal(weatherJson.temperature, 34);
+    assert.equal(weatherJson.attributionUrl, 'https://radarmeteorologico.com.br');
+    assert.equal(weatherJson.alert?.event, 'Baixa Umidade');
+
+    const directWeather = await getWeatherRadarDataForWorker('-10.184,-48.3336', {}, req);
+    assert.equal(directWeather.city, 'Palmas');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('worker garante zero editorias vazias, parágrafos integrais, Tailwind pré-compilado e JSON-LD SEO sem cdn.tailwindcss.com', async () => {
+  const formatted = formatArticleParagraphsHtml(
+    '<p><p>Primeira sentença importante sobre o orçamento público aprovado neste exercício fiscal pelo legislativo nacional. ' +
+      'Segunda sentença detalha a alocação de recursos para infraestrutura judiciária e digitalização processual. ' +
+      'Terceira sentença apresenta o cronograma oficial de desembolsos trimestrais para todos os tribunais regionais. ' +
+      'Quarta sentença informa que a auditoria de conformidade será conduzida pelo órgão de controle interno competente. ' +
+      'Quinta sentença confirma a publicação integral dos anexos técnicos no diário oficial eletrônico.</p></p>'
+  );
+  assert.equal(formatted.includes('<p><p>'), false);
+  assert.ok((formatted.match(/<p\b/g) || []).length >= 2);
+
+  const originalFetch = globalThis.fetch;
+  const sampleFeed = [
+    {
+      id: 'full-1',
+      title: 'STF consolida entendimento nacional aplicável a tribunais e municípios brasileiros',
+      slug: 'stf-consolida-entendimento-nacional-full-1',
+      category: 'Justiça',
+      description: 'Decisão plenária orienta órgãos estaduais e municipais em todo o Brasil.',
+      contentHtml:
+        '<p>Primeiro parágrafo completo com detalhamento jurídico da matéria no plenário do tribunal. ' +
+        'Segundo bloco explicativo sobre os impactos nos estados e municípios de norte a sul do país.</p>' +
+        '<p>Terceiro parágrafo com dados complementares sobre prazos processuais e vigência imediata da resolução oficial.</p>',
+      publishedAt: new Date().toISOString(),
+      imageUrl: 'https://cdn.example.com/stf-plenaria.jpg',
+      author: 'Redação',
+    },
+  ];
+
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const urlStr = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    if (urlStr.includes('/api/news')) {
+      return new Response(JSON.stringify({ items: sampleFeed }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+    return new Response(JSON.stringify({ items: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }) as typeof fetch;
+
+  try {
+    const env = {
+      NEWS_API_BASE_URL: 'https://news-sources-api.legislativemunicipal.workers.dev',
+      NEWS_API_KEY: 'test-key',
+      WEATHER_API_BASE_URL: 'https://radarmeteorologico.com.br',
+    };
+
+    // /api/categories retorna todas as 60 editorias
+    const catsRes = await worker.fetch(new Request('https://normajuridica.com.br/api/categories'), env);
+    assert.equal(catsRes.status, 200);
+    const catsJson = await catsRes.json();
+    assert.ok(catsJson.categories.length >= 60);
+
+    // Editorias sem fonte exclusiva retornam notícias por fallback contextual/nacional (zero vazios)
+    for (const slug of ['bahia', 'tocantins', 'direito-tributario']) {
+      const catApiRes = await worker.fetch(
+        new Request(`https://normajuridica.com.br/api/news?category=${slug}&limit=10`),
+        env
+      );
+      const catApiJson = await catApiRes.json();
+      assert.ok(catApiJson.items.length >= 1, `Editoria ${slug} não deve ficar vazia`);
+    }
+
+    // Home HTML sem cdn.tailwindcss.com e com crédito radarmeteorologico.com.br + JSON-LD NewsMediaOrganization
+    const homeRes = await worker.fetch(new Request('https://normajuridica.com.br/'), env);
+    const homeHtml = await homeRes.text();
+    assert.equal(homeHtml.includes('cdn.tailwindcss.com'), false);
+    assert.equal(homeHtml.includes('/*__WORKER_COMPILED_CSS__*/'), false);
+    assert.match(homeHtml, /radarmeteorologico\.com\.br/);
+    assert.match(homeHtml, /NewsMediaOrganization/);
+
+    // Artigo HTML com JSON-LD NewsArticle e múltiplos parágrafos
+    const artRes = await worker.fetch(
+      new Request('https://normajuridica.com.br/noticia/stf-consolida-entendimento-nacional-full-1'),
+      env
+    );
+    const artHtml = await artRes.text();
+    assert.match(artHtml, /NewsArticle/);
+    assert.match(artHtml, /BreadcrumbList/);
+    assert.equal(artHtml.includes('cdn.tailwindcss.com'), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 
 
 

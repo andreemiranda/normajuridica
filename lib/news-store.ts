@@ -5,8 +5,9 @@ import path from 'node:path';
 import os from 'node:os';
 import Database from 'better-sqlite3';
 import { NewsItem, CategoryInfo } from './types';
-import { ALL_CATEGORIES, getCategoryAliases, getCategorySourceIds, mergeDynamicCategories } from './sources';
+import { ALL_CATEGORIES, getCategoryAliases, getCategoryKeywords, getCategorySourceIds, mergeDynamicCategories } from './sources';
 import { stripHtmlTags, normalizeImageKey, extractAllImagesFromHtml, repairAndSanitizeArticleHtml, upgradeImageResolution, isLowResThumbnailUrl } from './sanitizer';
+import { formatArticleParagraphsHtml } from './article-extractor';
 import { SITE_CONFIG } from './site-config';
 
 export function formatTimeAgo(dateStr: string): string {
@@ -217,7 +218,7 @@ export function getSqliteDbPath(): { dbPath: string; isEphemeral: boolean } {
 const FEED_SELECT_COLUMNS = `
   id, slug, title, link, pub_date, pub_date_timestamp, iso_date,
   category, category_id, source, source_id, summary, image_url,
-  images_json, image_caption, author, original_category, created_at, updated_at
+  images_json, image_caption, author, original_category, source_url, created_at, updated_at
 `;
 
 interface QueryCacheEntry {
@@ -311,6 +312,7 @@ export class SqliteNewsStore implements INewsStore {
         image_caption TEXT,
         author TEXT,
         original_category TEXT,
+        source_url TEXT,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
       );
@@ -330,6 +332,48 @@ export class SqliteNewsStore implements INewsStore {
       CREATE INDEX IF NOT EXISTS idx_news_source_pub_ts ON news (source_id, pub_date_timestamp DESC);
       CREATE INDEX IF NOT EXISTS idx_news_link ON news (link);
     `);
+
+    try {
+      const cols = db.prepare('PRAGMA table_info(news)').all() as Array<{ name: string }>;
+      if (!cols.some((c) => c.name === 'source_url')) {
+        db.exec('ALTER TABLE news ADD COLUMN source_url TEXT');
+      }
+    } catch {}
+  }
+
+  private normalizeStoredArticles(db: Database.Database): void {
+    try {
+      const done = db.prepare('SELECT value FROM sync_meta WHERE key = ?').get('paragraphs_normalized_v1') as { value: string } | undefined;
+      if (done?.value === '1') return;
+
+      const candidates = db
+        .prepare(
+          `SELECT id, content_html FROM news
+           WHERE content_html IS NOT NULL AND content_html != ''`
+        )
+        .all() as Array<{ id: string; content_html: string }>;
+
+      const updateStmt = db.prepare('UPDATE news SET content_html = ? WHERE id = ?');
+      const tx = db.transaction(() => {
+        for (const row of candidates) {
+          const hasDoubleP = /<p\b[^>]*>\s*<p\b/i.test(row.content_html);
+          const pCount = (row.content_html.match(/<p\b/gi) || []).length;
+          if (hasDoubleP || pCount <= 2 || /<br\s*\/?>/i.test(row.content_html)) {
+            const formatted = formatArticleParagraphsHtml(row.content_html);
+            if (formatted && formatted !== row.content_html) {
+              updateStmt.run(formatted, row.id);
+            }
+          }
+        }
+        db.prepare(`
+          INSERT INTO sync_meta (key, value, updated_at)
+          VALUES (?, ?, ?)
+          ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+        `).run('paragraphs_normalized_v1', '1', Date.now());
+      });
+
+      tx();
+    } catch {}
   }
 
   private normalizeStoredImageUrls(db: Database.Database): void {
@@ -468,6 +512,7 @@ export class SqliteNewsStore implements INewsStore {
 
       this.setupSchema(this.db);
       this.normalizeStoredImageUrls(this.db);
+      this.normalizeStoredArticles(this.db);
       this.initialized = true;
 
       // Seed fallback from seed-news.json if database has fewer than 15000 items
@@ -651,8 +696,9 @@ export class SqliteNewsStore implements INewsStore {
       rawAppUrl && !rawAppUrl.includes('MY_APP_URL')
         ? rawAppUrl.replace(/\/+$/, '')
         : '';
-    const sanitizedContentHtml = rawContentHtml
-      ? repairAndSanitizeArticleHtml(rawContentHtml, finalImageUrl ? [finalImageUrl] : [], {
+    const formattedRawHtml = rawContentHtml ? formatArticleParagraphsHtml(rawContentHtml) : undefined;
+    const sanitizedContentHtml = formattedRawHtml
+      ? repairAndSanitizeArticleHtml(formattedRawHtml, finalImageUrl ? [finalImageUrl] : [], {
           appUrl,
           appDomain: SITE_CONFIG.domain,
           currentArticleSlug: String(row.slug || ''),
@@ -682,6 +728,7 @@ export class SqliteNewsStore implements INewsStore {
       imageCaption: row.image_caption ? String(row.image_caption) : undefined,
       author: row.author ? String(row.author) : 'Norma Jurídica',
       originalCategory: row.original_category ? String(row.original_category) : undefined,
+      sourceUrl: row.source_url ? String(row.source_url) : undefined,
     };
   }
 
@@ -755,19 +802,60 @@ export class SqliteNewsStore implements INewsStore {
       // Total count for query
       const countStmt = db.prepare(`SELECT COUNT(*) as count FROM news ${whereSql}`);
       const countRow = countStmt.get(...params) as { count: number } | undefined;
-      const total = countRow ? countRow.count : 0;
+      let total = countRow ? countRow.count : 0;
 
       // Items query with pagination - selects only feed metadata columns, omitting large content_html
       const validOrder = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
-      const itemsSql = `
-        SELECT ${FEED_SELECT_COLUMNS} FROM news
-        ${whereSql}
-        ORDER BY pub_date_timestamp ${validOrder}
-        LIMIT ? OFFSET ?
-      `;
+      let rows: Record<string, unknown>[] = [];
 
-      const itemsStmt = db.prepare(itemsSql);
-      const rows = itemsStmt.all(...params, limit, offset) as Record<string, unknown>[];
+      if (total > 0) {
+        const itemsSql = `
+          SELECT ${FEED_SELECT_COLUMNS} FROM news
+          ${whereSql}
+          ORDER BY pub_date_timestamp ${validOrder}
+          LIMIT ? OFFSET ?
+        `;
+        rows = db.prepare(itemsSql).all(...params, limit, offset) as Record<string, unknown>[];
+      } else if (category && category !== 'all' && category !== 'todas' && !searchQuery) {
+        // Secondary fallback: match editoria keywords across title and summary, then national editorial feed
+        const keywords = getCategoryKeywords(category);
+        if (keywords.length > 0) {
+          const kwClauses = keywords.map(() => '(LOWER(title) LIKE ? OR LOWER(summary) LIKE ?)').join(' OR ');
+          const kwParams = keywords.flatMap((kw) => [`%${kw.toLowerCase()}%`, `%${kw.toLowerCase()}%`]);
+          const kwCountRow = db.prepare(`SELECT COUNT(*) as count FROM news WHERE (${kwClauses})`).get(...kwParams) as { count: number } | undefined;
+          total = kwCountRow ? kwCountRow.count : 0;
+          if (total > 0) {
+            rows = db.prepare(`
+              SELECT ${FEED_SELECT_COLUMNS} FROM news
+              WHERE (${kwClauses})
+              ORDER BY pub_date_timestamp ${validOrder}
+              LIMIT ? OFFSET ?
+            `).all(...kwParams, limit, offset) as Record<string, unknown>[];
+          }
+        }
+
+        if (total === 0) {
+          const fbWhere = `WHERE LOWER(category_id) IN ('brasil', 'politica', 'economia', 'justica', 'noticias-gerais')`;
+          const fbCountRow = db.prepare(`SELECT COUNT(*) as count FROM news ${fbWhere}`).get() as { count: number } | undefined;
+          total = fbCountRow ? fbCountRow.count : 0;
+          if (total > 0) {
+            rows = db.prepare(`
+              SELECT ${FEED_SELECT_COLUMNS} FROM news
+              ${fbWhere}
+              ORDER BY pub_date_timestamp ${validOrder}
+              LIMIT ? OFFSET ?
+            `).all(limit, offset) as Record<string, unknown>[];
+          } else {
+            const allCountRow = db.prepare('SELECT COUNT(*) as count FROM news').get() as { count: number } | undefined;
+            total = allCountRow ? allCountRow.count : 0;
+            rows = db.prepare(`
+              SELECT ${FEED_SELECT_COLUMNS} FROM news
+              ORDER BY pub_date_timestamp ${validOrder}
+              LIMIT ? OFFSET ?
+            `).all(limit, offset) as Record<string, unknown>[];
+          }
+        }
+      }
 
       const items = rows.map(r => this.rowToNewsItem(r));
 
@@ -900,12 +988,12 @@ export class SqliteNewsStore implements INewsStore {
       INSERT INTO news (
         id, slug, title, link, pub_date, pub_date_timestamp, iso_date,
         category, category_id, source, source_id, summary, content_html,
-        image_url, images_json, image_caption, author, original_category,
+        image_url, images_json, image_caption, author, original_category, source_url,
         created_at, updated_at
       ) VALUES (
         @id, @slug, @title, @link, @pub_date, @pub_date_timestamp, @iso_date,
         @category, @category_id, @source, @source_id, @summary, @content_html,
-        @image_url, @images_json, @image_caption, @author, @original_category,
+        @image_url, @images_json, @image_caption, @author, @original_category, @source_url,
         @created_at, @updated_at
       )
     `);
@@ -928,6 +1016,7 @@ export class SqliteNewsStore implements INewsStore {
         image_caption = @image_caption,
         author = @author,
         original_category = @original_category,
+        source_url = COALESCE(@source_url, source_url),
         updated_at = @updated_at
       WHERE id = @id OR slug = @slug
     `);
@@ -948,8 +1037,9 @@ export class SqliteNewsStore implements INewsStore {
             ? [cleanImageUrl]
             : [];
         const imagesJson = cleanImages.length > 0 ? JSON.stringify(cleanImages) : '[]';
-        const cleanContentHtml = item.contentHtml
-          ? item.contentHtml.replace(
+        const formattedHtml = item.contentHtml ? formatArticleParagraphsHtml(item.contentHtml) : null;
+        const cleanContentHtml = formattedHtml
+          ? formattedHtml.replace(
               /(<img\b[^>]*?\bsrc=["'])([^"']+)(["'][^>]*>)/gi,
               (_m, prefix, src, suffix) => `${prefix}${upgradeImageResolution(src)}${suffix}`
             )
@@ -976,6 +1066,7 @@ export class SqliteNewsStore implements INewsStore {
           image_caption: item.imageCaption || null,
           author: item.author || 'Norma Jurídica',
           original_category: item.originalCategory || null,
+          source_url: item.sourceUrl || null,
           created_at: now,
           updated_at: now,
         };
@@ -1163,7 +1254,18 @@ export class SqliteNewsStore implements INewsStore {
 
       const stmt = db.prepare(`SELECT COUNT(*) as count FROM news WHERE (${categoryClauses.join(' OR ')})`);
       const row = stmt.get(...params) as { count: number } | undefined;
-      return row ? row.count : 0;
+      if (row && row.count > 0) return row.count;
+
+      const keywords = getCategoryKeywords(category);
+      if (keywords.length > 0) {
+        const kwClauses = keywords.map(() => '(LOWER(title) LIKE ? OR LOWER(summary) LIKE ?)').join(' OR ');
+        const kwParams = keywords.flatMap((kw) => [`%${kw.toLowerCase()}%`, `%${kw.toLowerCase()}%`]);
+        const kwRow = db.prepare(`SELECT COUNT(*) as count FROM news WHERE (${kwClauses})`).get(...kwParams) as { count: number } | undefined;
+        if (kwRow && kwRow.count > 0) return kwRow.count;
+      }
+
+      const fbRow = db.prepare(`SELECT COUNT(*) as count FROM news WHERE LOWER(category_id) IN ('brasil', 'politica', 'economia', 'justica', 'noticias-gerais')`).get() as { count: number } | undefined;
+      if (fbRow && fbRow.count > 0) return fbRow.count;
     }
     const stmt = db.prepare('SELECT COUNT(*) as count FROM news');
     const row = stmt.get() as { count: number } | undefined;
