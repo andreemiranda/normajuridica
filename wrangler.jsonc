@@ -25,8 +25,9 @@
       "enabled": true
     }
   },
-  // Custom domain (normajuridica.com.br) removido para evitar erro de deploy [code: 10082]
-  // e publicar automaticamente em https://normajuridica.com.br
+  // Sem "routes" aqui, de propósito: declarar o custom domain no arquivo causava o erro de deploy [code: 10082].
+  // O domínio https://normajuridica.com.br deve ser vinculado ao worker "normajuridica" pelo painel da Cloudflare
+  // (Workers & Pages > normajuridica > Settings > Domains & Routes), com a zona na mesma conta.
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
