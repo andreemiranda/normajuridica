@@ -3,7 +3,9 @@
 // com suporte híbrido (Proxy resiliente para ORIGIN_URL quando configurado OU execução 100% Edge Standalone),
 // prevenção de loops DNS (Error 1000 / 1014 / 508) para normajuridica.com.br e leitura exclusiva de secrets no env.
 
-const DEFAULT_NEWS_API_BASE_URL = 'https://normajuridica.com.br';
+// Base da API de fontes SEM o sufixo /api (o worker acrescenta /api/news, /api/types etc. a cada chamada).
+// Mesmo valor de NEWS_API_BASE_URL em wrangler.jsonc e wrangler.toml.
+const DEFAULT_NEWS_API_BASE_URL = 'https://news.normajuridica.com.br';
 const CANONICAL_DOMAIN = 'normajuridica.com.br';
 const CANONICAL_ORIGIN = `https://${CANONICAL_DOMAIN}`;
 
@@ -1375,6 +1377,64 @@ async function fetchUpstreamJsonDetailed(env, endpoint, timeoutMs = 5500) {
   } catch {
     return { data: null, status: res.status };
   }
+}
+
+export function diagnoseWorkerUpstream({ ok = false, httpStatus = 0, hasApiKey = false, baseUrl = '', siteDomain = '', currentHost = '' } = {}) {
+  let upstreamHost = '';
+  try {
+    upstreamHost = new URL(baseUrl).hostname.toLowerCase();
+  } catch {}
+  const ownHosts = [siteDomain, siteDomain ? `www.${siteDomain}` : '', currentHost]
+    .map((h) => String(h || '').toLowerCase())
+    .filter(Boolean);
+  const selfReference = Boolean(upstreamHost && ownHosts.includes(upstreamHost));
+
+  if (selfReference) {
+    return {
+      selfReference,
+      message: `A URL base da API (${upstreamHost}) é o próprio site. O worker estaria consultando a si mesmo e nunca receberia notícias. Aponte NEWS_API_BASE_URL para o serviço que entrega as fontes.`,
+    };
+  }
+  if (ok) return { selfReference, message: '' };
+  if (!httpStatus) {
+    return {
+      selfReference,
+      message: `Sem resposta de ${upstreamHost || 'a API'}. Verifique se o domínio existe no DNS, se está vinculado a um worker ativo e se responde em /api/types.`,
+    };
+  }
+  if (httpStatus === 401) {
+    return {
+      selfReference,
+      message: hasApiKey
+        ? 'A API recusou a chave (HTTP 401). Confirme que API_KEY é a chave emitida para este serviço e que o painel da Cloudflare não a sobrescreveu com outro valor.'
+        : 'A API exige chave (HTTP 401) e nenhuma foi encontrada no ambiente do worker.',
+    };
+  }
+  if (httpStatus === 403) {
+    return {
+      selfReference,
+      message: `A API bloqueou a origem (HTTP 403). O worker envia Origin, Referer e X-Site-Domain com ${siteDomain || 'o domínio configurado'}. Se a chave está vinculada a outro domínio, autorize este na API.`,
+    };
+  }
+  if (httpStatus === 404) {
+    return {
+      selfReference,
+      message: 'Endpoint não encontrado (HTTP 404). A URL base precisa servir /api/types e /api/news. Confira o endereço e o sufixo /api em NEWS_API_BASE_URL.',
+    };
+  }
+  if (httpStatus >= 520 && httpStatus <= 527) {
+    return {
+      selfReference,
+      message: `A Cloudflare não conseguiu alcançar o servidor por trás de ${upstreamHost || 'a API'} (HTTP ${httpStatus}). O registro DNS existe, mas aponta para um destino que não responde. Vincule o domínio a um worker ativo (Domains & Routes) ou corrija o registro DNS.`,
+    };
+  }
+  if (httpStatus === 429) {
+    return { selfReference, message: 'A API limitou as requisições (HTTP 429). Aguarde alguns minutos antes de sincronizar de novo.' };
+  }
+  if (httpStatus >= 500) {
+    return { selfReference, message: `A API respondeu com erro interno (HTTP ${httpStatus}). O problema está no serviço de origem.` };
+  }
+  return { selfReference, message: `Resposta inesperada da API (HTTP ${httpStatus}).` };
 }
 
 async function fetchUpstreamJson(env, endpoint, timeoutMs = 5500) {
@@ -2821,7 +2881,13 @@ async function handleApiRequest(request, env, url) {
         return jsonResponse({ error: 'Segredo de administração não configurado no servidor.' }, 503);
       }
       if (!timingSafeCompare(provided, configuredSecret)) {
-        return jsonResponse({ error: 'Ação restrita. Segredo ou token de autorização não fornecido ou inválido.' }, 401);
+        return jsonResponse(
+          {
+            error: 'Ação restrita. Segredo ou token de autorização não fornecido ou inválido.',
+            hint: 'Envie o segredo no cabeçalho Authorization: Bearer <TOKEN> (ou x-admin-secret). Para apenas atualizar as notícias a partir do navegador, use /api/sync?action=hydrate&format=html, que não exige segredo.',
+          },
+          401
+        );
       }
       const exported = await fetchAggregatedNews(env, { category: 'all', limit: 100, page: 1 });
       return jsonResponse(
@@ -2837,7 +2903,13 @@ async function handleApiRequest(request, env, url) {
 
     if ((action === 'sync' || action === 'prune') && configuredSecret) {
       if (!timingSafeCompare(provided, configuredSecret)) {
-        return jsonResponse({ error: 'Ação restrita. Segredo ou token de autorização não fornecido ou inválido.' }, 401);
+        return jsonResponse(
+          {
+            error: 'Ação restrita. Segredo ou token de autorização não fornecido ou inválido.',
+            hint: 'Envie o segredo no cabeçalho Authorization: Bearer <TOKEN> (ou x-admin-secret). Para apenas atualizar as notícias a partir do navegador, use /api/sync?action=hydrate&format=html, que não exige segredo.',
+          },
+          401
+        );
       }
     }
     const probeStart = Date.now();
@@ -2874,6 +2946,14 @@ async function handleApiRequest(request, env, url) {
     const maxPerSource = Math.max(350, parseInt(readEnvVar(env, ['NEWS_STORE_MAX_PER_SOURCE']) || '350', 10) || 350);
     const retentionDays = Math.max(90, parseInt(readEnvVar(env, ['NEWS_RETENTION_DAYS']) || '90', 10) || 90);
 
+    const upstreamDiagnosis = diagnoseWorkerUpstream({
+      ok: Boolean(probeRes.data),
+      httpStatus: probeRes.status,
+      hasApiKey: Boolean(apiKey),
+      baseUrl,
+      siteDomain: siteConfig.domain,
+      currentHost: url.hostname,
+    });
     const payload = {
       status: 'conectado',
       connection: 'ativa',
@@ -2898,6 +2978,8 @@ async function handleApiRequest(request, env, url) {
         authConfigured: Boolean(apiKey),
         latencyMs,
         endpoint: baseUrl,
+        selfReference: upstreamDiagnosis.selfReference,
+        diagnosis: upstreamDiagnosis.message,
       },
       latestPostInStore: latestItem
         ? {
@@ -2925,6 +3007,12 @@ async function handleApiRequest(request, env, url) {
             <div class="stat-label" style="color:#fbbf24;">Ação Necessária: Autenticação API Ausente no Runtime</div>
             <p style="margin:6px 0;color:#fde68a;">Nenhuma chave de API foi encontrada no ambiente de execução (<code>env</code>) do Worker.</p>
             <p style="margin:6px 0;color:#cbd5e1;">No painel do Cloudflare: acesse <strong>Workers &amp; Pages → news → Settings → Variables and Secrets</strong> e adicione <code>API_KEY</code> ou <code>NEWS_API_KEY</code> como variável de <strong>Runtime</strong> (não apenas Build variables), depois execute um novo deploy.</p>
+          </div>`
+        : '';
+      const upstreamAlertBox = upstreamDiagnosis.message
+        ? `<div class="card card-alert">
+            <div class="stat-label" style="color:#fbbf24;">Por que nenhuma notícia está chegando</div>
+            <p style="margin:6px 0;color:#fde68a;">${escapeHtml(upstreamDiagnosis.message)}</p>
           </div>`
         : '';
       const latestCard = latestItem
@@ -3001,10 +3089,11 @@ async function handleApiRequest(request, env, url) {
       <p><strong>Autenticação API:</strong> <strong style="color:${apiKey ? '#34d399' : '#f87171'};">${apiKey ? 'Configurada' : 'Ausente'}</strong></p>
       <p><strong>Variáveis de URL:</strong> APP_URL=${siteConfig.hasAppUrlVar ? 'Configurada' : 'Fallback'} • SITE_DOMAIN=${siteConfig.hasSiteDomainVar ? 'Configurada' : 'Fallback'}</p>
     </div>
+    ${upstreamAlertBox}
     ${alertHelpBox}
     ${latestCard}
     <div style="text-align: center; margin-top: 24px;">
-      <a href="/api/sync?action=sync&amp;format=html" class="btn">↻ Forçar Sincronização Agora</a>
+      <a href="/api/sync?action=hydrate&amp;format=html" class="btn">↻ Forçar Sincronização Agora</a>
       <a href="/" class="btn btn-secondary">← Voltar ao Portal</a>
     </div>
     <div class="footer">
