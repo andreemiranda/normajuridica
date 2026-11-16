@@ -1055,6 +1055,28 @@ test('worker garante zero editorias vazias, parágrafos integrais, Tailwind pré
     assert.match(artHtml, /NewsArticle/);
     assert.match(artHtml, /BreadcrumbList/);
     assert.equal(artHtml.includes('cdn.tailwindcss.com'), false);
+
+    // Ambas configurações do AdSense (tradicional + AMP Auto Ads) ativas no HTML e liberadas na CSP
+    const cspHeader = homeRes.headers.get('Content-Security-Policy') || '';
+    assert.match(cspHeader, /https:\/\/cdn\.ampproject\.org/);
+    assert.match(cspHeader, /https:\/\/pagead2\.googlesyndication\.com/);
+
+    for (const html of [homeHtml, artHtml]) {
+      const headEndIdx = html.indexOf('</head>');
+      const bodyStartIdx = html.indexOf('<body');
+      const ampScriptIdx = html.indexOf('src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js"');
+      const ampTagIdx = html.indexOf('<amp-auto-ads type="adsense" data-ad-client="ca-pub-7059730627018047"></amp-auto-ads>');
+      assert.ok(ampScriptIdx > 0 && ampScriptIdx < headEndIdx, 'Script amp-auto-ads deve estar dentro de <head></head>');
+      assert.match(html, /custom-element="amp-auto-ads"/);
+      assert.ok(ampTagIdx > bodyStartIdx, '<amp-auto-ads> deve estar logo após <body>');
+      assert.match(html, /https:\/\/pagead2\.googlesyndication\.com\/pagead\/js\/adsbygoogle\.js\?client=ca-pub-7059730627018047/);
+      assert.match(html, /class="adsbygoogle block"/);
+    }
+
+    const layoutSrc = fs.readFileSync(path.join(process.cwd(), 'app/layout.tsx'), 'utf8');
+    assert.match(layoutSrc, /amp-auto-ads-0\.1\.js/);
+    assert.match(layoutSrc, /<amp-auto-ads/);
+    assert.match(layoutSrc, /adsbygoogle\.js\?client=/);
   } finally {
     globalThis.fetch = originalFetch;
   }

@@ -1061,13 +1061,13 @@ const WORKER_CSP_POLICY = [
   "form-action 'self'",
   "frame-ancestors 'self'",
   "object-src 'none'",
-  "script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://adservice.google.com https://fundingchoicesmessages.google.com https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google https://www.googletagservices.com",
+  "script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://adservice.google.com https://fundingchoicesmessages.google.com https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google https://www.googletagservices.com https://cdn.ampproject.org",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob: https: http:",
   "media-src 'self' https: http: blob:",
   "connect-src 'self' https: wss:",
-  "frame-src 'self' https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://fundingchoicesmessages.google.com https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google",
+  "frame-src 'self' https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://fundingchoicesmessages.google.com https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google https://cdn.ampproject.org",
   'upgrade-insecure-requests',
 ].join('; ');
 
@@ -2474,7 +2474,7 @@ function renderSharedHead({ title, description, canonicalUrl, ogImageUrl, newsAp
     })();
   </script>
   ${ldScripts}
-  ${adsenseId ? `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${escapeHtml(adsenseId)}" crossorigin="anonymous"></script>` : ''}
+  ${adsenseId ? `<link rel="preconnect" href="https://cdn.ampproject.org" crossorigin="anonymous" />\n  <script async custom-element="amp-auto-ads" src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js"></script>\n  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${escapeHtml(adsenseId)}" crossorigin="anonymous"></script>` : ''}
   <style>${WORKER_COMPILED_CSS}</style>
   <style>
     html { font-size: 16px; font-feature-settings: "rlig" 1, "calt" 1; }
@@ -2519,7 +2519,7 @@ function renderSharedHead({ title, description, canonicalUrl, ogImageUrl, newsAp
     }
   </style>
 </head>
-<body class="bg-slate-50/50 dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 min-h-screen flex flex-col font-sans transition-colors duration-200">
+<body class="bg-slate-50/50 dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 min-h-screen flex flex-col font-sans transition-colors duration-200">${adsenseId ? `\n  <amp-auto-ads type="adsense" data-ad-client="${escapeHtml(adsenseId)}"></amp-auto-ads>` : ''}
   <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-brand-700 focus:text-white focus:rounded-xl">Pular para o conteúdo principal</a>`;
 }
 

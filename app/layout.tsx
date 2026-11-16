@@ -159,7 +159,15 @@ export default function RootLayout({
         <link rel="preconnect" href="https://gazetaesportiva.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://www.gazetaesportiva.com" crossOrigin="anonymous" />
         {adsenseClientId && (
-          <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
+          <>
+            <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
+            <link rel="preconnect" href="https://cdn.ampproject.org" crossOrigin="anonymous" />
+            <script
+              async
+              custom-element="amp-auto-ads"
+              src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js"
+            />
+          </>
         )}
 
         {/* Structured Data: Organization & WebSite */}
@@ -217,6 +225,13 @@ export default function RootLayout({
       </head>
 
       <body className="bg-white dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 min-h-screen flex flex-col font-sans transition-colors duration-200">
+        {adsenseClientId && (
+          <amp-auto-ads
+            type="adsense"
+            data-ad-client={adsenseClientId}
+            suppressHydrationWarning
+          />
+        )}
         {/* Skip to Content Link for Accessibility */}
         <a
           href="#main-content"
