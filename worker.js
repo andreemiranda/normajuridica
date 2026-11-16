@@ -1,10 +1,10 @@
 // worker.js — Cloudflare Workers Multiplatform Entry Point for Norma Jurídica
 // Mantém paridade completa de interface, rotas e contratos JSON com o servidor Node.js (server.js),
 // com suporte híbrido (Proxy resiliente para ORIGIN_URL quando configurado OU execução 100% Edge Standalone),
-// prevenção de loops DNS (Error 1000 / 1014 / 508) para news.mirandinhacontabilidade.workers.dev e leitura exclusiva de secrets no env.
+// prevenção de loops DNS (Error 1000 / 1014 / 508) para normajuridica.com.br e leitura exclusiva de secrets no env.
 
-const DEFAULT_NEWS_API_BASE_URL = 'https://news-sources-api.legislativemunicipal.workers.dev';
-const CANONICAL_DOMAIN = 'news.mirandinhacontabilidade.workers.dev';
+const DEFAULT_NEWS_API_BASE_URL = 'https://normajuridica.com.br';
+const CANONICAL_DOMAIN = 'normajuridica.com.br';
 const CANONICAL_ORIGIN = `https://${CANONICAL_DOMAIN}`;
 
 const SITE_INFO = {
