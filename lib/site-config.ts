@@ -45,31 +45,37 @@ export const SITE_CONFIG = {
     email: 'contato@normajuridica.com.br',
   },
   adsense: {
-    clientId:
+    clientId: stripWrappingQuotes(
       process.env.NEXT_PUBLIC_ADSENSE_ID ||
-      process.env.GOOGLE_ADSENSE_CLIENT_ID ||
-      'ca-pub-7059730627018047',
+        process.env.GOOGLE_ADSENSE_CLIENT_ID ||
+        'ca-pub-7059730627018047'
+    ),
     slots: {
-      header:
+      header: stripWrappingQuotes(
         process.env.NEXT_PUBLIC_ADSENSE_SLOT_HEADER ||
-        process.env.GOOGLE_ADSENSE_SLOT_HEADER ||
-        '',
-      sidebar:
+          process.env.GOOGLE_ADSENSE_SLOT_HEADER ||
+          '2112796122'
+      ),
+      sidebar: stripWrappingQuotes(
         process.env.NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR ||
-        process.env.GOOGLE_ADSENSE_SLOT_SIDEBAR ||
-        '',
-      sidebarBottom:
+          process.env.GOOGLE_ADSENSE_SLOT_SIDEBAR ||
+          '1127017514'
+      ),
+      sidebarBottom: stripWrappingQuotes(
         process.env.NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR_BOTTOM ||
-        process.env.GOOGLE_ADSENSE_SLOT_SIDEBAR_BOTTOM ||
-        '',
-      inArticle:
+          process.env.GOOGLE_ADSENSE_SLOT_SIDEBAR_BOTTOM ||
+          '8465515707'
+      ),
+      inArticle: stripWrappingQuotes(
         process.env.NEXT_PUBLIC_ADSENSE_SLOT_IN_ARTICLE ||
-        process.env.GOOGLE_ADSENSE_SLOT_IN_ARTICLE ||
-        '',
-      footer:
+          process.env.GOOGLE_ADSENSE_SLOT_IN_ARTICLE ||
+          '6400171558'
+      ),
+      footer: stripWrappingQuotes(
         process.env.NEXT_PUBLIC_ADSENSE_SLOT_FOOTER ||
-        process.env.GOOGLE_ADSENSE_SLOT_FOOTER ||
-        '',
+          process.env.GOOGLE_ADSENSE_SLOT_FOOTER ||
+          '7613698536'
+      ),
     },
   },
 };

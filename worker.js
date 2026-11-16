@@ -770,11 +770,11 @@ export function resolveWorkerAdsenseConfig(env = {}) {
   return {
     clientId,
     slots: {
-      header: readEnvVar(env, ['NEXT_PUBLIC_ADSENSE_SLOT_HEADER', 'GOOGLE_ADSENSE_SLOT_HEADER']),
-      sidebar: readEnvVar(env, ['NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR', 'GOOGLE_ADSENSE_SLOT_SIDEBAR']),
-      sidebarBottom: readEnvVar(env, ['NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR_BOTTOM', 'GOOGLE_ADSENSE_SLOT_SIDEBAR_BOTTOM']),
-      inArticle: readEnvVar(env, ['NEXT_PUBLIC_ADSENSE_SLOT_IN_ARTICLE', 'GOOGLE_ADSENSE_SLOT_IN_ARTICLE']),
-      footer: readEnvVar(env, ['NEXT_PUBLIC_ADSENSE_SLOT_FOOTER', 'GOOGLE_ADSENSE_SLOT_FOOTER']),
+      header: readEnvVar(env, ['NEXT_PUBLIC_ADSENSE_SLOT_HEADER', 'GOOGLE_ADSENSE_SLOT_HEADER']) || '2112796122',
+      sidebar: readEnvVar(env, ['NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR', 'GOOGLE_ADSENSE_SLOT_SIDEBAR']) || '1127017514',
+      sidebarBottom: readEnvVar(env, ['NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR_BOTTOM', 'GOOGLE_ADSENSE_SLOT_SIDEBAR_BOTTOM']) || '8465515707',
+      inArticle: readEnvVar(env, ['NEXT_PUBLIC_ADSENSE_SLOT_IN_ARTICLE', 'GOOGLE_ADSENSE_SLOT_IN_ARTICLE']) || '6400171558',
+      footer: readEnvVar(env, ['NEXT_PUBLIC_ADSENSE_SLOT_FOOTER', 'GOOGLE_ADSENSE_SLOT_FOOTER']) || '7613698536',
     },
   };
 }

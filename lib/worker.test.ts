@@ -8,6 +8,7 @@ import worker, {
   resolveWorkerSiteConfig,
   resolveWorkerNewsApiConfig,
   resolveWorkerWeatherConfig,
+  resolveWorkerAdsenseConfig,
   buildWorkerNewsApiHeaders,
   sanitizePublicData,
   stripForcedAlignmentStyles,
@@ -49,6 +50,18 @@ test('wrangler.jsonc e wrangler.toml são válidos, sincronizados e sem segredos
   assert.equal(jsonc.vars?.WEATHER_API_BASE_URL, 'https://radarmeteorologico.com.br');
   assert.equal(jsonc.vars?.WEATHER_BASE_URL, 'https://radarmeteorologico.com.br');
   assert.equal(jsonc.vars?.NEXT_PUBLIC_WEATHER_API_BASE_URL, 'https://radarmeteorologico.com.br');
+  assert.equal(jsonc.vars?.NEXT_PUBLIC_ADSENSE_ID, 'ca-pub-7059730627018047');
+  assert.equal(jsonc.vars?.NEXT_PUBLIC_ADSENSE_SLOT_FOOTER, '7613698536');
+  assert.equal(jsonc.vars?.NEXT_PUBLIC_ADSENSE_SLOT_HEADER, '2112796122');
+  assert.equal(jsonc.vars?.NEXT_PUBLIC_ADSENSE_SLOT_IN_ARTICLE, '6400171558');
+  assert.equal(jsonc.vars?.NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR, '1127017514');
+  assert.equal(jsonc.vars?.NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR_BOTTOM, '8465515707');
+  assert.equal(jsonc.vars?.GOOGLE_ADSENSE_CLIENT_ID, 'ca-pub-7059730627018047');
+  assert.equal(jsonc.vars?.GOOGLE_ADSENSE_SLOT_FOOTER, '7613698536');
+  assert.equal(jsonc.vars?.GOOGLE_ADSENSE_SLOT_HEADER, '2112796122');
+  assert.equal(jsonc.vars?.GOOGLE_ADSENSE_SLOT_IN_ARTICLE, '6400171558');
+  assert.equal(jsonc.vars?.GOOGLE_ADSENSE_SLOT_SIDEBAR, '1127017514');
+  assert.equal(jsonc.vars?.GOOGLE_ADSENSE_SLOT_SIDEBAR_BOTTOM, '8465515707');
 
   assert.equal(jsonc.routes, undefined);
 
@@ -68,7 +81,35 @@ test('wrangler.jsonc e wrangler.toml são válidos, sincronizados e sem segredos
   assert.match(tomlRaw, /NEXT_PUBLIC_SITE_URL\s*=\s*"https:\/\/normajuridica\.com\.br"/);
   assert.match(tomlRaw, /NEWS_API_BASE_URL\s*=\s*"https:\/\/news-sources-api\.legislativemunicipal\.workers\.dev"/);
   assert.match(tomlRaw, /WEATHER_API_BASE_URL\s*=\s*"https:\/\/radarmeteorologico\.com\.br"/);
+  assert.match(tomlRaw, /NEXT_PUBLIC_ADSENSE_SLOT_HEADER\s*=\s*"2112796122"/);
+  assert.match(tomlRaw, /GOOGLE_ADSENSE_SLOT_SIDEBAR_BOTTOM\s*=\s*"8465515707"/);
   assert.doesNotMatch(tomlRaw, /^\s*(API_KEY|NEWS_API_KEY|REVALIDATE_SECRET|SMTP_PASS|WEATHER_API_KEY)\s*=/m);
+
+  const workerAds = resolveWorkerAdsenseConfig({});
+  assert.equal(workerAds.clientId, 'ca-pub-7059730627018047');
+  assert.equal(workerAds.slots.header, '2112796122');
+  assert.equal(workerAds.slots.sidebar, '1127017514');
+  assert.equal(workerAds.slots.sidebarBottom, '8465515707');
+  assert.equal(workerAds.slots.inArticle, '6400171558');
+  assert.equal(workerAds.slots.footer, '7613698536');
+
+  const workerAdsFromGoogleVars = resolveWorkerAdsenseConfig({
+    GOOGLE_ADSENSE_CLIENT_ID: 'ca-pub-7059730627018047',
+    GOOGLE_ADSENSE_SLOT_FOOTER: '7613698536',
+    GOOGLE_ADSENSE_SLOT_HEADER: '2112796122',
+    GOOGLE_ADSENSE_SLOT_IN_ARTICLE: '6400171558',
+    GOOGLE_ADSENSE_SLOT_SIDEBAR: '1127017514',
+    GOOGLE_ADSENSE_SLOT_SIDEBAR_BOTTOM: '8465515707',
+  });
+  assert.deepEqual(workerAdsFromGoogleVars, workerAds);
+
+  const nextConfigRaw = fs.readFileSync(path.join(rootDir, 'next.config.ts'), 'utf8');
+  assert.match(nextConfigRaw, /'ca-pub-7059730627018047'/);
+  assert.match(nextConfigRaw, /'2112796122'/);
+  assert.match(nextConfigRaw, /'1127017514'/);
+  assert.match(nextConfigRaw, /'8465515707'/);
+  assert.match(nextConfigRaw, /'6400171558'/);
+  assert.match(nextConfigRaw, /'7613698536'/);
 
   // Garante que bun.lock/bun.lockb estão no .gitignore (lockfileVersion 2 incompatível com bun@1.2.15 no Cloudflare Builds) e valida package-lock.json
   const gitignoreRaw = fs.readFileSync(path.join(rootDir, '.gitignore'), 'utf8');

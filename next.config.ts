@@ -29,23 +29,23 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_ADSENSE_SLOT_HEADER:
       process.env.NEXT_PUBLIC_ADSENSE_SLOT_HEADER ||
       process.env.GOOGLE_ADSENSE_SLOT_HEADER ||
-      '',
+      '2112796122',
     NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR:
       process.env.NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR ||
       process.env.GOOGLE_ADSENSE_SLOT_SIDEBAR ||
-      '',
+      '1127017514',
     NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR_BOTTOM:
       process.env.NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR_BOTTOM ||
       process.env.GOOGLE_ADSENSE_SLOT_SIDEBAR_BOTTOM ||
-      '',
+      '8465515707',
     NEXT_PUBLIC_ADSENSE_SLOT_IN_ARTICLE:
       process.env.NEXT_PUBLIC_ADSENSE_SLOT_IN_ARTICLE ||
       process.env.GOOGLE_ADSENSE_SLOT_IN_ARTICLE ||
-      '',
+      '6400171558',
     NEXT_PUBLIC_ADSENSE_SLOT_FOOTER:
       process.env.NEXT_PUBLIC_ADSENSE_SLOT_FOOTER ||
       process.env.GOOGLE_ADSENSE_SLOT_FOOTER ||
-      '',
+      '7613698536',
   },
   poweredByHeader: false,
   compress: true,
