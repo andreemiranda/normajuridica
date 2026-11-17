@@ -122,25 +122,8 @@ export function ArticlePageClient({
       }
     }
 
-    // 3. Fallback defaults if still below target
-    const fallbackDefaults = [
-      `Fato apurado: ${article.title}`,
-      'Acompanhamento contínuo dos desdobramentos pelas autoridades competentes.',
-      'Informação confirmada com base nas fontes e comunicações oficiais do setor.',
-      'Análise de desdobramentos jurídicos e impacto direto para a sociedade.',
-      'Monitoramento prioritário das manifestações institucionais e regulatórias.',
-      'Atualização em tempo real das deliberações e medidas anunciadas pelo poder público.',
-    ];
-
-    for (const fb of fallbackDefaults) {
-      if (points.length >= minRequiredPoints) break;
-      if (!points.includes(fb)) {
-        points.push(fb);
-      }
-    }
-
     return points.slice(0, minRequiredPoints);
-  }, [keyPoints, contentHtml, article.summary, article.title, minRequiredPoints]);
+  }, [keyPoints, contentHtml, article.summary, minRequiredPoints]);
 
   // Audio Reader
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
@@ -162,10 +145,13 @@ export function ArticlePageClient({
         );
         if (res.ok) {
           const data = await res.json();
-          if (data.contentHtml && data.contentHtml.length > 250) {
-            setContentHtml(
-              repairAndSanitizeArticleHtml(data.contentHtml, featuredImage ? [featuredImage] : [], linkOpts)
+          if (data.contentHtml) {
+            const cleaned = repairAndSanitizeArticleHtml(
+              data.contentHtml,
+              featuredImage ? [featuredImage] : [],
+              linkOpts
             );
+            setContentHtml((prev) => (cleaned.length > prev.length ? cleaned : prev));
           }
         }
       } catch {}

@@ -34,15 +34,17 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
     ? article.imageUrl
     : `${baseUrl}/cover.png`;
 
+  const metaDescription = (article.summary || '').trim() || SITE_CONFIG.description;
+
   return {
     title: article.title,
-    description: article.summary,
+    description: metaDescription,
     alternates: {
       canonical: canonicalUrl,
     },
     openGraph: {
       title: `${article.title} | ${SITE_CONFIG.name}`,
-      description: article.summary,
+      description: metaDescription,
       url: canonicalUrl,
       type: 'article',
       publishedTime: article.isoDate || article.pubDate,
@@ -60,7 +62,7 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
     twitter: {
       card: 'summary_large_image',
       title: `${article.title} | ${SITE_CONFIG.name}`,
-      description: article.summary,
+      description: metaDescription,
       images: [ogImg],
     },
   };

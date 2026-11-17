@@ -5,6 +5,7 @@ import { ALL_CATEGORIES, normalizeCategoryText } from '@/lib/sources';
 import { categorySlugify } from '@/lib/slug';
 import { getNewsItemBySlugOrId } from '@/lib/news-fetcher';
 import { INSTITUTIONAL_PAGES } from '@/lib/wp';
+import { SITE_CONFIG } from '@/lib/site-config';
 
 export const revalidate = 60; // ISR 60s
 
@@ -21,7 +22,10 @@ export async function generateMetadata({ params }: CatchAllPageProps): Promise<M
     first === 'videos' ||
     /\.(ico|png|jpg|jpeg|gif|svg|webp|txt|xml|json|map|css|js)$/i.test(first)
   ) {
-    return { title: 'Página Não Encontrada' };
+    return {
+      title: 'Página Não Encontrada',
+      description: SITE_CONFIG.description,
+    };
   }
 
   // 1. Check category
@@ -39,7 +43,7 @@ export async function generateMetadata({ params }: CatchAllPageProps): Promise<M
   if (article) {
     return {
       title: article.title,
-      description: article.summary,
+      description: article.summary || SITE_CONFIG.description,
     };
   }
 
@@ -48,11 +52,14 @@ export async function generateMetadata({ params }: CatchAllPageProps): Promise<M
   if (page) {
     return {
       title: page.title,
-      description: page.lead,
+      description: page.lead || SITE_CONFIG.description,
     };
   }
 
-  return { title: 'Página Não Encontrada' };
+  return {
+    title: 'Página Não Encontrada',
+    description: SITE_CONFIG.description,
+  };
 }
 
 export default async function CatchAllPage({ params }: CatchAllPageProps) {

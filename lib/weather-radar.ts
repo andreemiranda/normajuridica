@@ -130,6 +130,74 @@ function normalizeCityName(text: string): string {
     .trim();
 }
 
+const BR_UF_CAPITAL_MAP: Record<string, string> = {
+  AC: 'Rio Branco',
+  AL: 'Maceió',
+  AP: 'Macapá',
+  AM: 'Manaus',
+  BA: 'Salvador',
+  CE: 'Fortaleza',
+  DF: 'Brasília',
+  ES: 'Vitória',
+  GO: 'Goiânia',
+  MA: 'São Luís',
+  MT: 'Cuiabá',
+  MS: 'Campo Grande',
+  MG: 'Belo Horizonte',
+  PA: 'Belém',
+  PB: 'João Pessoa',
+  PR: 'Curitiba',
+  PE: 'Recife',
+  PI: 'Teresina',
+  RJ: 'Rio de Janeiro',
+  RN: 'Natal',
+  RS: 'Porto Alegre',
+  RO: 'Porto Velho',
+  RR: 'Boa Vista',
+  SC: 'Florianópolis',
+  SP: 'São Paulo',
+  SE: 'Aracaju',
+  TO: 'Palmas',
+};
+
+export function resolveEdgeWeatherQuery(headers: Headers): string {
+  const edgeLat = headers.get('x-vercel-ip-latitude') || headers.get('cf-iplatitude');
+  const edgeLon = headers.get('x-vercel-ip-longitude') || headers.get('cf-iplongitude');
+  if (edgeLat && edgeLon) {
+    const lat = Number(edgeLat);
+    const lon = Number(edgeLon);
+    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+      return `${lat},${lon}`;
+    }
+  }
+
+  const rawCountry = (headers.get('cf-ipcountry') || headers.get('x-vercel-ip-country') || '')
+    .toUpperCase()
+    .trim();
+  const rawCity = headers.get('x-vercel-ip-city') || headers.get('cf-ipcity') || '';
+  if (rawCity && (!rawCountry || rawCountry === 'BR')) {
+    try {
+      const decoded = decodeURIComponent(rawCity).trim();
+      if (decoded) return decoded;
+    } catch {
+      if (rawCity.trim()) return rawCity.trim();
+    }
+  }
+
+  const rawRegion = (
+    headers.get('cf-region-code') ||
+    headers.get('x-vercel-ip-country-region') ||
+    ''
+  )
+    .toUpperCase()
+    .trim();
+  if (rawRegion && BR_UF_CAPITAL_MAP[rawRegion] && (!rawCountry || rawCountry === 'BR')) {
+    return BR_UF_CAPITAL_MAP[rawRegion];
+  }
+
+  return '';
+}
+
 export function parseCoordinatesQuery(query?: string): { lat: number; lon: number } | null {
   if (!query) return null;
   const m = query.trim().match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);

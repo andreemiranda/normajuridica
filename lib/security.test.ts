@@ -166,6 +166,12 @@ test('worker aplica CSP, headers de segurança em /api/* e bloqueia SSRF e expor
     null
   );
 
+  const htmlSecured = applySecurityHeaders(
+    new Response('<html></html>', { status: 200, headers: { 'X-Robots-Tag': 'noindex, nofollow' } }),
+    '/'
+  );
+  assert.equal(htmlSecured.headers.has('X-Robots-Tag'), false);
+
   const apiSecured = applySecurityHeaders(new Response('{}', { status: 200 }), '/api/health');
   const csp = apiSecured.headers.get('Content-Security-Policy') || '';
   assert.ok(csp);

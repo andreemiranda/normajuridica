@@ -90,6 +90,17 @@ export async function GET(req: NextRequest) {
       }
     );
 
+    if (!cleanHtml) {
+      return NextResponse.json(
+        sanitizePublicData({
+          success: false,
+          slug,
+          contentHtml: '',
+        }),
+        { status: 404, headers: { 'Cache-Control': 'no-store, max-age=0' } }
+      );
+    }
+
     return NextResponse.json(
       sanitizePublicData({
         success: true,
@@ -105,10 +116,10 @@ export async function GET(req: NextRequest) {
   } catch {
     return NextResponse.json(
       sanitizePublicData({
-        success: true,
-        contentHtml: '<p>O conteúdo completo desta reportagem está em atualização pela redação do Norma Jurídica.</p>',
+        success: false,
+        contentHtml: '',
       }),
-      { headers: { 'Cache-Control': 'no-store, max-age=0' } }
+      { status: 500, headers: { 'Cache-Control': 'no-store, max-age=0' } }
     );
   }
 }

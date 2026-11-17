@@ -54,9 +54,13 @@ test('extractArticleFromHtml extrai conteúdo editorial completo ignorando naveg
   assert.equal(extracted.includes('Todos os direitos reservados'), false);
 });
 
-test('ensureCompleteArticleText preserva matérias completas e expande notas curtas sem truncar', () => {
+test('ensureCompleteArticleText preserva matérias integrais sem injetar texto genérico', () => {
   const shortNote = '<p>Resumo inicial da audiência pública na Câmara Municipal.</p>';
   const completed = ensureCompleteArticleText(shortNote, 'Audiência Pública', 'Política');
-  assert.ok((completed.match(/<p\b/g) || []).length >= 2);
-  assert.match(completed, /Norma Jurídica/);
+  assert.equal((completed.match(/<p\b/g) || []).length, 1);
+  assert.equal(completed.includes('segue acompanhando os desdobramentos'), false);
+
+  const longLinked = `<p>${'Contexto detalhado da decisão. '.repeat(35)}<a href="https://exemplo.com.br/ato">Ato oficial</a> continua válido em todo o território.</p>`;
+  const formattedLong = formatArticleParagraphsHtml(longLinked);
+  assert.match(formattedLong, /<a href="https:\/\/exemplo\.com\.br\/ato">Ato oficial<\/a>/);
 });

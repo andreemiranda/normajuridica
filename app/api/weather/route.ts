@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sanitizePublicData, checkRateLimit, sanitizeInput, getClientIp } from '@/lib/security';
-import { getWeatherRadarData } from '@/lib/weather-radar';
+import { getWeatherRadarData, resolveEdgeWeatherQuery } from '@/lib/weather-radar';
 import { WeatherInfo } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -13,6 +13,8 @@ interface WeatherCacheEntry {
 const weatherCache = new Map<string, WeatherCacheEntry>();
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 min (respeita janela mínima de alertas INMET)
 const MAX_WEATHER_CACHE_SIZE = 150;
+const EDGE_GEO_VARY =
+  'cf-iplatitude, cf-iplongitude, cf-ipcity, cf-region-code, cf-ipcountry, x-vercel-ip-latitude, x-vercel-ip-longitude, x-vercel-ip-city, x-vercel-ip-country-region, x-vercel-ip-country';
 
 export async function GET(req: NextRequest) {
   const clientIp = getClientIp(req.headers);
@@ -27,36 +29,31 @@ export async function GET(req: NextRequest) {
   const latParam = req.nextUrl.searchParams.get('lat');
   const lonParam = req.nextUrl.searchParams.get('lon');
   let rawQuery = req.nextUrl.searchParams.get('q') || '';
+  const hasExplicitLocation = Boolean(rawQuery.trim() || (latParam && lonParam));
 
   if (!rawQuery && latParam && lonParam) {
     rawQuery = `${latParam},${lonParam}`;
   }
 
-  // Fallback automático por cabeçalhos de borda (Cloudflare / Vercel / Netlify) quando não há GPS do dispositivo
+  // Fallback automático por cabeçalhos de borda (Cloudflare / Vercel / UF) quando não há GPS do dispositivo
   if (!rawQuery) {
-    const edgeLat = req.headers.get('x-vercel-ip-latitude') || req.headers.get('cf-iplatitude');
-    const edgeLon = req.headers.get('x-vercel-ip-longitude') || req.headers.get('cf-iplongitude');
-    const edgeCity = req.headers.get('x-vercel-ip-city') || req.headers.get('cf-ipcity');
-    if (edgeLat && edgeLon) {
-      rawQuery = `${edgeLat},${edgeLon}`;
-    } else if (edgeCity) {
-      try {
-        rawQuery = decodeURIComponent(edgeCity);
-      } catch {
-        rawQuery = edgeCity;
-      }
-    } else {
-      rawQuery = 'Brasília';
-    }
+    rawQuery = resolveEdgeWeatherQuery(req.headers) || 'Brasília';
   }
 
   const query = sanitizeInput(rawQuery, 60).replace(/[^\p{L}\p{N}\s,.-]/gu, '') || 'Brasília';
   const cleanQuery = query.toLowerCase();
 
+  const responseHeaders: Record<string, string> = hasExplicitLocation
+    ? { 'Cache-Control': 'public, max-age=600, s-maxage=600' }
+    : {
+        'Cache-Control': 'private, no-store, no-cache, must-revalidate',
+        Vary: EDGE_GEO_VARY,
+      };
+
   const cached = weatherCache.get(cleanQuery);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
     return NextResponse.json(sanitizePublicData(cached.data), {
-      headers: { 'Cache-Control': 'public, max-age=600, s-maxage=600' },
+      headers: responseHeaders,
     });
   }
 
@@ -68,6 +65,6 @@ export async function GET(req: NextRequest) {
   weatherCache.set(cleanQuery, { data, timestamp: Date.now() });
 
   return NextResponse.json(sanitizePublicData(data), {
-    headers: { 'Cache-Control': 'public, max-age=600, s-maxage=600' },
+    headers: responseHeaders,
   });
 }

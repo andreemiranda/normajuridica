@@ -7,6 +7,7 @@ import {
   getWeatherRadarData,
   haversineKm,
   parseCoordinatesQuery,
+  resolveEdgeWeatherQuery,
   resolveWeatherApiConfig,
 } from './weather-radar';
 
@@ -135,4 +136,23 @@ test('getWeatherRadarData consulta /api/v1/cidades, /temperaturas e /alertas sem
     globalThis.fetch = originalFetch;
     clearWeatherRadarCache();
   }
+});
+
+test('resolveEdgeWeatherQuery resolve coordenadas, cidade e UF cf-region-code/x-vercel sem prender em Brasília', () => {
+  assert.equal(
+    resolveEdgeWeatherQuery(new Headers({ 'cf-region-code': 'SP', 'cf-ipcountry': 'BR' })),
+    'São Paulo'
+  );
+  assert.equal(
+    resolveEdgeWeatherQuery(new Headers({ 'x-vercel-ip-country-region': 'MG', 'x-vercel-ip-country': 'BR' })),
+    'Belo Horizonte'
+  );
+  assert.equal(
+    resolveEdgeWeatherQuery(new Headers({ 'cf-ipcity': 'S%C3%A3o%20Lu%C3%ADs', 'cf-ipcountry': 'BR' })),
+    'São Luís'
+  );
+  assert.equal(
+    resolveEdgeWeatherQuery(new Headers({ 'cf-iplatitude': '-23.5505', 'cf-iplongitude': '-46.6333' })),
+    '-23.5505,-46.6333'
+  );
 });

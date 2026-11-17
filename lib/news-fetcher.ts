@@ -1,7 +1,5 @@
 // lib/news-fetcher.ts
 import 'server-only';
-import fs from 'node:fs';
-import path from 'node:path';
 
 import { NewsItem } from './types';
 import { getNewsStore, formatTimeAgo } from './news-store';
@@ -16,29 +14,6 @@ import { formatArticleParagraphsHtml, fetchFullArticleBody } from './article-ext
 import { SITE_CONFIG, getBaseUrl } from './site-config';
 
 export { formatTimeAgo };
-
-let cachedSeedItems: NewsItem[] | null = null;
-
-function getSeedItems(): NewsItem[] {
-  if (cachedSeedItems) return cachedSeedItems;
-  const candidates = [
-    path.join(process.cwd(), 'data', 'seed-news.json'),
-    path.join(__dirname, '..', 'data', 'seed-news.json'),
-    path.join(__dirname, '..', '..', 'data', 'seed-news.json'),
-    path.join('/app/applet', 'data', 'seed-news.json'),
-    '/data/seed-news.json',
-  ];
-  for (const c of candidates) {
-    try {
-      if (fs.existsSync(c)) {
-        const data = fs.readFileSync(c, 'utf8');
-        cachedSeedItems = JSON.parse(data);
-        return cachedSeedItems || [];
-      }
-    } catch {}
-  }
-  return [];
-}
 
 export interface FetchNewsOptions {
   category?: string;
@@ -61,7 +36,6 @@ let inMemoryShortCache: { key: string; result: FetchNewsResult; timestamp: numbe
 
 export function clearNewsCache() {
   inMemoryShortCache = null;
-  cachedSeedItems = null;
 }
 
 export async function fetchNews(options: FetchNewsOptions = {}): Promise<FetchNewsResult> {
@@ -94,7 +68,7 @@ export async function fetchNews(options: FetchNewsOptions = {}): Promise<FetchNe
     return inMemoryShortCache.result;
   }
 
-  // 1. Primary Read: Query SQLite Local Persistent Store
+  // 1. Primary Read: Query SQLite Local Persistent Store (populated exclusively by upstream API)
   let storeRes = await store.getNews({
     category,
     sourceId,
@@ -103,22 +77,19 @@ export async function fetchNews(options: FetchNewsOptions = {}): Promise<FetchNe
     page,
   });
 
-  // 2. Empty Store Recovery (Initial boot / fresh serverless cold-start)
-  if (storeRes.total === 0) {
+  // 2. Empty Store Recovery: sync live upstream API sources directly (never synthetic seeds)
+  if (storeRes.total === 0 && !refresh) {
     try {
-      const seeds = getSeedItems();
-      if (seeds.length > 0) {
-        await store.upsertNews(seeds);
-        storeRes = await store.getNews({
-          category,
-          sourceId,
-          searchQuery,
-          limit,
-          page,
-        });
-      }
+      await syncNewsSources({ force: true });
+      storeRes = await store.getNews({
+        category,
+        sourceId,
+        searchQuery,
+        limit,
+        page,
+      });
     } catch (err) {
-      console.warn('[news-fetcher] Aviso ao aplicar seed de recuperação:', err);
+      console.warn('[news-fetcher] Aviso ao sincronizar API na recuperação inicial:', err);
     }
   }
 
@@ -157,19 +128,7 @@ export async function getNewsItemBySlugOrId(
     deferMissingLinkFallback: shouldResolveApiLinks,
   });
 
-  // 2. Fallback: Search bundled seed items
-  if (!item) {
-    const seeds = getSeedItems();
-    const seedMatch = seeds.find(
-      s => s.slug.toLowerCase() === decoded || s.id.toLowerCase() === decoded
-    );
-    if (seedMatch) {
-      store.upsertNews([seedMatch]).catch(() => {});
-      item = seedMatch;
-    }
-  }
-
-  // 3. Fallback: Search upstream API on-demand and import to SQLite if found
+  // 2. Search upstream API on-demand and import to SQLite if found
   if (!item) {
     item = await findAndImportNewsItemFromApi(decoded);
   }

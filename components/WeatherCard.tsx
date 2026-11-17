@@ -23,12 +23,16 @@ export function WeatherCard() {
     let isMounted = true;
 
     async function fetchWeatherForQuery(query?: string) {
-      const url = query ? `/api/weather?q=${encodeURIComponent(query)}` : '/api/weather';
-      const res = await fetch(url);
-      if (res.ok && isMounted) {
-        const data = await res.json();
-        setWeather(data);
-        setLoading(false);
+      try {
+        const url = query ? `/api/weather?q=${encodeURIComponent(query)}` : '/api/weather';
+        const res = await fetch(url);
+        if (res.ok && isMounted) {
+          const data = await res.json();
+          setWeather(data);
+          setLoading(false);
+        }
+      } catch {
+        if (isMounted) setLoading(false);
       }
     }
 
@@ -37,11 +41,13 @@ export function WeatherCard() {
 
       try {
         const cachedCoords = window.sessionStorage.getItem('nj_weather_coords');
-        if (cachedCoords) {
+        if (cachedCoords && /^-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?$/.test(cachedCoords)) {
           query = cachedCoords;
-          await fetchWeatherForQuery(query);
         }
       } catch {}
+
+      // Exibe imediatamente a previsão via cache de sessão ou geolocalização de borda/IP (sem esperar timeout do GPS)
+      const initialFetch = fetchWeatherForQuery(query);
 
       if (typeof window !== 'undefined' && 'geolocation' in navigator) {
         try {
@@ -59,20 +65,13 @@ export function WeatherCard() {
               window.sessionStorage.setItem('nj_weather_coords', liveCoords);
             } catch {}
             await fetchWeatherForQuery(liveCoords);
-            return;
           }
         } catch {
-          // Geolocation denied, unavailable, or timed out — use edge/IP or default fallback
+          // Geolocation denied, unavailable, or timed out — initial edge/IP response remains displayed
         }
       }
 
-      if (!query) {
-        try {
-          await fetchWeatherForQuery();
-        } catch {
-          if (isMounted) setLoading(false);
-        }
-      }
+      await initialFetch;
     }
 
     loadWeather();

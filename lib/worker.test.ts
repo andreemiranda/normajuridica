@@ -993,14 +993,14 @@ test('worker garante zero editorias vazias, parágrafos integrais, Tailwind pré
   const sampleFeed = [
     {
       id: 'full-1',
-      title: 'STF consolida entendimento nacional aplicável a tribunais e municípios brasileiros',
+      title: 'STF consolida entendimento nacional sobre direito tributário aplicável a municípios da Bahia e Tocantins',
       slug: 'stf-consolida-entendimento-nacional-full-1',
       category: 'Justiça',
-      description: 'Decisão plenária orienta órgãos estaduais e municipais em todo o Brasil.',
+      description: 'Decisão plenária sobre direito tributário orienta tribunais na Bahia, Tocantins e em todo o Brasil.',
       contentHtml:
-        '<p>Primeiro parágrafo completo com detalhamento jurídico da matéria no plenário do tribunal. ' +
-        'Segundo bloco explicativo sobre os impactos nos estados e municípios de norte a sul do país.</p>' +
-        '<p>Terceiro parágrafo com dados complementares sobre prazos processuais e vigência imediata da resolução oficial.</p>',
+        '<p>Primeiro parágrafo completo com detalhamento jurídico da matéria no plenário do tribunal sobre direito tributário e receita municipal. ' +
+        'Segundo bloco explicativo sobre os impactos nos estados da Bahia e Tocantins de norte a sul do país.</p>' +
+        '<p>Terceiro parágrafo com dados complementares e <a href="https://stf.jus.br/decisao">decisão oficial publicada</a> sobre prazos processuais e vigência imediata da resolução.</p>',
       publishedAt: new Date().toISOString(),
       imageUrl: 'https://cdn.example.com/stf-plenaria.jpg',
       author: 'Redação',
@@ -1028,7 +1028,7 @@ test('worker garante zero editorias vazias, parágrafos integrais, Tailwind pré
     const catsJson = await catsRes.json();
     assert.ok(catsJson.categories.length >= 60);
 
-    // Editorias sem fonte exclusiva retornam notícias por fallback contextual/nacional (zero vazios)
+    // Editorias retornam notícias reais correspondentes sem despejo artificial
     for (const slug of ['bahia', 'tocantins', 'direito-tributario']) {
       const catApiRes = await worker.fetch(
         new Request(`https://normajuridica.com.br/api/news?category=${slug}&limit=10`),
@@ -1038,11 +1038,13 @@ test('worker garante zero editorias vazias, parágrafos integrais, Tailwind pré
       assert.ok(catApiJson.items.length >= 1, `Editoria ${slug} não deve ficar vazia`);
     }
 
-    // Home HTML sem cdn.tailwindcss.com e com crédito radarmeteorologico.com.br + JSON-LD NewsMediaOrganization
+    // Home HTML sem cdn.tailwindcss.com, com index/follow meta robots, sem X-Robots-Tag noindex e com crédito radarmeteorologico.com.br
     const homeRes = await worker.fetch(new Request('https://normajuridica.com.br/'), env);
+    assert.equal(homeRes.headers.get('X-Robots-Tag'), null);
     const homeHtml = await homeRes.text();
     assert.equal(homeHtml.includes('cdn.tailwindcss.com'), false);
     assert.equal(homeHtml.includes('/*__WORKER_COMPILED_CSS__*/'), false);
+    assert.match(homeHtml, /<meta name="robots" content="index,follow/);
     assert.match(homeHtml, /radarmeteorologico\.com\.br/);
     assert.match(homeHtml, /NewsMediaOrganization/);
 
@@ -1060,6 +1062,7 @@ test('worker garante zero editorias vazias, parágrafos integrais, Tailwind pré
     const cspHeader = homeRes.headers.get('Content-Security-Policy') || '';
     assert.match(cspHeader, /https:\/\/cdn\.ampproject\.org/);
     assert.match(cspHeader, /https:\/\/pagead2\.googlesyndication\.com/);
+    assert.match(cspHeader, /https:\/\/\*\.safeframe\.googlesyndication\.com/);
 
     for (const html of [homeHtml, artHtml]) {
       const headEndIdx = html.indexOf('</head>');
@@ -1072,6 +1075,19 @@ test('worker garante zero editorias vazias, parágrafos integrais, Tailwind pré
       assert.match(html, /https:\/\/pagead2\.googlesyndication\.com\/pagead\/js\/adsbygoogle\.js\?client=ca-pub-7059730627018047/);
       assert.match(html, /class="adsbygoogle block"/);
     }
+
+    // Edge /api/weather sem parâmetros explícitos usa region-code / Vary e não polui cache público
+    const weatherEdgeRes = await worker.fetch(
+      new Request('https://normajuridica.com.br/api/weather', {
+        headers: { 'cf-ipcountry': 'BR', 'cf-region-code': 'SP' },
+      }),
+      env
+    );
+    assert.equal(weatherEdgeRes.status, 200);
+    assert.match(weatherEdgeRes.headers.get('Cache-Control') || '', /private, no-store/);
+    assert.match(weatherEdgeRes.headers.get('Vary') || '', /CF-Region-Code/);
+    const weatherEdgeJson = await weatherEdgeRes.json();
+    assert.equal(weatherEdgeJson.uf, 'SP');
 
     const layoutSrc = fs.readFileSync(path.join(process.cwd(), 'app/layout.tsx'), 'utf8');
     assert.match(layoutSrc, /amp-auto-ads-0\.1\.js/);

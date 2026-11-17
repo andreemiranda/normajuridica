@@ -202,23 +202,6 @@ ${Array.from({ length: minPoints }, (_, i) => `PONTO ${i + 1}: <ponto ${i + 1}>`
         }
       }
 
-      // Supplementary high-quality points if sentences are fewer than required
-      const defaultPool = [
-        `Fato em destaque: ${cleanTitle}`,
-        'Cobertura analítica e monitoramento institucional pelo portal Norma Jurídica.',
-        'Informação apurada com base nas fontes e comunicações oficiais.',
-        'Análise de desdobramentos práticos e impacto para a sociedade e agentes envolvidos.',
-        'Acompanhamento contínuo dos pareceres e manifestações das autoridades competentes.',
-        'Atualização em tempo real das deliberações e medidas anunciadas.',
-      ];
-
-      for (const d of defaultPool) {
-        if (extracted.length >= minPoints) break;
-        if (!extracted.includes(d)) {
-          extracted.push(d);
-        }
-      }
-
       keyPoints = extracted.slice(0, minPoints);
     }
 

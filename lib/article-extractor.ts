@@ -124,8 +124,8 @@ export function formatArticleParagraphsHtml(rawHtmlOrText: string): string {
       .map((s) => s.trim())
       .filter(Boolean);
 
-    const hasInlineLinksOrFormat = /<(?:a|strong|em|b|i)\b/i.test(trimmedInner);
-    if (hasInlineLinksOrFormat && trimmedInner.length <= 750 && subParts.length <= 1) {
+    const hasInlineLinksOrFormat = /<(?:a|strong|em|b|i|mark|u|s)\b/i.test(trimmedInner);
+    if (hasInlineLinksOrFormat && subParts.length <= 1) {
       const plainCheck = stripHtmlTags(trimmedInner);
       if (NOISE_LINE_REGEX.test(plainCheck)) return '';
       return `<p${attrs}>${cleanFullNewsText(trimmedInner)}</p>`;
@@ -135,10 +135,10 @@ export function formatArticleParagraphsHtml(rawHtmlOrText: string): string {
     for (const part of subParts.length > 0 ? subParts : [trimmedInner]) {
       const plainPart = stripHtmlTags(part);
       if (!plainPart || NOISE_LINE_REGEX.test(plainPart)) continue;
-      if (/<(?:a|strong|em|b|i)\b/i.test(part) && plainPart.length <= 450) {
+      if (/<(?:a|strong|em|b|i|mark|u|s)\b/i.test(part)) {
         resultBlocks.push(`<p>${cleanFullNewsText(part)}</p>`);
       } else {
-        const textToSplit = hasInlineLinksOrFormat ? plainPart : part.replace(/<[^>]+>/g, ' ').trim();
+        const textToSplit = part.replace(/<[^>]+>/g, ' ').trim();
         for (const chunk of splitLongParagraphText(cleanFullNewsText(textToSplit))) {
           resultBlocks.push(`<p>${chunk}</p>`);
         }
@@ -280,18 +280,11 @@ export async function fetchFullArticleBody(url: string, limit: number = 50000): 
   }
 }
 
-export function ensureCompleteArticleText(text: string, title: string, category: string): string {
+export function ensureCompleteArticleText(text: string, _title?: string, _category?: string): string {
   const formatted = formatArticleParagraphsHtml(text || '');
-  const plainLen = stripHtmlTags(formatted).length;
-
-  if (formatted && plainLen >= 160) {
+  if (formatted) {
     return formatted;
   }
-
-  const cleanT = decodeHtmlEntities(title || 'Reportagem Norma Jurídica');
-  const baseBlock = formatted || `<p>${cleanFullNewsText(text || cleanT)}</p>`;
-
-  return `${baseBlock}
-<p>A redação do portal <strong>Norma Jurídica</strong> segue acompanhando os desdobramentos em <strong>${cleanFullNewsText(category || 'Brasil')}</strong>, reunindo atos oficiais, declarações de autoridades e documentos públicos relacionados ao caso.</p>
-<p>Novos dados, desdobramentos institucionais e notas complementares são incorporados continuamente à cobertura editorial em tempo real.</p>`.trim();
+  const cleaned = cleanFullNewsText(text || '');
+  return cleaned ? `<p>${cleaned}</p>` : '';
 }

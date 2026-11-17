@@ -129,14 +129,15 @@ async function asyncPool<T, R>(
 }
 
 // Resilient fetch with retry and exponential backoff exclusively against NEWS_API_BASE_URL
-async function fetchWithRetryAndFallback<T>(endpoint: string, timeoutMs = 6000): Promise<T | null> {
+async function fetchWithRetryAndFallback<T>(endpoint: string, timeoutMs = 9000): Promise<T | null> {
   const { baseUrl, apiKey } = getNewsApiConfig();
   const headers = getNewsApiHeaders();
 
-  const retryCount = 1;
+  const retryCount = 2;
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    let backoffMs = 450 * (attempt + 1);
     try {
       const url = `${baseUrl}${endpoint}`;
       let res = await fetch(url, {
@@ -156,12 +157,15 @@ async function fetchWithRetryAndFallback<T>(endpoint: string, timeoutMs = 6000):
       if (res.ok) {
         return (await res.json()) as T;
       }
+      if (res.status === 429 || res.status === 502 || res.status === 503 || res.status === 504) {
+        backoffMs = 900 * (attempt + 1);
+      }
     } catch {
       clearTimeout(timeout);
     }
 
     if (attempt < retryCount) {
-      await new Promise(resolve => setTimeout(resolve, 350 * (attempt + 1)));
+      await new Promise(resolve => setTimeout(resolve, backoffMs));
     }
   }
 
@@ -317,7 +321,6 @@ function buildNewsItemFromUpstream(
 // Bounded in-memory caches for on-demand API article search
 const apiArticleLookupCache = new Map<string, { item: NewsItem | null; expiresAt: number }>();
 const inFlightApiLookups = new Map<string, Promise<NewsItem | null>>();
-let recentGlobalFeedCache: { items: UpstreamArticleItem[]; expiresAt: number } | null = null;
 
 function extractItemsArrayFromPayload(rawData: unknown): UpstreamArticleItem[] {
   if (!rawData) return [];
@@ -456,83 +459,37 @@ export async function findAndImportNewsItemFromApi(
         return resultItem;
       };
 
-      // 1. Check cached recent global feed (/api/news?limit=100)
-      if (!recentGlobalFeedCache || recentGlobalFeedCache.expiresAt <= Date.now()) {
-        const globalData = await fetchWithRetryAndFallback<UpstreamSourceResponse | UpstreamArticleItem[]>(
-          '/api/news?limit=100',
-          3000
-        );
-        const globalItems = extractItemsArrayFromPayload(globalData);
-        recentGlobalFeedCache = {
-          items: globalItems,
-          expiresAt: Date.now() + (globalItems.length > 0 ? 90_000 : 20_000),
-        };
-      }
+      // 1. Targeted category source search (pages 1..2 per matching active source)
+      const activeSources = ALL_NEWS_SOURCES.filter((s) => s.active);
+      const normCat = inferredCat ? inferredCat.toLowerCase() : '';
+      const catSources = normCat
+        ? activeSources.filter((s) => (s.category || '').toLowerCase() === normCat)
+        : [];
+      const candidateSources = (catSources.length > 0 ? catSources : activeSources.slice(0, 8)).slice(0, 8);
 
-      if (recentGlobalFeedCache.items.length > 0) {
-        const matchedGlobal = findMatchingUpstreamItem(recentGlobalFeedCache.items, cleanCandidate);
-        if (matchedGlobal) {
-          return await saveAndReturn(matchedGlobal, defaultSource);
-        }
-      }
-
-      // 2. Targeted API queries (direct slug, keyword search, and category endpoint in parallel)
-      const searchWords = cleanCandidate
-        .split('-')
-        .filter((w) => w.length >= 4)
-        .slice(0, 4)
-        .join(' ');
-
-      const queryEndpoints: string[] = [
-        `/api/news?slug=${encodeURIComponent(cleanCandidate)}&limit=10`,
-      ];
-      if (searchWords) {
-        queryEndpoints.push(`/api/news?search=${encodeURIComponent(searchWords)}&limit=15`);
-      }
-      if (inferredCat) {
-        queryEndpoints.push(`/api/news/category/${encodeURIComponent(inferredCat)}?limit=50`);
-      }
-
-      const targetedResults = await Promise.allSettled(
-        queryEndpoints.map((ep) =>
-          fetchWithRetryAndFallback<UpstreamSourceResponse | UpstreamArticleItem[]>(ep, 3000)
-        )
+      const sourceResults = await Promise.allSettled(
+        candidateSources.map(async (src) => {
+          const page1Raw = await fetchWithRetryAndFallback<UpstreamSourceResponse | UpstreamArticleItem[]>(
+            `/api/news/${src.id}?limit=30&page=1`,
+            3500
+          );
+          const list = extractItemsArrayFromPayload(page1Raw);
+          if (list.length >= 25 && !findMatchingUpstreamItem(list, cleanCandidate)) {
+            const page2Raw = await fetchWithRetryAndFallback<UpstreamSourceResponse | UpstreamArticleItem[]>(
+              `/api/news/${src.id}?limit=30&page=2`,
+              3500
+            );
+            list.push(...extractItemsArrayFromPayload(page2Raw));
+          }
+          return { src, list };
+        })
       );
 
-      for (const r of targetedResults) {
-        if (r.status !== 'fulfilled' || !r.value) continue;
-        const list = extractItemsArrayFromPayload(r.value);
-        const matched = findMatchingUpstreamItem(list, cleanCandidate);
+      for (const r of sourceResults) {
+        if (r.status !== 'fulfilled') continue;
+        const matched = findMatchingUpstreamItem(r.value.list, cleanCandidate);
         if (matched) {
-          return await saveAndReturn(matched, defaultSource);
-        }
-      }
-
-      // 3. Targeted per-source check (up to 3 matching category sources, fast timeout)
-      if (inferredCat) {
-        const normCat = inferredCat.toLowerCase();
-        const catSources = ALL_NEWS_SOURCES.filter(
-          (s) => s.active && (s.category || '').toLowerCase() === normCat
-        ).slice(0, 3);
-
-        if (catSources.length > 0) {
-          const sourceResults = await Promise.allSettled(
-            catSources.map(async (src) => {
-              const raw = await fetchWithRetryAndFallback<UpstreamSourceResponse | UpstreamArticleItem[]>(
-                `/api/news/${src.id}?limit=50`,
-                3000
-              );
-              return { src, list: extractItemsArrayFromPayload(raw) };
-            })
-          );
-
-          for (const r of sourceResults) {
-            if (r.status !== 'fulfilled') continue;
-            const matched = findMatchingUpstreamItem(r.value.list, cleanCandidate);
-            if (matched) {
-              return await saveAndReturn(matched, r.value.src);
-            }
-          }
+          return await saveAndReturn(matched, r.value.src);
         }
       }
 
@@ -591,7 +548,7 @@ export async function syncNewsSources(options: SyncOptions = {}): Promise<SyncEx
     const store = getNewsStore();
     await store.init();
 
-    const limitPerSource = options.limitPerSource || 50;
+    const maxPages = Math.max(1, Math.min(10, Math.ceil((options.limitPerSource || 120) / 30)));
     let targetSources = ALL_NEWS_SOURCES;
 
     if (options.sourcesSubset && options.sourcesSubset.length > 0) {
@@ -603,25 +560,20 @@ export async function syncNewsSources(options: SyncOptions = {}): Promise<SyncEx
     let sourcesFailed = 0;
     let itemsFetched = 0;
     const allParsedItems: NewsItem[] = [];
-    const sharedCategoryImages = new Map<string, string[]>();
-    const allValidImages: string[] = [];
 
-    // Parallel processing with bounded concurrency of 6 to prevent server socket starvation
-    const results = await asyncPool(6, targetSources, async (source: NewsApiSourceItem) => {
+    // Parallel processing with bounded concurrency of 4 to avoid upstream 503 throttling while paginating all active sources
+    const results = await asyncPool(4, targetSources, async (source: NewsApiSourceItem) => {
       try {
-        const rawData = await fetchWithRetryAndFallback<UpstreamSourceResponse | UpstreamArticleItem[]>(
-          `/api/news/${source.id}?limit=${limitPerSource}`,
-          5000
-        );
-
-        let items: UpstreamArticleItem[] = [];
-
-        if (rawData) {
-          if (Array.isArray(rawData)) {
-            items = rawData;
-          } else if (rawData.items && Array.isArray(rawData.items)) {
-            items = rawData.items;
-          }
+        const items: UpstreamArticleItem[] = [];
+        for (let page = 1; page <= maxPages; page++) {
+          const rawData = await fetchWithRetryAndFallback<UpstreamSourceResponse | UpstreamArticleItem[]>(
+            `/api/news/${source.id}?limit=30&page=${page}`,
+            9000
+          );
+          const pageItems = extractItemsArrayFromPayload(rawData);
+          if (pageItems.length === 0) break;
+          items.push(...pageItems);
+          if (pageItems.length < 25) break;
         }
 
         if (items.length === 0) {

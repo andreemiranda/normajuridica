@@ -139,24 +139,6 @@ function findSeedDbPath(): string | null {
   return null;
 }
 
-function findSeedJsonPath(): string | null {
-  const candidates = [
-    path.join(process.cwd(), 'data', 'seed-news.json'),
-    path.join(__dirname, '..', 'data', 'seed-news.json'),
-    path.join(__dirname, '..', '..', 'data', 'seed-news.json'),
-    path.join('/app/applet', 'data', 'seed-news.json'),
-    '/data/seed-news.json',
-  ];
-  for (const c of candidates) {
-    try {
-      if (fs.existsSync(c) && fs.statSync(c).size > 1000) {
-        return c;
-      }
-    } catch {}
-  }
-  return null;
-}
-
 function isDirectoryWritable(dirPath: string): boolean {
   try {
     if (!fs.existsSync(dirPath)) {
@@ -514,44 +496,6 @@ export class SqliteNewsStore implements INewsStore {
       this.normalizeStoredImageUrls(this.db);
       this.normalizeStoredArticles(this.db);
       this.initialized = true;
-
-      // Seed fallback from seed-news.json if database has fewer than 15000 items
-      try {
-        const countRow = this.db.prepare('SELECT COUNT(*) as count FROM news').get() as { count: number } | undefined;
-        if (!countRow || countRow.count < 15000) {
-          const seedJson = findSeedJsonPath();
-          if (seedJson) {
-            const raw = fs.readFileSync(seedJson, 'utf8');
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              await this.upsertNews(parsed);
-            }
-          }
-        }
-      } catch (seedErr) {
-        console.warn('[SqliteNewsStore] Aviso ao carregar seed inicial:', seedErr);
-        // If the database threw an error (e.g. malformed), recreate it cleanly in tmp
-        try {
-          if (this.db) {
-            try { this.db.close(); } catch {}
-          }
-          const freshFallback = path.join(os.tmpdir(), `norma-juridica-fresh-${Date.now()}.db`);
-          this.db = new Database(freshFallback, { timeout: 5000 });
-          this.dbPath = freshFallback;
-          this.isEphemeral = true;
-          this.setupSchema(this.db);
-          const seedJson = findSeedJsonPath();
-          if (seedJson) {
-            const raw = fs.readFileSync(seedJson, 'utf8');
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              await this.upsertNews(parsed);
-            }
-          }
-        } catch (recoverErr) {
-          console.error('[SqliteNewsStore] Falha crítica ao recuperar banco:', recoverErr);
-        }
-      }
     } catch (err) {
       console.error('Falha ao inicializar SQLite store, usando fallback em memória:', err);
       try {
@@ -561,14 +505,6 @@ export class SqliteNewsStore implements INewsStore {
         this.isEphemeral = true;
         this.setupSchema(this.db);
         this.initialized = true;
-        const seedJson = findSeedJsonPath();
-        if (seedJson) {
-          const raw = fs.readFileSync(seedJson, 'utf8');
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            await this.upsertNews(parsed);
-          }
-        }
       } catch {}
     }
   }
@@ -623,18 +559,6 @@ export class SqliteNewsStore implements INewsStore {
         this.isEphemeral = true;
         this.setupSchema(this.db);
         this.initialized = true;
-
-        // Auto re-seed fallback from seed-news.json
-        try {
-          const seedJson = findSeedJsonPath();
-          if (seedJson && fs.existsSync(seedJson)) {
-            const raw = fs.readFileSync(seedJson, 'utf8');
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              this.upsertNews(parsed).catch(() => {});
-            }
-          }
-        } catch {}
       }
     }
     return this.db;
@@ -833,28 +757,6 @@ export class SqliteNewsStore implements INewsStore {
             `).all(...kwParams, limit, offset) as Record<string, unknown>[];
           }
         }
-
-        if (total === 0) {
-          const fbWhere = `WHERE LOWER(category_id) IN ('brasil', 'politica', 'economia', 'justica', 'noticias-gerais')`;
-          const fbCountRow = db.prepare(`SELECT COUNT(*) as count FROM news ${fbWhere}`).get() as { count: number } | undefined;
-          total = fbCountRow ? fbCountRow.count : 0;
-          if (total > 0) {
-            rows = db.prepare(`
-              SELECT ${FEED_SELECT_COLUMNS} FROM news
-              ${fbWhere}
-              ORDER BY pub_date_timestamp ${validOrder}
-              LIMIT ? OFFSET ?
-            `).all(limit, offset) as Record<string, unknown>[];
-          } else {
-            const allCountRow = db.prepare('SELECT COUNT(*) as count FROM news').get() as { count: number } | undefined;
-            total = allCountRow ? allCountRow.count : 0;
-            rows = db.prepare(`
-              SELECT ${FEED_SELECT_COLUMNS} FROM news
-              ORDER BY pub_date_timestamp ${validOrder}
-              LIMIT ? OFFSET ?
-            `).all(limit, offset) as Record<string, unknown>[];
-          }
-        }
       }
 
       const items = rows.map(r => this.rowToNewsItem(r));
@@ -868,48 +770,6 @@ export class SqliteNewsStore implements INewsStore {
       return { items, total };
     } catch (queryErr) {
       console.error('[SqliteNewsStore] Erro ao consultar notícias no SQLite:', queryErr);
-      // Fallback: If query fails due to malformed db, reset db connection and reseed
-      try {
-        if (this.db) {
-          try { this.db.close(); } catch {}
-          this.db = null;
-        }
-        this.initialized = false;
-        const seedJson = findSeedJsonPath();
-        if (seedJson && fs.existsSync(seedJson)) {
-          const raw = fs.readFileSync(seedJson, 'utf8');
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) {
-            let filtered = parsed;
-            if (category && category !== 'all' && category !== 'todas') {
-              const aliases = getCategoryAliases(category);
-              const sourceIds = getCategorySourceIds(category);
-              filtered = filtered.filter(item => {
-                const itemCat = (item.category || '').toLowerCase();
-                const itemCatId = (item.categoryId || '').toLowerCase();
-                const itemSourceId = (item.sourceId || '').toLowerCase();
-                return aliases.some(a => a.toLowerCase() === itemCat || a.toLowerCase() === itemCatId) ||
-                       sourceIds.some(s => s.toLowerCase() === itemSourceId) ||
-                       itemCat === category.toLowerCase() ||
-                       itemCatId === category.toLowerCase();
-              });
-            }
-            if (searchQuery && searchQuery.trim()) {
-              const q = searchQuery.toLowerCase();
-              filtered = filtered.filter(item =>
-                (item.title && item.title.toLowerCase().includes(q)) ||
-                (item.summary && item.summary.toLowerCase().includes(q))
-              );
-            }
-            return {
-              items: filtered.slice(offset, offset + limit),
-              total: filtered.length,
-            };
-          }
-        }
-      } catch (fbErr) {
-        console.error('[SqliteNewsStore] Erro no fallback de leitura JSON:', fbErr);
-      }
       throw queryErr;
     }
   }
@@ -948,25 +808,6 @@ export class SqliteNewsStore implements INewsStore {
     } catch (err) {
       console.error('[SqliteNewsStore] Erro ao buscar notícia por slug/id:', err);
     }
-
-    // Fallback: search in seed-news.json
-    try {
-      const seedJson = findSeedJsonPath();
-      if (seedJson && fs.existsSync(seedJson)) {
-        const raw = fs.readFileSync(seedJson, 'utf8');
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          const clean = slugOrId.replace(/^-+|-+$/g, '').toLowerCase();
-          const found = parsed.find(item =>
-            item.id === slugOrId ||
-            item.slug === slugOrId ||
-            (clean.length >= 10 && item.slug && item.slug.toLowerCase().includes(clean)) ||
-            (clean.length >= 10 && item.link && item.link.toLowerCase().includes(clean))
-          );
-          if (found) return found;
-        }
-      }
-    } catch {}
 
     return null;
   }
@@ -1119,7 +960,7 @@ export class SqliteNewsStore implements INewsStore {
 
     const maxItems = Math.max(15000, options.maxItems ?? parseInt(process.env.NEWS_STORE_MAX_ITEMS || '15000', 10));
     const maxPerSource = Math.max(350, options.maxPerSource ?? parseInt(process.env.NEWS_STORE_MAX_PER_SOURCE || '350', 10));
-    const retentionDays = Math.max(90, options.retentionDays ?? parseInt(process.env.NEWS_RETENTION_DAYS || '90', 10));
+    const retentionDays = Math.max(365, options.retentionDays ?? parseInt(process.env.NEWS_RETENTION_DAYS || '365', 10));
 
     let prunedByRetention = 0;
     let prunedBySourceLimit = 0;
@@ -1264,8 +1105,7 @@ export class SqliteNewsStore implements INewsStore {
         if (kwRow && kwRow.count > 0) return kwRow.count;
       }
 
-      const fbRow = db.prepare(`SELECT COUNT(*) as count FROM news WHERE LOWER(category_id) IN ('brasil', 'politica', 'economia', 'justica', 'noticias-gerais')`).get() as { count: number } | undefined;
-      if (fbRow && fbRow.count > 0) return fbRow.count;
+      return 0;
     }
     const stmt = db.prepare('SELECT COUNT(*) as count FROM news');
     const row = stmt.get() as { count: number } | undefined;
